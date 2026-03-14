@@ -15,13 +15,13 @@ interface SidebarProps {
   userEmail: string;
 }
 
-const adminLinks = [
-  { href: '/dashboard/admin', label: 'Overview', icon: Home },
-  { href: '/dashboard/admin/users', label: 'Manage Users', icon: Users },
-  { href: '/dashboard/admin/events', label: 'Events', icon: Calendar },
-  { href: '/dashboard/admin/jobs', label: 'Job Board', icon: Briefcase },
-  { href: '/dashboard/admin/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/dashboard/admin/settings', label: 'Settings', icon: Settings },
+const facultyLinks = [
+  { href: '/dashboard/faculty',          label: 'Overview',  icon: Home          },
+  { href: '/dashboard/faculty/students', label: 'Students',  icon: Users         },
+  { href: '/dashboard/faculty/alumni',   label: 'Alumni',    icon: GraduationCap },
+  { href: '/dashboard/faculty/events',   label: 'Events',    icon: Calendar      },
+  { href: '/dashboard/faculty/jobs',     label: 'Job Board', icon: Briefcase     },
+  { href: '/dashboard/faculty/settings', label: 'Settings',  icon: Settings      },
 ];
 
 const alumniLinks = [
@@ -46,7 +46,7 @@ export default function DashboardSidebar({ role, userName, userEmail }: SidebarP
   const pathname = usePathname();
   const router = useRouter();
 
-  const links = role === 'admin' ? adminLinks : role === 'alumni' ? alumniLinks : studentLinks;
+  const links = role === 'faculty' ? facultyLinks : role === 'alumni' ? alumniLinks : studentLinks;
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
@@ -55,9 +55,8 @@ export default function DashboardSidebar({ role, userName, userEmail }: SidebarP
     router.push('/');
   };
 
-  const roleLabel = role === 'admin' ? 'Administrator' : role === 'alumni' ? 'Alumni Member' : 'Student';
-  const roleBadgeColor = role === 'admin' ? 'bg-red-100 text-red-700' : role === 'alumni' ? 'bg-gold-100 text-gold-700' : 'bg-blue-100 text-blue-700';
-
+  const roleBadgeColor = role === 'faculty' ? 'bg-blue-100 text-blue-700' : role === 'alumni' ? 'bg-gold-100 text-gold-700' : 'bg-green-100 text-green-700';
+  const roleLabel = role === 'faculty' ? 'Faculty Member' : role === 'alumni' ? 'Alumni Member' : 'Student';
   return (
     <aside className="w-64 bg-navy-950 min-h-screen flex flex-col">
       {/* Logo */}
@@ -82,7 +81,7 @@ export default function DashboardSidebar({ role, userName, userEmail }: SidebarP
           </div>
         </div>
         <span className={cn('badge mt-3', roleBadgeColor)}>
-          {role === 'admin' && <Shield className="h-3 w-3 mr-1" />}
+          {role === 'faculty' && <GraduationCap className="h-3 w-3 mr-1" />}
           {roleLabel}
         </span>
       </div>

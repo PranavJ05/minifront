@@ -39,7 +39,7 @@ export function clearCurrentUser() {
 
 export function getDashboardPath(role: string): string {
   switch (role) {
-    case 'admin': return '/dashboard/admin';
+    case 'faculty': return '/dashboard/faculty';
     case 'student': return '/dashboard/student';
     case 'alumni': return '/dashboard/alumni';
     default: return '/';

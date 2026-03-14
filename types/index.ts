@@ -1,6 +1,7 @@
 // types/index.ts
 
-export type UserRole = 'admin' | 'student' | 'alumni';
+export type UserRole = 'faculty' | 'student' | 'alumni';
+export type AccountStatus = 'pending' | 'approved' | 'rejected';
 
 export interface User {
   id: string;
@@ -12,6 +13,9 @@ export interface User {
   phone?: string;
   linkedin?: string;
   profilePicture?: string;
+  place?: string;
+  profession?: string;
+  status?: AccountStatus;
 }
 
 export interface Alumni {
@@ -113,4 +117,6 @@ export interface AuthFormData {
   phone?: string;
   linkedin?: string;
   rememberMe?: boolean;
+  place?: string;
+  profession?: string;
 }
