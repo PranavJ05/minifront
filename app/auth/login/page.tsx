@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { GraduationCap, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { GraduationCap, Mail, Lock, Eye, EyeOff, AlertCircle, Clock } from 'lucide-react';
 import AuthInput from '@/components/auth/AuthInput';
 import { UserRole } from '@/types';
 import { getDashboardPath } from '@/lib/utils';
@@ -25,35 +25,47 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    // Simulate API call - replace with Spring Boot API
+    // Simulate API call — replace with Spring Boot /api/auth/login
     await new Promise((r) => setTimeout(r, 1000));
 
-    // Mock validation
     if (!formData.email || !formData.password) {
       setError('Please fill in all fields.');
       setLoading(false);
       return;
     }
 
-    // Mock user - in production, this comes from Spring Boot JWT
+    // Mock: check if account is pending (in production, API returns status)
+    // For demo: emails containing "pending" simulate a pending account
+    if (formData.email.toLowerCase().includes('pending')) {
+      setError('pending');
+      setLoading(false);
+      return;
+    }
+
     const mockUser = {
       id: '1',
       email: formData.email,
-      fullName: formData.role === 'admin' ? 'Admin User' : formData.role === 'student' ? 'Alex Johnson' : 'Sarah Jenkins',
+      fullName:
+        formData.role === 'faculty'
+          ? 'Dr. Faculty User'
+          : formData.role === 'student'
+          ? 'Alex Johnson'
+          : 'Sarah Jenkins',
       role: formData.role,
+      status: 'approved',
     };
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('alumni_user', JSON.stringify(mockUser));
     }
-
     router.push(getDashboardPath(formData.role));
   };
 
   const roles: { value: UserRole; label: string; desc: string }[] = [
-    { value: 'alumni', label: 'Alumni', desc: 'Graduate member' },
-    { value: 'student', label: 'Student', desc: 'Current student' },
-    { value: 'admin', label: 'Admin', desc: 'Staff / Admin' },
+    { value: 'alumni',  label: 'Alumni',   desc: 'Graduate member' },
+    { value: 'student', label: 'Student',  desc: 'Current student' },
+    { value: 'faculty', label: 'Faculty',  desc: 'Faculty member' },
+    
   ];
 
   return (
@@ -72,32 +84,34 @@ export default function LoginPage() {
 
         <div className="relative z-10">
           <h1 className="font-serif text-4xl font-bold text-white leading-tight mb-6">
-            Welcome back to<br />your <span className="gradient-text">community</span>
+            Welcome back to<br />your{' '}
+            <span className="gradient-text">community</span>
           </h1>
           <p className="text-gray-300 text-lg leading-relaxed mb-10">
-            Sign in to access your network, career opportunities, and stay connected with your university family.
+            Sign in to access your network, career opportunities, and stay
+            connected with your university family.
           </p>
-
-          {/* Feature list */}
           <div className="space-y-4">
             {[
               '35,000+ alumni connections worldwide',
               'Exclusive job board and opportunities',
               'Mentorship and career guidance',
-              'Events, reunions, and webinars',
-            ].map((feature) => (
-              <div key={feature} className="flex items-center gap-3">
+              'Campus news and announcements',
+            ].map((f) => (
+              <div key={f} className="flex items-center gap-3">
                 <div className="w-2 h-2 bg-gold-500 rounded-full flex-shrink-0" />
-                <span className="text-gray-300 text-sm">{feature}</span>
+                <span className="text-gray-300 text-sm">{f}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="text-gray-500 text-xs relative z-10">© 2024 Alumni Network. Verified University Platform.</p>
+        <p className="text-gray-500 text-xs relative z-10">
+          © 2024 Alumni Network. Verified University Platform.
+        </p>
       </div>
 
-      {/* Right panel - Form */}
+      {/* Right panel */}
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
@@ -115,7 +129,9 @@ export default function LoginPage() {
 
           {/* Role selector */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-navy-800 mb-2 font-sans">Sign in as</label>
+            <label className="block text-sm font-medium text-navy-800 mb-2 font-sans">
+              Sign in as
+            </label>
             <div className="grid grid-cols-3 gap-2">
               {roles.map((role) => (
                 <button
@@ -135,7 +151,22 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {error && (
+          {/* Pending account warning */}
+          {error === 'pending' && (
+            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+              <Clock className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-amber-800 text-sm">Account Pending Approval</p>
+                <p className="text-amber-700 text-sm mt-0.5">
+                  Your account is awaiting admin approval. You&apos;ll receive an email
+                  once it&apos;s approved.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Generic error */}
+          {error && error !== 'pending' && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-sm">
               <AlertCircle className="h-4 w-4 flex-shrink-0" />
               {error}
@@ -161,7 +192,11 @@ export default function LoginPage() {
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               rightElement={
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-gray-400 hover:text-gray-600">
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               }
@@ -198,11 +233,14 @@ export default function LoginPage() {
 
           <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <p className="text-xs text-amber-700 font-sans font-medium mb-1">Demo credentials:</p>
-            <p className="text-xs text-amber-600 font-sans">Email: any@email.com · Password: any password<br />Select a role to see its dashboard</p>
+            <p className="text-xs text-amber-600 font-sans">
+              Email: any@email.com · Password: any<br />
+              Use email with &quot;pending&quot; to see the approval notice
+            </p>
           </div>
 
           <p className="mt-6 text-center text-sm text-gray-500 font-sans">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/auth/signup" className="text-gold-600 hover:text-gold-700 font-semibold">
               Join the Network
             </Link>

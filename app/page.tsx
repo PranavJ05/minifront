@@ -9,7 +9,6 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { mockAlumni, stats } from '@/lib/mockData';
 
-/*************  ✨ Windsurf Command ⭐  *************/
 /**
  * LandingPage component
  *
@@ -17,7 +16,6 @@ import { mockAlumni, stats } from '@/lib/mockData';
  *
  * @returns {JSX.Element} The LandingPage component
  */
-/*******  f9e3b975-3367-4fbd-8418-cf0b06dbe30c  *******/
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-50">

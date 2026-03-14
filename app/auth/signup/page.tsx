@@ -81,7 +81,7 @@ export default function SignupPage() {
   const roles: { value: UserRole; label: string; icon: string }[] = [
     { value: 'alumni', label: 'Alumni', icon: '🎓' },
     { value: 'student', label: 'Student', icon: '📚' },
-    { value: 'admin', label: 'Admin', icon: '⚙️' },
+    { value: 'faculty', label: 'Faculty',icon: '👩‍🏫' },
   ];
 
   const passwordStrength = () => {

@@ -54,7 +54,7 @@ export default function AlumniProfilePage({ params }: Props) {
 
                 <div className="flex items-start justify-between mb-1">
                   <h1 className="font-bold text-navy-900 text-xl font-serif">{alumni.fullName}</h1>
-                  <Shield className="h-4 w-4 text-blue-500 flex-shrink-0 mt-1" title="Verified Alumni" />
+                  <Shield className="h-4 w-4 text-blue-500 flex-shrink-0 mt-1" aria-label="Verified Alumni" />
                 </div>
                 <p className="text-gold-600 font-medium text-sm mb-1">{alumni.currentRole}</p>
                 <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-1">
