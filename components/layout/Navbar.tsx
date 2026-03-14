@@ -2,7 +2,7 @@
 // components/layout/Navbar.tsx
 import { useState } from 'react';
 import Link from 'next/link';
-import { Menu, X, Search, GraduationCap, Bell } from 'lucide-react';
+import { Menu, X, GraduationCap, Bell } from 'lucide-react';
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -12,13 +12,6 @@ interface NavbarProps {
 
 export default function Navbar({ isAuthenticated = false, userRole, userName }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
-
-  const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/alumni', label: 'Directory' },
-    { href: '/events', label: 'Events' },
-    { href: '/news', label: 'News' },
-  ];
 
   const getDashboardLink = () => {
     switch (userRole) {
@@ -33,6 +26,7 @@ export default function Navbar({ isAuthenticated = false, userRole, userName }: 
     <nav className="bg-navy-950 text-white sticky top-0 z-50 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
+
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="bg-gold-500 p-1.5 rounded-lg group-hover:bg-gold-400 transition-colors">
@@ -40,20 +34,6 @@ export default function Navbar({ isAuthenticated = false, userRole, userName }: 
             </div>
             <span className="font-serif font-bold text-lg tracking-wide">ALUMNI</span>
           </Link>
-
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm font-medium text-gray-300 hover:text-gold-400 transition-colors relative group"
-              >
-                {link.label}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gold-400 group-hover:w-full transition-all duration-300" />
-              </Link>
-            ))}
-          </div>
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-3">
@@ -63,6 +43,7 @@ export default function Navbar({ isAuthenticated = false, userRole, userName }: 
                   <Bell className="h-5 w-5" />
                   <span className="absolute top-1 right-1 w-2 h-2 bg-gold-500 rounded-full" />
                 </button>
+
                 <Link
                   href={getDashboardLink()}
                   className="flex items-center gap-2 bg-navy-800 hover:bg-navy-700 px-4 py-2 rounded-lg transition-colors"
@@ -75,9 +56,13 @@ export default function Navbar({ isAuthenticated = false, userRole, userName }: 
               </>
             ) : (
               <>
-                <Link href="/auth/login" className="text-sm font-medium text-gray-300 hover:text-white transition-colors px-4 py-2">
+                <Link
+                  href="/auth/login"
+                  className="text-sm font-medium text-gray-300 hover:text-white transition-colors px-4 py-2"
+                >
                   Login
                 </Link>
+
                 <Link
                   href="/auth/signup"
                   className="bg-gold-500 hover:bg-gold-400 text-navy-950 text-sm font-bold px-5 py-2 rounded-lg transition-all hover:shadow-lg hover:-translate-y-0.5"
@@ -95,6 +80,7 @@ export default function Navbar({ isAuthenticated = false, userRole, userName }: 
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
+
         </div>
       </div>
 
@@ -102,32 +88,37 @@ export default function Navbar({ isAuthenticated = false, userRole, userName }: 
       {isOpen && (
         <div className="md:hidden bg-navy-900 border-t border-navy-800 animate-slide-up">
           <div className="px-4 py-4 space-y-2">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="block px-3 py-2.5 text-gray-300 hover:text-gold-400 hover:bg-navy-800 rounded-lg transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
+
             <div className="pt-2 border-t border-navy-800 flex flex-col gap-2">
               {isAuthenticated ? (
-                <Link href={getDashboardLink()} className="btn-gold text-center" onClick={() => setIsOpen(false)}>
+                <Link
+                  href={getDashboardLink()}
+                  className="btn-gold text-center"
+                  onClick={() => setIsOpen(false)}
+                >
                   My Dashboard
                 </Link>
               ) : (
                 <>
-                  <Link href="/auth/login" className="btn-outline text-center" onClick={() => setIsOpen(false)}>
+                  <Link
+                    href="/auth/login"
+                    className="btn-outline text-center"
+                    onClick={() => setIsOpen(false)}
+                  >
                     Login
                   </Link>
-                  <Link href="/auth/signup" className="btn-gold text-center" onClick={() => setIsOpen(false)}>
+
+                  <Link
+                    href="/auth/signup"
+                    className="btn-gold text-center"
+                    onClick={() => setIsOpen(false)}
+                  >
                     Join Network
                   </Link>
                 </>
               )}
             </div>
+
           </div>
         </div>
       )}

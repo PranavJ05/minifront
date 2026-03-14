@@ -3,11 +3,16 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { GraduationCap, Mail, Lock, Eye, EyeOff, User, Phone, Linkedin, AlertCircle, CheckCircle } from 'lucide-react';
+import {
+  GraduationCap, Mail, Lock, Eye, EyeOff, User,
+  Phone, Linkedin, CheckCircle, MapPin, Briefcase, Calendar
+} from 'lucide-react';
 import AuthInput from '@/components/auth/AuthInput';
 import { UserRole } from '@/types';
-import { departments, graduationYears } from '@/lib/mockData';
-import { getDashboardPath } from '@/lib/utils';
+import { departments } from '@/lib/mockData';
+
+// Batch years from 1980 up to 2050
+const batchYears = Array.from({ length: 71 }, (_, i) => String(1980 + i));
 
 export default function SignupPage() {
   const router = useRouter();
@@ -26,6 +31,10 @@ export default function SignupPage() {
     graduationYear: '',
     phone: '',
     linkedin: '',
+    // new fields
+    place: '',
+    profession: '',
+    batchYear: '',
   });
 
   const update = (key: string, value: string) => {
@@ -34,21 +43,23 @@ export default function SignupPage() {
   };
 
   const validateStep1 = () => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
-    if (!formData.email.includes('@')) newErrors.email = 'Valid email required';
-    if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e: Record<string, string> = {};
+    if (!formData.fullName.trim())              e.fullName        = 'Full name is required';
+    if (!formData.email.includes('@'))          e.email           = 'Valid email required';
+    if (formData.password.length < 8)           e.password        = 'Min 8 characters';
+    if (formData.password !== formData.confirmPassword)
+                                                e.confirmPassword = 'Passwords do not match';
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const validateStep2 = () => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.department) newErrors.department = 'Department is required';
-    if (!formData.graduationYear) newErrors.graduationYear = 'Graduation year is required';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e: Record<string, string> = {};
+    if (!formData.department)   e.department = 'Department is required';
+    if (!formData.batchYear)    e.batchYear  = 'Batch year is required';
+    if (!formData.place.trim()) e.place      = 'Place is required';
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const handleNext = () => {
@@ -60,41 +71,46 @@ export default function SignupPage() {
     if (!validateStep2()) return;
     setLoading(true);
 
-    // Simulate API - replace with Spring Boot API
+    // Simulate API — replace with Spring Boot /api/auth/register
     await new Promise((r) => setTimeout(r, 1200));
 
-    const mockUser = {
+    // Store pending status; approval must come from admin
+    const pendingUser = {
       id: Date.now().toString(),
       email: formData.email,
       fullName: formData.fullName,
       role: formData.role,
       department: formData.department,
-      graduationYear: formData.graduationYear,
+      batchYear: formData.batchYear,
+      place: formData.place,
+      profession: formData.profession,
+      status: 'pending',
     };
 
     if (typeof window !== 'undefined') {
-      localStorage.setItem('alumni_user', JSON.stringify(mockUser));
+      localStorage.setItem('alumni_pending_user', JSON.stringify(pendingUser));
     }
-    router.push(getDashboardPath(formData.role));
+
+    // Always redirect to waiting page — never directly to dashboard
+    router.push('/auth/pending');
   };
 
   const roles: { value: UserRole; label: string; icon: string }[] = [
-    { value: 'alumni', label: 'Alumni', icon: '🎓' },
+    { value: 'alumni',  label: 'Alumni',  icon: '🎓' },
     { value: 'student', label: 'Student', icon: '📚' },
-    { value: 'faculty', label: 'Faculty',icon: '👩‍🏫' },
+    { value: 'faculty', label: 'Faculty', icon: '🏫' },
   ];
 
   const passwordStrength = () => {
     const p = formData.password;
     if (!p) return 0;
-    let score = 0;
-    if (p.length >= 8) score++;
-    if (/[A-Z]/.test(p)) score++;
-    if (/[0-9]/.test(p)) score++;
-    if (/[^A-Za-z0-9]/.test(p)) score++;
-    return score;
+    let s = 0;
+    if (p.length >= 8)          s++;
+    if (/[A-Z]/.test(p))        s++;
+    if (/[0-9]/.test(p))        s++;
+    if (/[^A-Za-z0-9]/.test(p)) s++;
+    return s;
   };
-
   const strengthColors = ['', 'bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-green-500'];
   const strengthLabels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
   const strength = passwordStrength();
@@ -102,7 +118,7 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Left panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-navy-950 relative overflow-hidden flex-col justify-between p-12">
+      <div className="hidden lg:flex lg:w-2/5 bg-navy-950 relative overflow-hidden flex-col justify-between p-12">
         <div className="absolute top-0 right-0 w-96 h-96 bg-gold-500/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-navy-700/50 rounded-full blur-3xl" />
 
@@ -115,61 +131,88 @@ export default function SignupPage() {
 
         <div className="relative z-10">
           <h1 className="font-serif text-4xl font-bold text-white leading-tight mb-6">
-            Join 35,000+<br />alumni <span className="gradient-text">worldwide</span>
+            Join 35,000+<br />alumni{' '}
+            <span className="gradient-text">worldwide</span>
           </h1>
-          <p className="text-gray-300 text-lg leading-relaxed mb-10">
-            Create your account to access the full suite of alumni resources, connections, and opportunities.
+          <p className="text-gray-300 leading-relaxed mb-10">
+            Create your account to access the full suite of alumni resources,
+            connections, and opportunities.
           </p>
 
-          {/* Steps indicator */}
+          {/* Step indicators */}
           <div className="space-y-3">
             {[
-              { num: 1, label: 'Account Setup', done: step > 1 },
-              { num: 2, label: 'Academic Details', done: false },
+              { num: 1, label: 'Account Setup',    done: step > 1 },
+              { num: 2, label: 'Academic Details', done: false    },
             ].map((s) => (
               <div key={s.num} className="flex items-center gap-3">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
-                  s.done ? 'bg-green-500 text-white' : step === s.num ? 'bg-gold-500 text-navy-950' : 'bg-navy-800 text-gray-400'
+                  s.done           ? 'bg-green-500 text-white'   :
+                  step === s.num   ? 'bg-gold-500 text-navy-950' :
+                                     'bg-navy-800 text-gray-400'
                 }`}>
                   {s.done ? <CheckCircle className="h-4 w-4" /> : s.num}
                 </div>
-                <span className={`text-sm ${step === s.num ? 'text-white font-medium' : 'text-gray-400'}`}>{s.label}</span>
+                <span className={`text-sm ${step === s.num ? 'text-white font-medium' : 'text-gray-400'}`}>
+                  {s.label}
+                </span>
               </div>
             ))}
           </div>
+
+          <div className="mt-10 p-4 bg-navy-800/60 rounded-xl border border-navy-700/50">
+            <p className="text-gold-400 text-sm font-semibold mb-1">⏳ Account Approval</p>
+            <p className="text-gray-400 text-xs leading-relaxed">
+              After signing up, your account will be reviewed by an admin.
+              You&apos;ll receive an email once approved.
+            </p>
+          </div>
         </div>
 
-        <p className="text-gray-500 text-xs relative z-10">© 2024 Alumni Network. Verified University Platform.</p>
+        <p className="text-gray-500 text-xs relative z-10">
+          © 2024 Alumni Network. Verified University Platform.
+        </p>
       </div>
 
-      {/* Right panel - Form */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12 overflow-y-auto">
-        <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8">
+      {/* Right panel */}
+      <div className="flex-1 flex items-center justify-center px-4 py-10 overflow-y-auto">
+        <div className="w-full max-w-lg">
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-2 mb-6">
             <div className="bg-navy-800 p-1.5 rounded-lg">
               <GraduationCap className="h-5 w-5 text-gold-500" />
             </div>
             <span className="font-serif font-bold text-navy-900 text-xl">ALUMNI</span>
           </div>
 
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${step === 1 ? 'bg-navy-800 text-white' : 'bg-green-500 text-white'}`}>
-                {step === 1 ? '1' : '✓'}
+          {/* Step progress */}
+          <div className="flex items-center gap-2 mb-6">
+            {[1, 2].map((n) => (
+              <div key={n} className="flex items-center gap-2">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                  step > n ? 'bg-green-500 text-white' :
+                  step === n ? 'bg-navy-800 text-white' :
+                  'bg-gray-200 text-gray-400'
+                }`}>
+                  {step > n ? '✓' : n}
+                </div>
+                {n < 2 && <div className={`h-0.5 w-10 ${step > n ? 'bg-green-500' : 'bg-gray-200'}`} />}
               </div>
-              <div className="h-0.5 w-8 bg-gray-200" />
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${step === 2 ? 'bg-navy-800 text-white' : 'bg-gray-200 text-gray-400'}`}>
-                2
-              </div>
-            </div>
+            ))}
+          </div>
+
+          <div className="mb-7">
             <h2 className="font-serif text-3xl font-bold text-navy-900 mb-1">
               {step === 1 ? 'Create Account' : 'Academic Details'}
             </h2>
             <p className="text-gray-500 text-sm">
-              {step === 1 ? 'Step 1 of 2 — Basic information' : 'Step 2 of 2 — Tell us about your studies'}
+              {step === 1
+                ? 'Step 1 of 2 — Basic information'
+                : 'Step 2 of 2 — Tell us about your studies'}
             </p>
           </div>
 
+          {/* ── STEP 1 ── */}
           {step === 1 && (
             <div className="space-y-4">
               {/* Role */}
@@ -182,7 +225,9 @@ export default function SignupPage() {
                       type="button"
                       onClick={() => update('role', role.value)}
                       className={`p-3 rounded-lg border-2 text-center transition-all ${
-                        formData.role === role.value ? 'border-navy-800 bg-navy-50' : 'border-gray-200 hover:border-gray-300'
+                        formData.role === role.value
+                          ? 'border-navy-800 bg-navy-50'
+                          : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <div className="text-xl mb-0.5">{role.icon}</div>
@@ -201,14 +246,21 @@ export default function SignupPage() {
                 error={errors.email} />
 
               <div>
-                <AuthInput label="Password" type={showPassword ? 'text' : 'password'} placeholder="Min 8 characters" icon={Lock}
-                  value={formData.password} onChange={(e) => update('password', e.target.value)}
+                <AuthInput
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Min 8 characters"
+                  icon={Lock}
+                  value={formData.password}
+                  onChange={(e) => update('password', e.target.value)}
                   error={errors.password}
                   rightElement={
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-gray-400 hover:text-gray-600">
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="text-gray-400 hover:text-gray-600">
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
-                  } />
+                  }
+                />
                 {formData.password && (
                   <div className="mt-1.5 flex items-center gap-2">
                     <div className="flex-1 flex gap-1">
@@ -225,53 +277,97 @@ export default function SignupPage() {
                 value={formData.confirmPassword} onChange={(e) => update('confirmPassword', e.target.value)}
                 error={errors.confirmPassword} />
 
-              <button type="button" onClick={handleNext} className="w-full btn-primary">
+              <button type="button" onClick={handleNext} className="w-full btn-primary mt-2">
                 Continue →
               </button>
             </div>
           )}
 
+          {/* ── STEP 2 ── */}
           {step === 2 && (
             <form onSubmit={handleSubmit} className="space-y-4">
+
+              {/* Department */}
               <div>
-                <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">Department *</label>
+                <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
+                  Department *
+                </label>
                 <select
                   value={formData.department}
                   onChange={(e) => update('department', e.target.value)}
                   className="input-field cursor-pointer"
                 >
                   <option value="">Select department</option>
-                  {departments.slice(1).map((dept) => (
-                    <option key={dept} value={dept}>{dept}</option>
+                  {departments.slice(1).map((d) => (
+                    <option key={d} value={d}>{d}</option>
                   ))}
                 </select>
                 {errors.department && <p className="mt-1 text-sm text-red-600">{errors.department}</p>}
               </div>
 
+              {/* Batch Year */}
               <div>
                 <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
-                  {formData.role === 'student' ? 'Expected Graduation Year *' : 'Graduation Year *'}
+                  Batch Year *
                 </label>
-                <select
-                  value={formData.graduationYear}
-                  onChange={(e) => update('graduationYear', e.target.value)}
-                  className="input-field cursor-pointer"
-                >
-                  <option value="">Select year</option>
-                  {graduationYears.map((year) => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-                {errors.graduationYear && <p className="mt-1 text-sm text-red-600">{errors.graduationYear}</p>}
+                <div className="relative">
+                  <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <select
+                    value={formData.batchYear}
+                    onChange={(e) => update('batchYear', e.target.value)}
+                    className="input-field pl-10 cursor-pointer"
+                  >
+                    <option value="">Select batch year</option>
+                    {batchYears.map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+                {errors.batchYear && <p className="mt-1 text-sm text-red-600">{errors.batchYear}</p>}
               </div>
 
+              {/* Place */}
+              <AuthInput
+                label="Place / City *"
+                type="text"
+                placeholder="e.g. Bangalore, India"
+                icon={MapPin}
+                value={formData.place}
+                onChange={(e) => update('place', e.target.value)}
+                error={errors.place}
+              />
+
+              {/* Profession */}
+              <AuthInput
+                label="Profession / Current Role"
+                type="text"
+                placeholder="e.g. Software Engineer at Google"
+                icon={Briefcase}
+                value={formData.profession}
+                onChange={(e) => update('profession', e.target.value)}
+              />
+
+              {/* Phone */}
               <AuthInput label="Phone Number" type="tel" placeholder="+1 (234) 567-890" icon={Phone}
                 value={formData.phone} onChange={(e) => update('phone', e.target.value)} />
 
+              {/* LinkedIn */}
               <AuthInput label="LinkedIn Profile (Optional)" type="url" placeholder="linkedin.com/in/yourname" icon={Linkedin}
                 value={formData.linkedin} onChange={(e) => update('linkedin', e.target.value)} />
 
-              <div className="flex gap-3">
+              {/* Approval notice */}
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+                <span className="text-2xl">⏳</span>
+                <div>
+                  <p className="font-semibold text-amber-800 text-sm">Account Approval Required</p>
+                  <p className="text-amber-700 text-xs mt-0.5 leading-relaxed">
+                    Your account will be reviewed by an administrator. This may
+                    take a few days. You will be notified by email once approved.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-1">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
@@ -279,11 +375,15 @@ export default function SignupPage() {
                 >
                   ← Back
                 </button>
-                <button type="submit" disabled={loading} className="flex-2 btn-gold flex-1 flex items-center justify-center gap-2 disabled:opacity-60">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 btn-gold flex items-center justify-center gap-2 disabled:opacity-60"
+                >
                   {loading ? (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    'Create Account'
+                    'Submit for Approval'
                   )}
                 </button>
               </div>
