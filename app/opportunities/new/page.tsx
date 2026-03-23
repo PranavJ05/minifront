@@ -62,29 +62,40 @@ export default function NewOpportunityPage() {
     }
 
     try {
-      // In a real application, the token would be dynamically retrieved from an authentication context or local storage.
-      // For demonstration purposes, I'm using the hardcoded token from your curl example.
-      const token =
-        "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2VAbWVjLmFjLmluIiwiaWF0IjoxNzc0MDc3MDE5LCJleHAiOjE3NzQxNjM0MTl9.4lfj_SGs05dnuLmK3yR3W4FQWJ9VvHQiS0GONme2DJU";
+      // 1. DYNAMICALLY grab the token from localStorage
+      const token = localStorage.getItem("token");
+
+      // 2. Prevent submission if there is no token
+      if (!token) {
+        throw new Error("You must be logged in to post an opportunity.");
+      }
 
       const res = await fetch("http://localhost:8080/opportunities/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          // 3. Use the dynamic token here
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(formData),
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
+        // Handle Spring Security 401/403 specifically
+        if (res.status === 401 || res.status === 403) {
+          throw new Error(
+            "Session expired or unauthorized. Please log in again.",
+          );
+        }
+
+        const errorData = await res.json().catch(() => null);
         throw new Error(
-          errorData.message || `HTTP error! status: ${res.status}`,
+          errorData?.message || `HTTP error! status: ${res.status}`,
         );
       }
 
       setSuccess(true);
-      // Optionally redirect after a short delay or show a success message
+      // Redirect after a short delay
       setTimeout(() => {
         router.push("/opportunities");
       }, 2000);
@@ -95,7 +106,6 @@ export default function NewOpportunityPage() {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />

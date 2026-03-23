@@ -1,12 +1,19 @@
 "use client";
 
-import Image from "next/image";
-import { Calendar, User, Tag, ArrowRight, MapPin, Plus } from "lucide-react";
+import {
+  Calendar,
+  User,
+  Tag,
+  ArrowRight,
+  MapPin,
+  Plus,
+  Users,
+} from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-
+import ReferralRequestModal from "@/components/referrals/ReferralRequestModal";
 interface Opportunity {
   id: number;
   title: string;
@@ -16,9 +23,13 @@ interface Opportunity {
   type: string;
   applyLink: string;
   allowReferrals: boolean;
-  postedByName: string; // Changed from postedBy to match backend response
+  postedByName: string;
   postedAt: string;
+  referrerUserId?: number; // ID of the alumni who posted (used for referral requests)
 }
+
+// Replace with actual auth logic — e.g. from context/localStorage/cookie
+// Token will be read from localStorage at runtime (key: 'token').
 
 export default function OpportunitiesPage() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
@@ -26,37 +37,37 @@ export default function OpportunitiesPage() {
     Opportunity[]
   >([]);
   const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [referralTarget, setReferralTarget] = useState<Opportunity | null>(
+    null,
+  );
+  // Friendly fetch error state (used when token is missing or auth fails)
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchOpportunities = async () => {
+      setFetchError(null);
       try {
-        // In a real application, the token would be dynamically retrieved from an authentication context or local storage.
-        // For demonstration purposes, I'm using the hardcoded token from your curl example.
-        const token =
-          "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2VAbWVjLmFjLmluIiwiaWF0IjoxNzc0MDc3MDE5LCJleHAiOjE3NzQxNjM0MTl9.4lfj_SGs05dnuLmK3yR3W4FQWJ9VvHQiS0GONme2DJU";
-
         const res = await fetch("http://localhost:8080/opportunities/all", {
-          method: "GET", // Changed from POST to GET as per backend endpoint
+          method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // Added Authorization header
           },
         });
 
         if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
+          setFetchError(`Failed to fetch opportunities: Error ${res.status}`);
+          return;
         }
 
         const data: Opportunity[] = await res.json();
         setOpportunities(data);
       } catch (error) {
         console.error("Failed to fetch opportunities:", error);
-        // You might want to set an error state here to display feedback to the user
+        setFetchError("Unable to load opportunities. Please try again later.");
       }
     };
-
     fetchOpportunities();
-  }, []); // The empty dependency array ensures this effect runs only once after the initial render.
+  }, []);
 
   useEffect(() => {
     if (activeCategory === "All") {
@@ -84,8 +95,15 @@ export default function OpportunitiesPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex justify-between items-center mb-6">
-          {/* Categories */}
+        {fetchError ? (
+          <div className="max-w-3xl mx-auto mb-6">
+            <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-red-700 text-sm">
+              {fetchError}
+            </div>
+          </div>
+        ) : null}
+        <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
+          {/* Category Filter */}
           <div className="flex flex-wrap gap-2">
             {["All", "JOB", "INTERNSHIP"].map((cat) => (
               <button
@@ -105,18 +123,35 @@ export default function OpportunitiesPage() {
               </button>
             ))}
           </div>
-          <Link href="/opportunities/new">
-            <button className="btn-primary flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Create New Opportunity
-            </button>
-          </Link>
+
+          <div className="flex gap-3">
+            {/* Link to My Referrals */}
+            <Link href="/referrals/mine">
+              <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-navy-200 text-navy-700 text-sm font-medium hover:bg-navy-50 transition-colors">
+                <Users className="h-4 w-4" />
+                My Referrals
+              </button>
+            </Link>
+            {/* Link to Received Referrals (for alumni who post) */}
+            <Link href="/referrals/received">
+              <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-navy-200 text-navy-700 text-sm font-medium hover:bg-navy-50 transition-colors">
+                <Users className="h-4 w-4" />
+                Referral Requests
+              </button>
+            </Link>
+            <Link href="/opportunities/new">
+              <button className="btn-primary flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Post Opportunity
+              </button>
+            </Link>
+          </div>
         </div>
 
-        {/* Opportunities Listing */}
+        {/* Opportunities Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredOpportunities.length === 0 ? (
-            <p className="col-span-full text-center text-gray-600">
+            <p className="col-span-full text-center text-gray-600 py-16">
               No opportunities found for this category.
             </p>
           ) : (
@@ -136,6 +171,7 @@ export default function OpportunitiesPage() {
                       {new Date(opportunity.postedAt).toLocaleDateString()}
                     </span>
                   </div>
+
                   <h3 className="font-bold text-navy-900 mb-2 group-hover:text-navy-700 transition-colors">
                     {opportunity.title}
                   </h3>
@@ -153,25 +189,41 @@ export default function OpportunitiesPage() {
                   <p className="text-gray-500 text-sm mb-4 line-clamp-3 flex-grow">
                     {opportunity.description}
                   </p>
+
                   <div className="flex items-center justify-between text-xs text-gray-400 mb-4">
                     <span className="flex items-center gap-1.5">
                       <User className="h-3 w-3" />
                       Posted by: {opportunity.postedByName}
                     </span>
                     {opportunity.allowReferrals && (
-                      <span className="text-green-600 font-semibold">
-                        Referrals Allowed
+                      <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                        Referrals Open
                       </span>
                     )}
                   </div>
-                  <a
-                    href={opportunity.applyLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-primary flex items-center justify-center gap-2 mt-auto"
-                  >
-                    Apply Now <ArrowRight className="h-4 w-4" />
-                  </a>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 mt-auto">
+                    <a
+                      href={opportunity.applyLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-primary flex-1 flex items-center justify-center gap-2"
+                    >
+                      Apply Now <ArrowRight className="h-4 w-4" />
+                    </a>
+                    {opportunity.allowReferrals && (
+                      <button
+                        onClick={() => setReferralTarget(opportunity)}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-navy-200 text-navy-700 text-sm font-medium hover:bg-navy-50 transition-colors shrink-0"
+                        title="Request a Referral"
+                      >
+                        <Users className="h-4 w-4" />
+                        Refer Me
+                      </button>
+                    )}
+                  </div>
                 </div>
               </article>
             ))
@@ -180,6 +232,15 @@ export default function OpportunitiesPage() {
       </div>
 
       <Footer />
+
+      {/* Referral Modal */}
+      {referralTarget && (
+        <ReferralRequestModal
+          opportunity={referralTarget}
+          referrerUserId={referralTarget.referrerUserId ?? 0}
+          onClose={() => setReferralTarget(null)}
+        />
+      )}
     </div>
   );
 }
