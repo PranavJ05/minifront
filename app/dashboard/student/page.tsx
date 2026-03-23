@@ -1,5 +1,4 @@
 'use client';
-// app/dashboard/student/page.tsx
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -13,10 +12,25 @@ export default function StudentDashboard() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    // 1. Check for the JWT token
+    const token = localStorage.getItem('token');
+    // 2. Check for the stored user context
     const stored = localStorage.getItem('alumni_user');
-    if (!stored) { router.push('/auth/login'); return; }
+    
+    // Redirect if either is missing
+    if (!token || !stored) { 
+      router.push('/auth/login'); 
+      return; 
+    }
+    
     const u = JSON.parse(stored);
-    if (u.role !== 'student') { router.push('/auth/login'); return; }
+    
+    // Ensure the role matches
+    if (u.role.toLowerCase() !== 'student') { 
+      router.push('/auth/login'); 
+      return; 
+    }
+    
     setUser(u);
   }, [router]);
 
@@ -29,7 +43,7 @@ export default function StudentDashboard() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <DashboardSidebar role="student" userName={user.fullName} userEmail={user.email} />
-
+      {/* ... Rest of your Dashboard layout code remains unchanged ... */}
       <main className="flex-1 overflow-auto p-6">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
@@ -37,8 +51,8 @@ export default function StudentDashboard() {
             <h1 className="font-serif text-2xl font-bold text-navy-900">Welcome, {user.fullName.split(' ')[0]}! 👋</h1>
             <p className="text-gray-500">Find mentors, jobs, and connections to kickstart your career.</p>
           </div>
-
-          {/* Quick search */}
+          
+           {/* Quick search */}
           <div className="card p-5 mb-6 bg-navy-950">
             <h2 className="text-white font-bold mb-3">Find an Alumni Mentor</h2>
             <div className="relative">
@@ -147,8 +161,19 @@ export default function StudentDashboard() {
               ))}
             </div>
           </div>
+        
         </div>
       </main>
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
