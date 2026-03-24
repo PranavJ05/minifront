@@ -13,11 +13,14 @@ export function formatDate(dateStr: string): string {
   });
 }
 
-export function getInitials(name: string): string {
+export function getInitials(name?: string): string {
+  if (!name || typeof name !== "string") return "NA";
+
   return name
-    .split(' ')
+    .trim()
+    .split(" ")
     .map((n) => n[0])
-    .join('')
+    .join("")
     .toUpperCase()
     .slice(0, 2);
 }
