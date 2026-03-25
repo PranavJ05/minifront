@@ -92,19 +92,6 @@ export default function AlumniDashboard() {
               </button>
             </div>
           </div>
-
-          {/* Tabs */}
-          <div className="flex gap-6 border-b border-gray-200 mb-6">
-            {["Feed", "Reunions", "Opportunities"].map((tab, i) => (
-              <button
-                key={tab}
-                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${i === 0 ? "border-navy-800 text-navy-900" : "border-transparent text-gray-500"}`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
           {/* Upcoming Events */}
           <section className="mb-8">
             <div className="flex items-center justify-between mb-4">
@@ -147,7 +134,6 @@ export default function AlumniDashboard() {
               ))}
             </div>
           </section>
-
           {/* Suggested Job */}
           <section className="mb-8">
             <div className="flex items-center justify-between mb-4">
@@ -185,7 +171,6 @@ export default function AlumniDashboard() {
               <button className="w-full btn-primary">Apply Now</button>
             </div>
           </section>
-
           {/* Recent Activity */}
           <section>
             <h2 className="font-bold text-navy-900 font-serif mb-4">
