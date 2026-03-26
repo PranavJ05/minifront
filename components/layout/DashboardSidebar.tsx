@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserRole } from "@/types";
-
+import router from "next/router";
 interface SidebarProps {
   role: UserRole;
   userName: string;
@@ -64,7 +64,7 @@ const studentLinks = [
   { href: "/alumni", label: "Find Alumni", icon: Users },
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/events", label: "Events", icon: Calendar },
-  { href: "/mentorship", label: "Find Mentors", icon: BookOpen },
+
   { href: "/profile", label: "My Profile", icon: User },
 ];
 

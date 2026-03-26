@@ -14,8 +14,7 @@ import CreateEventModal from "@/components/events/CreateEventModal";
 import { fetchAllEvents } from "@/lib/api/events";
 import { Event } from "@/lib/types/events";
 import { formatMonthYear, isUpcoming, isPast } from "@/lib/utils/dateUtils";
-import { getToken } from "@/lib/auth";
-
+import { getToken, getUserRole } from "@/lib/auth";
 function groupByMonth(events: Event[]): Map<string, Event[]> {
   const map = new Map<string, Event[]>();
   for (const event of events) {
@@ -31,13 +30,13 @@ export default function EventsPage() {
   const [allEvents, setAllEvents] = useState<Event[]>([]);
   // State for user's specific events
   const [myEvents, setMyEvents] = useState<Event[]>([]);
-
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMyEvents, setLoadingMyEvents] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [activeTab, setActiveTab] = useState<EventTab>("Upcoming");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  // Add after the loadMyEvents useEffect
 
   // 1. Fetch ALL public events (Upcoming & Past)
   const loadEvents = useCallback(async () => {
@@ -77,6 +76,11 @@ export default function EventsPage() {
     }
   }, []);
 
+  useEffect(() => {
+  const role = getUserRole();
+  console.log("EVENT PAGE ROLE:", role);
+  setUserRole(role);
+}, []);
   // Initial load of public events
   useEffect(() => {
     loadEvents();
@@ -105,7 +109,8 @@ export default function EventsPage() {
   // Determine if we should show a loading spinner based on the active tab
   const isCurrentlyLoading =
     activeTab === "My Events" ? loadingMyEvents : loading;
-
+  console.log("USER ROLE RAW:", userRole);
+  console.log("USER ROLE TYPE:", typeof userRole);
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -120,13 +125,15 @@ export default function EventsPage() {
               Upcoming events for our alumni community
             </p>
           </div>
+          {(userRole?.toUpperCase() === "ADMIN" || userRole?.toUpperCase() === "BATCH_ADMIN") && (
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2 bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold px-4 py-2 rounded-lg transition-colors"
           >
             <Plus className="h-4 w-4" />
-            Submit Event
+            Create Event
           </button>
+        )}
         </div>
       </div>
 

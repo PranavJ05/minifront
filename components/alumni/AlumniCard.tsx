@@ -2,13 +2,17 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, Briefcase, MessageSquare, UserPlus } from 'lucide-react';
+import { MapPin, Mail, Linkedin } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 
 export default function AlumniCard({ alumni, variant = 'grid' }: any) {
 
   const name = alumni.name || "Unknown";
-
+  const linkedin = alumni.linkedinUrl || null;
+  const email =
+  typeof window !== "undefined"
+    ? localStorage.getItem("email")
+    : null;
   // ================= LIST VIEW =================
   if (variant === 'list') {
     return (
@@ -49,27 +53,40 @@ export default function AlumniCard({ alumni, variant = 'grid' }: any) {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 flex-shrink-0">
-          <button className="flex items-center gap-1.5 border border-navy-800 text-navy-800 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-navy-800 hover:text-white">
-            <MessageSquare className="h-3.5 w-3.5" />
-            Message
-          </button>
+        <div className="flex gap-2">
 
-          <Link
-            href={`/alumni/${alumni.id}`}
-            className="flex items-center gap-1.5 bg-navy-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-navy-700"
-          >
-            <UserPlus className="h-3.5 w-3.5" />
-            Connect
-          </Link>
-        </div>
+  {email && (
+    <a
+      href={`mailto:${email}`}
+      onClick={(e) => e.stopPropagation()}
+      className="flex-1 flex items-center justify-center p-2 rounded-lg border"
+    >
+      <Mail className="h-4 w-4" />
+    </a>
+  )}
+
+  {alumni.linkedinUrl && (
+    <a
+      href={
+        alumni.linkedinUrl.startsWith("http")
+          ? alumni.linkedinUrl
+          : `https://${alumni.linkedinUrl}`
+      }
+      onClick={(e) => e.stopPropagation()}
+      target="_blank"
+    >
+      <Linkedin className="h-4 w-4" />
+    </a>
+  )}
+
+</div>
       </div>
     );
   }
 
   // ================= GRID VIEW =================
   return (
-    <Link href={`/alumni/${alumni.id}`} className="card block group overflow-hidden">
+    <div>
 
       {/* Header */}
       <div className="bg-navy-800 h-16 relative">
@@ -130,24 +147,39 @@ export default function AlumniCard({ alumni, variant = 'grid' }: any) {
 
         {/* Actions */}
         <div className="flex gap-2">
-          <button
-            className="flex-1 flex items-center justify-center gap-1.5 border border-navy-300 text-navy-700 text-xs font-semibold py-2 rounded-lg hover:border-navy-800 hover:bg-navy-50"
-            onClick={(e) => e.preventDefault()}
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-            Message
-          </button>
+          {email && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.location.href = `mailto:${email}`;
+                }}
+                className="flex-1 flex items-center justify-center p-2 rounded-lg border border-navy-300 text-navy-700 hover:bg-navy-50"
+              >
+                <Mail className="h-4 w-4" />
+              </button>
+            )}
 
-          <button
-            className="flex-1 flex items-center justify-center gap-1.5 bg-navy-800 text-white text-xs font-semibold py-2 rounded-lg hover:bg-navy-700"
-            onClick={(e) => e.preventDefault()}
-          >
-            <UserPlus className="h-3.5 w-3.5" />
-            Connect
-          </button>
+            {/* LINKEDIN BUTTON */}
+            {alumni.linkedinUrl && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(
+                    alumni.linkedinUrl.startsWith("http")
+                      ? alumni.linkedinUrl
+                      : `https://${alumni.linkedinUrl}`,
+                    "_blank"
+                  );
+                }}
+                className="flex-1 flex items-center justify-center p-2 rounded-lg border border-navy-300 text-navy-700 hover:bg-navy-50"
+              >
+                <Linkedin className="h-4 w-4" />
+              </button>
+            )}
+
         </div>
 
       </div>
-    </Link>
+    </div>
   );
 }

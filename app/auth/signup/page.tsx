@@ -137,7 +137,6 @@ try {
     // Alumni fields
     placeOfResidence: formData.place,
     profession: formData.profession,
-    gmail: formData.gmail,
     linkedinUrl: formData.linkedin,
   };
   console.log("Submitting payload:", payload);
@@ -344,14 +343,6 @@ return ( <div className="min-h-screen flex items-center justify-center bg-gray-5
               icon={Briefcase}
             />
 
-            <AuthInput
-              label="Gmail"
-              value={formData.gmail}
-              onChange={(e) =>
-                update("gmail", e.target.value)
-              }
-              icon={Mail}
-            />
 
             <AuthInput
               label="LinkedIn"

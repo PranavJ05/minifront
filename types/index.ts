@@ -1,6 +1,6 @@
 // types/index.ts
 
-export type UserRole = 'faculty' | 'student' | 'alumni';
+export type UserRole = 'faculty' | 'student' | 'alumni' | 'admin' | 'Batch_admin';
 export type AccountStatus = 'pending' | 'approved' | 'rejected';
 
 export interface User {

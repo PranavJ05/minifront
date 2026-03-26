@@ -57,6 +57,9 @@ export default function LoginPage() {
 
       const data = await res.json();
       console.log("Login Response:", data);
+      localStorage.setItem("role", data.roles[0]); // ✅ MUST
+      
+  console.log("Stored role:", data.role);
 
       if (!res.ok) {
         throw new Error(data.message || "Login failed");
@@ -64,6 +67,7 @@ export default function LoginPage() {
 
       if (data.token) {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("email", formData.email); 
       }
 
       const userRole = data.roles?.[0];

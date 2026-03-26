@@ -33,8 +33,7 @@ export default function Footer() {
             <ul className="space-y-3">
               {[
                 { href: '/alumni', label: 'Alumni Directory' },
-                { href: '/events', label: 'Events & Reunions' },
-                { href: '/news', label: 'News & Updates' },
+                { href: '/events', label: 'Events & News' },
                 { href: '/auth/login', label: 'Member Login' },
                 { href: '/auth/signup', label: 'Join Network' },
               ].map((link) => (
@@ -76,15 +75,15 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-3 text-sm text-gray-400">
                 <MapPin className="h-4 w-4 text-gold-500 mt-0.5 flex-shrink-0" />
-                <span>Office of Alumni Relations<br />University Campus, Building A<br />Main Street, City 12345</span>
+                <span>Office of Alumni Relations<br />Model Engineering College<br />Thrikkakkara, Kochi 682021</span>
               </li>
               <li className="flex items-center gap-3 text-sm text-gray-400">
                 <Phone className="h-4 w-4 text-gold-500 flex-shrink-0" />
-                <a href="tel:+1234567890" className="hover:text-gold-400 transition-colors">+1 (234) 567-890</a>
+                <a href="tel:04842577379" className="hover:text-gold-400 transition-colors">0484 257 7379</a>
               </li>
               <li className="flex items-center gap-3 text-sm text-gray-400">
                 <Mail className="h-4 w-4 text-gold-500 flex-shrink-0" />
-                <a href="mailto:alumni@university.edu" className="hover:text-gold-400 transition-colors">alumni@university.edu</a>
+                <a href="mailto:mecalumni@gmail.com" className="hover:text-gold-400 transition-colors">mecalumni@gmail.com</a>
               </li>
             </ul>
           </div>
