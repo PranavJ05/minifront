@@ -9,10 +9,7 @@ export default function AlumniCard({ alumni, variant = 'grid' }: any) {
 
   const name = alumni.name || "Unknown";
   const linkedin = alumni.linkedinUrl || null;
-  const email =
-  typeof window !== "undefined"
-    ? localStorage.getItem("email")
-    : null;
+  const email =alumni.email || null;
   // ================= LIST VIEW =================
   if (variant === 'list') {
     return (
@@ -58,8 +55,15 @@ export default function AlumniCard({ alumni, variant = 'grid' }: any) {
   {email && (
     <a
       href={`mailto:${email}`}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+  e.stopPropagation();
+  window.location.href = `mailto:${email}`;
+  setTimeout(() => {
+    alert(`Unable to launch email app. Copy: ${email}`);
+  }, 300);
+}}
       className="flex-1 flex items-center justify-center p-2 rounded-lg border"
+      title={`Email ${name}`}
     >
       <Mail className="h-4 w-4" />
     </a>
@@ -147,34 +151,36 @@ export default function AlumniCard({ alumni, variant = 'grid' }: any) {
 
         {/* Actions */}
         <div className="flex gap-2">
-          {email && (
-              <button
+                      {email && (
+              <a
+                href={`mailto:${email}`}
                 onClick={(e) => {
-                  e.stopPropagation();
-                  window.location.href = `mailto:${email}`;
+                  e.stopPropagation();       // prevents card click
                 }}
                 className="flex-1 flex items-center justify-center p-2 rounded-lg border border-navy-300 text-navy-700 hover:bg-navy-50"
+                title={`Email ${name}`}
               >
                 <Mail className="h-4 w-4" />
-              </button>
+              </a>
             )}
 
             {/* LINKEDIN BUTTON */}
             {alumni.linkedinUrl && (
-              <button
+              <a
+                href={
+                  alumni.linkedinUrl.startsWith("http")
+                    ? alumni.linkedinUrl
+                    : `https://${alumni.linkedinUrl}`
+                }
                 onClick={(e) => {
                   e.stopPropagation();
-                  window.open(
-                    alumni.linkedinUrl.startsWith("http")
-                      ? alumni.linkedinUrl
-                      : `https://${alumni.linkedinUrl}`,
-                    "_blank"
-                  );
                 }}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex-1 flex items-center justify-center p-2 rounded-lg border border-navy-300 text-navy-700 hover:bg-navy-50"
               >
                 <Linkedin className="h-4 w-4" />
-              </button>
+              </a>
             )}
 
         </div>
