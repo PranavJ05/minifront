@@ -51,13 +51,18 @@ export async function createEvent(
 
 export async function addPhoto(
   eventId: number,
-  url: string,
+  file: File,
   token: string,
 ): Promise<EventActionResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+
   const res = await fetch(`${BASE}/events/${eventId}/photos`, {
     method: "POST",
-    headers: authHeaders(token),
-    body: JSON.stringify({ url }),
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
   });
   return res.json();
 }

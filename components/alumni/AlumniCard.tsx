@@ -2,19 +2,16 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, Mail, Linkedin } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 
 export default function AlumniCard({ alumni, variant = 'grid' }: any) {
-
   const name = alumni.name || "Unknown";
-  const linkedin = alumni.linkedinUrl || null;
-  const email =alumni.email || null;
+
   // ================= LIST VIEW =================
   if (variant === 'list') {
     return (
       <div className="card p-4 flex items-center gap-4">
-
         {/* Avatar */}
         <div className="relative flex-shrink-0">
           <div className="w-14 h-14 rounded-full overflow-hidden bg-navy-200">
@@ -51,39 +48,13 @@ export default function AlumniCard({ alumni, variant = 'grid' }: any) {
 
         {/* Actions */}
         <div className="flex gap-2">
-
-  {email && (
-    <a
-      href={`mailto:${email}`}
-      onClick={(e) => {
-  e.stopPropagation();
-  window.location.href = `mailto:${email}`;
-  setTimeout(() => {
-    alert(`Unable to launch email app. Copy: ${email}`);
-  }, 300);
-}}
-      className="flex-1 flex items-center justify-center p-2 rounded-lg border"
-      title={`Email ${name}`}
-    >
-      <Mail className="h-4 w-4" />
-    </a>
-  )}
-
-  {alumni.linkedinUrl && (
-    <a
-      href={
-        alumni.linkedinUrl.startsWith("http")
-          ? alumni.linkedinUrl
-          : `https://${alumni.linkedinUrl}`
-      }
-      onClick={(e) => e.stopPropagation()}
-      target="_blank"
-    >
-      <Linkedin className="h-4 w-4" />
-    </a>
-  )}
-
-</div>
+          <Link
+            href={`/alumni/${alumni.id}`}
+            className="inline-flex items-center justify-center rounded-lg border border-navy-300 px-4 py-2 text-sm font-semibold text-navy-700 hover:bg-navy-50"
+          >
+            View Profile
+          </Link>
+        </div>
       </div>
     );
   }
@@ -91,7 +62,6 @@ export default function AlumniCard({ alumni, variant = 'grid' }: any) {
   // ================= GRID VIEW =================
   return (
     <div>
-
       {/* Header */}
       <div className="bg-navy-800 h-16 relative">
         <div className="absolute -bottom-8 left-4">
@@ -115,7 +85,6 @@ export default function AlumniCard({ alumni, variant = 'grid' }: any) {
 
       {/* Content */}
       <div className="p-4 pt-10">
-
         <p className="text-xs text-gold-600 font-semibold uppercase mb-1">
           CLASS OF {alumni.batch} · {alumni.department}
         </p>
@@ -151,40 +120,13 @@ export default function AlumniCard({ alumni, variant = 'grid' }: any) {
 
         {/* Actions */}
         <div className="flex gap-2">
-                      {email && (
-              <a
-                href={`mailto:${email}`}
-                onClick={(e) => {
-                  e.stopPropagation();       // prevents card click
-                }}
-                className="flex-1 flex items-center justify-center p-2 rounded-lg border border-navy-300 text-navy-700 hover:bg-navy-50"
-                title={`Email ${name}`}
-              >
-                <Mail className="h-4 w-4" />
-              </a>
-            )}
-
-            {/* LINKEDIN BUTTON */}
-            {alumni.linkedinUrl && (
-              <a
-                href={
-                  alumni.linkedinUrl.startsWith("http")
-                    ? alumni.linkedinUrl
-                    : `https://${alumni.linkedinUrl}`
-                }
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center p-2 rounded-lg border border-navy-300 text-navy-700 hover:bg-navy-50"
-              >
-                <Linkedin className="h-4 w-4" />
-              </a>
-            )}
-
+          <Link
+            href={`/alumni/${alumni.id}`}
+            className="flex-1 flex items-center justify-center rounded-lg border border-navy-300 px-4 py-2 text-sm font-semibold text-navy-700 hover:bg-navy-50"
+          >
+            View Profile
+          </Link>
         </div>
-
       </div>
     </div>
   );

@@ -11,31 +11,15 @@ import {
   Settings,
   LogOut,
   GraduationCap,
-  BarChart3,
-  Bell,
-  BookOpen,
-  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserRole } from "@/types";
-import router from "next/router";
+
 interface SidebarProps {
   role: UserRole;
   userName: string;
   userEmail: string;
 }
-
-const getProfileId = async () => {
-  const stored = localStorage.getItem("alumni_user");
-  console.log("User Info:", localStorage.getItem("alumni_user"));
-  if (!stored) {
-    router.push("/auth/login");
-    return;
-  }
-  const u = JSON.parse(stored);
-  console.log("user is ", u);
-  return u.id;
-};
 
 const facultyLinks = [
   { href: "/dashboard/faculty", label: "Overview", icon: Home },
@@ -49,22 +33,16 @@ const facultyLinks = [
 const alumniLinks = [
   { href: "/dashboard/alumni", label: "Home", icon: Home },
   { href: "/alumni", label: "My Network", icon: Users },
-  {
-    href: "/opportunities",
-    label: "Opportunities",
-    icon: Briefcase,
-  },
+  { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/events", label: "Events", icon: Calendar },
-  { href: `/alumni/1`, label: "My Profile", icon: User },
+  { href: "/profile", label: "My Profile", icon: User },
 ];
-//{ href: "/mentorship", label: "Mentorship", icon: BookOpen },
 
 const studentLinks = [
   { href: "/dashboard/student", label: "Home", icon: Home },
   { href: "/alumni", label: "Find Alumni", icon: Users },
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/events", label: "Events", icon: Calendar },
-
   { href: "/profile", label: "My Profile", icon: User },
 ];
 
@@ -86,6 +64,9 @@ export default function DashboardSidebar({
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("alumni_user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("email");
     }
     router.push("/");
   };
@@ -96,15 +77,16 @@ export default function DashboardSidebar({
       : role === "alumni"
         ? "bg-gold-100 text-gold-700"
         : "bg-green-100 text-green-700";
+
   const roleLabel =
     role === "faculty"
       ? "Faculty Member"
       : role === "alumni"
         ? "Alumni Member"
         : "Student";
+
   return (
-    <aside className="w-64 bg-navy-950 min-h-screen flex flex-col">
-      {/* Logo */}
+    <aside className="sticky top-0 self-start h-screen w-64 bg-navy-950 flex flex-col">
       <div className="p-6 border-b border-navy-800">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="bg-gold-500 p-1.5 rounded-lg">
@@ -116,7 +98,6 @@ export default function DashboardSidebar({
         </Link>
       </div>
 
-      {/* User info */}
       <div className="p-5 border-b border-navy-800">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gold-500 rounded-full flex items-center justify-center font-bold text-navy-950 text-sm flex-shrink-0">
@@ -135,8 +116,7 @@ export default function DashboardSidebar({
         </span>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto p-4">
         {links.map((link) => {
           const Icon = link.icon;
           const isActive = pathname === link.href;
@@ -158,15 +138,7 @@ export default function DashboardSidebar({
         })}
       </nav>
 
-      {/* Notifications & Logout */}
       <div className="p-4 border-t border-navy-800 space-y-1">
-        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-navy-800 transition-colors">
-          <Bell className="h-4 w-4" />
-          Notifications
-          <span className="ml-auto bg-gold-500 text-navy-950 text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-            3
-          </span>
-        </button>
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400 hover:bg-red-950/20 transition-colors"

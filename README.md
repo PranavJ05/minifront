@@ -159,7 +159,7 @@ export async function login(email: string, password: string, role: string) {
 ### Events (`/events`)
 - Featured event hero
 - Monthly grouped listing
-- RSVP functionality
+- Register functionality
 
 ### Dashboards
 - **Alumni**: Feed, events, job suggestions, activity

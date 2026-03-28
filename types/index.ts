@@ -1,7 +1,12 @@
 // types/index.ts
 
-export type UserRole = 'faculty' | 'student' | 'alumni' | 'admin' | 'Batch_admin';
-export type AccountStatus = 'pending' | 'approved' | 'rejected';
+export type UserRole =
+  | "faculty"
+  | "student"
+  | "alumni"
+  | "admin"
+  | "Batch_admin";
+export type AccountStatus = "pending" | "approved" | "rejected";
 
 export interface User {
   id: string;
@@ -43,7 +48,7 @@ export interface WorkExperience {
   role: string;
   location: string;
   startYear: string;
-  endYear: string | 'Present';
+  endYear: string | "Present";
   description?: string;
 }
 
@@ -63,13 +68,13 @@ export interface Event {
   date: string;
   time: string;
   location: string;
-  type: 'reunion' | 'webinar' | 'networking' | 'workshop' | 'other';
+  type: "reunion" | "webinar" | "networking" | "workshop" | "other";
   description: string;
   image?: string;
   attendees: number;
   isFeatured?: boolean;
   isOnline?: boolean;
-  rsvpLink?: string;
+  RegisterLink?: string;
 }
 
 export interface NewsItem {
@@ -88,7 +93,7 @@ export interface Job {
   title: string;
   company: string;
   location: string;
-  type: 'full-time' | 'part-time' | 'internship' | 'contract';
+  type: "full-time" | "part-time" | "internship" | "contract";
   salary?: string;
   postedBy?: string;
   isAlumniOwned?: boolean;

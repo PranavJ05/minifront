@@ -82,7 +82,7 @@ export default function EventCardCompact({ event }: EventCardCompactProps) {
               rel="noopener noreferrer"
               className="btn-primary text-xs py-2 px-4 flex items-center gap-1"
             >
-              RSVP <ExternalLink className="h-3 w-3" />
+              Register <ExternalLink className="h-3 w-3" />
             </a>
           )}
         </div>

@@ -2,7 +2,7 @@
 
 // components/events/CreateEventModal.tsx
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { X, Loader2, CheckCircle2, CalendarPlus } from "lucide-react";
 import { createEvent } from "@/lib/api/events";
 import { getToken } from "@/lib/auth";
@@ -29,10 +29,26 @@ export default function CreateEventModal({
   const [registrationRequired, setRegistrationRequired] = useState(false);
   const [registrationLink, setRegistrationLink] = useState("");
 
+  const minDateTime = useMemo(() => {
+    const now = new Date();
+    const offsetMs = now.getTimezoneOffset() * 60 * 1000;
+    return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !eventDate || !location) return;
 
+    const selectedDate = new Date(eventDate);
+    const now = new Date();
+
+    if (selectedDate.getTime() < now.getTime()) {
+      setError("Event date and time must be today or in the future.");
+      setState("error");
+      return;
+    }
+
+    setError("");
     setState("submitting");
     try {
       const token = getToken() ?? "";
@@ -40,7 +56,7 @@ export default function CreateEventModal({
         {
           title,
           description,
-          eventDate: new Date(eventDate).toISOString().slice(0, 19), // strip Z
+          eventDate: new Date(eventDate).toISOString().slice(0, 19),
           location,
           batchYear: batchYear ? parseInt(batchYear) : 0,
           registrationRequired,
@@ -66,7 +82,6 @@ export default function CreateEventModal({
       />
 
       <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-        {/* Header */}
         <div className="bg-navy-950 px-6 py-5 flex items-center justify-between shrink-0">
           <div>
             <p className="text-navy-400 text-xs font-medium uppercase tracking-widest mb-0.5">
@@ -84,7 +99,6 @@ export default function CreateEventModal({
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-6 overflow-y-auto flex-1">
           {state === "success" ? (
             <div className="flex flex-col items-center text-center py-8 gap-4">
@@ -131,7 +145,6 @@ export default function CreateEventModal({
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Title */}
               <div>
                 <label className="block text-sm font-semibold text-navy-800 mb-1.5">
                   Event Title <span className="text-red-400">*</span>
@@ -147,7 +160,6 @@ export default function CreateEventModal({
                 />
               </div>
 
-              {/* Description */}
               <div>
                 <label className="block text-sm font-semibold text-navy-800 mb-1.5">
                   Description
@@ -162,7 +174,6 @@ export default function CreateEventModal({
                 />
               </div>
 
-              {/* Date + Location */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-navy-800 mb-1.5">
@@ -173,6 +184,7 @@ export default function CreateEventModal({
                     value={eventDate}
                     onChange={(e) => setEventDate(e.target.value)}
                     required
+                    min={minDateTime}
                     className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent transition-all"
                     disabled={state === "submitting"}
                   />
@@ -194,7 +206,6 @@ export default function CreateEventModal({
                 </div>
               </div>
 
-              {/* Location */}
               <div>
                 <label className="block text-sm font-semibold text-navy-800 mb-1.5">
                   Location <span className="text-red-400">*</span>
@@ -210,7 +221,6 @@ export default function CreateEventModal({
                 />
               </div>
 
-              {/* Registration toggle */}
               <div className="flex items-center gap-3 py-1">
                 <button
                   type="button"
@@ -231,7 +241,6 @@ export default function CreateEventModal({
                 </span>
               </div>
 
-              {/* Registration link (conditional) */}
               {registrationRequired && (
                 <div>
                   <label className="block text-sm font-semibold text-navy-800 mb-1.5">
@@ -248,7 +257,6 @@ export default function CreateEventModal({
                 </div>
               )}
 
-              {/* Submit */}
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"

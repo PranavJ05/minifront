@@ -92,7 +92,7 @@ export default function EventCard({ event }: EventCardProps) {
                 rel="noopener noreferrer"
                 className="btn-gold flex items-center gap-2"
               >
-                RSVP Now <ExternalLink className="h-3.5 w-3.5" />
+                Register Now <ExternalLink className="h-3.5 w-3.5" />
               </a>
             )}
           </div>

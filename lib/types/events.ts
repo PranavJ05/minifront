@@ -4,6 +4,7 @@ export interface EventPhoto {
   id: number;
   eventId: number;
   photoUrl: string;
+  photoPublicId?: string;
 }
 
 export interface EventVideo {
@@ -24,10 +25,8 @@ export interface Event {
   createdAt: string;
   registrationRequired: boolean;
   registrationLink: string | null;
-  // Full objects (with IDs) — used when organizer needs to delete
   photos: EventPhoto[];
   videos: EventVideo[];
-  // Convenience URL arrays (same data, for read-only display)
   photoUrls: string[];
   videoUrls: string[];
 }
@@ -46,4 +45,6 @@ export interface EventActionResponse {
   success: boolean;
   message: string;
   eventId: number | null;
+  mediaId?: number | null;
+  mediaUrl?: string | null;
 }

@@ -1,10 +1,38 @@
-'use client';
+"use client";
 // app/auth/pending/page.tsx
 
-import Link from 'next/link';
-import { GraduationCap, Mail, Clock, CheckCircle, ArrowLeft } from 'lucide-react';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  GraduationCap,
+  Mail,
+  Clock,
+  CheckCircle,
+  ArrowLeft,
+} from "lucide-react";
+
+type PendingUser = {
+  id: string;
+  name: string;
+  email: string;
+  department: string;
+  batchYear: string | number;
+  status: string;
+};
 
 export default function PendingPage() {
+  const [user, setUser] = useState<PendingUser | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const data = localStorage.getItem("pendingUserData");
+      if (data) {
+        const parsed = JSON.parse(data);
+        setUser(parsed.user);
+      }
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top bar */}
@@ -41,26 +69,56 @@ export default function PendingPage() {
           </h1>
 
           <p className="text-gray-600 leading-relaxed mb-6 max-w-md mx-auto">
-            Your account has been submitted and is currently awaiting
-            approval from our admin team. This process typically takes
+            Your account has been submitted and is currently awaiting approval
+            from our admin team. This process typically takes
             <span className="font-semibold text-navy-800">
-              {" "}1–3 business days
-            </span>.
+              {" "}
+              1–3 business days
+            </span>
+            .
           </p>
+
+          {/* User Info Card */}
+          {user && (
+            <div className="bg-gray-100 rounded-lg p-6 mb-8 text-left max-w-md mx-auto">
+              <div className="mb-2 font-semibold text-navy-900">
+                Your Details:
+              </div>
+              <div className="mb-1">
+                <b>Name:</b> {user.name}
+              </div>
+              <div className="mb-1">
+                <b>Email:</b> {user.email}
+              </div>
+              <div className="mb-1">
+                <b>Department:</b> {user.department}
+              </div>
+              <div className="mb-1">
+                <b>Batch Year:</b> {user.batchYear}
+              </div>
+              <div className="mb-1">
+                <b>Status:</b>{" "}
+                <span className="text-amber-600">{user.status}</span>
+              </div>
+              <div className="mb-1">
+                <b>User ID:</b> {user.id}
+              </div>
+            </div>
+          )}
 
           {/* Steps */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             {[
-              { icon: CheckCircle, label: 'Account Created', done: true },
-              { icon: Clock, label: 'Admin Review', done: false },
-              { icon: Mail, label: 'Email Notification', done: false },
+              { icon: CheckCircle, label: "Account Created", done: true },
+              { icon: Clock, label: "Admin Review", done: false },
+              { icon: Mail, label: "Email Notification", done: false },
             ].map(({ icon: Icon, label, done }, i) => (
               <div key={label} className="flex items-center gap-2">
                 <div
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${
                     done
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-500'
+                      ? "bg-green-100 text-green-700"
+                      : "bg-gray-100 text-gray-500"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -83,10 +141,7 @@ export default function PendingPage() {
             <p className="leading-relaxed">
               Once your account is approved, you&apos;ll receive a confirmation
               email. Then simply return to{" "}
-              <Link
-                href="/auth/login"
-                className="underline font-medium"
-              >
+              <Link href="/auth/login" className="underline font-medium">
                 the login page
               </Link>{" "}
               and sign in with your credentials.
