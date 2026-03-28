@@ -182,7 +182,6 @@ try {
 const roles: { value: UserRole; label: string; icon: string }[] = [
 { value: "alumni", label: "Alumni", icon: "🎓" },
 { value: "student", label: "Student", icon: "📚" },
-{ value: "faculty", label: "Faculty", icon: "🏫" },
 ];
 
 return ( <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4"> <div className="w-full max-w-lg bg-white p-8 rounded-xl shadow-md">
@@ -197,7 +196,7 @@ return ( <div className="min-h-screen flex items-center justify-center bg-gray-5
       <div className="space-y-4">
 
         {/* ROLE */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {roles.map((r) => (
             <button
               key={r.value}

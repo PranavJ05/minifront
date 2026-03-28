@@ -1,4 +1,8 @@
+'use client';
+
 // app/page.tsx
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -8,6 +12,7 @@ import {
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { mockAlumni, stats } from '@/lib/mockData';
+import { getDashboardPath } from '@/lib/utils';
 
 /**
  * LandingPage component
@@ -17,6 +22,44 @@ import { mockAlumni, stats } from '@/lib/mockData';
  * @returns {JSX.Element} The LandingPage component
  */
 export default function LandingPage() {
+  const router = useRouter();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('alumni_user');
+
+    if (!token || !storedUser) {
+      setIsCheckingAuth(false);
+      return;
+    }
+
+    try {
+      const user = JSON.parse(storedUser);
+      const rawRole = typeof user?.role === 'string' ? user.role.toLowerCase() : '';
+      const normalizedRole = rawRole === 'batch_admin' ? 'alumni' : rawRole;
+      const dashboardPath = getDashboardPath(normalizedRole);
+
+      if (dashboardPath !== '/') {
+        router.replace(dashboardPath);
+        return;
+      }
+    } catch (error) {
+      console.error('Failed to parse stored user:', error);
+      localStorage.removeItem('alumni_user');
+    }
+
+    setIsCheckingAuth(false);
+  }, [router]);
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-8 h-8 border-2 border-navy-800 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -39,13 +82,13 @@ export default function LandingPage() {
 
             <h1 className="font-serif text-5xl lg:text-6xl font-bold leading-[1.1] mb-6">
               Your Journey<br />
-              Doesn&apos;t End at<br />
+              Doesn't End at<br />
               <span className="gradient-text">Graduation.</span>
             </h1>
 
             <p className="text-gray-300 text-lg leading-relaxed mb-4 max-w-lg">
               Thousands of graduates are already growing careers, mentoring
-              the next generation, and giving back — all through one platform.
+              the next generation, and giving back all through one platform.
             </p>
             <p className="text-gold-400 font-medium mb-10 max-w-lg">
               Your network is waiting. Are you in?
@@ -136,7 +179,7 @@ export default function LandingPage() {
               {
                 icon: Briefcase,
                 title: 'Exclusive Opportunities',
-                desc: "Jobs, internships, and freelance gigs posted directly by alumni-led companies and top recruiters — not available anywhere else.",
+                desc: 'Jobs, internships, and freelance gigs posted directly by alumni-led companies and top recruiters not available anywhere else.',
                 color: 'bg-green-50 text-green-600',
                 cta: 'Explore Jobs',
               },
@@ -221,7 +264,7 @@ export default function LandingPage() {
           </h2>
           <p className="text-gray-300 text-lg max-w-2xl mx-auto mb-4 leading-relaxed">
             Campus updates, department news, faculty announcements, and alumni
-            achievements — all exclusively for verified members.
+            achievements all exclusively for verified members.
           </p>
           <p className="text-gold-400 font-medium mb-10">
             Create your account in 2 minutes. Start connecting today.

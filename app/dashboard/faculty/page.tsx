@@ -1,10 +1,10 @@
-'use client';
+"use client";
 // app/dashboard/faculty/page.tsx
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
-  Users, Briefcase, Calendar, TrendingUp,
+  Users, Calendar, TrendingUp,
   CheckCircle, AlertCircle, Eye, UserPlus, GraduationCap
 } from 'lucide-react';
 import DashboardSidebar from '@/components/layout/DashboardSidebar';
@@ -15,10 +15,11 @@ export default function FacultyDashboard() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
     const stored = localStorage.getItem('alumni_user');
-    if (!stored) { router.push('/auth/login'); return; }
+    if (!token || !stored) { router.replace('/auth/login'); return; }
     const u = JSON.parse(stored);
-    if (u.role !== 'faculty') { router.push('/auth/login'); return; }
+    if (u.role !== 'faculty') { router.replace('/auth/login'); return; }
     setUser(u);
   }, [router]);
 
@@ -29,10 +30,10 @@ export default function FacultyDashboard() {
   );
 
   const statsData = [
-    { label: 'Total Alumni',    value: '35,247', change: '+5%',  icon: GraduationCap, color: 'text-blue-600',   bg: 'bg-blue-50'   },
-    { label: 'Active Students', value: '4,821',  change: '+3%',  icon: Users,         color: 'text-green-600',  bg: 'bg-green-50'  },
-    { label: 'Upcoming Events', value: '23',     change: '+3',   icon: Calendar,      color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Jobs Posted',     value: '1,204',  change: '+12%', icon: Briefcase,     color: 'text-gold-600',   bg: 'bg-gold-50'   },
+    { label: 'Total Alumni',    value: '35,247', change: '+5%', icon: GraduationCap, color: 'text-blue-600',   bg: 'bg-blue-50' },
+    { label: 'Active Students', value: '4,821',  change: '+3%', icon: Users,         color: 'text-green-600',  bg: 'bg-green-50' },
+    { label: 'Upcoming Events', value: '23',     change: '+3',  icon: Calendar,      color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Pending Approvals', value: '18',   change: '+4',  icon: UserPlus,      color: 'text-gold-600',   bg: 'bg-gold-50' },
   ];
 
   const pendingUsers = [
@@ -44,9 +45,9 @@ export default function FacultyDashboard() {
 
   const recentActivity = [
     { type: 'success', msg: 'Event "Tech Alumni Mixer" published successfully', time: '1h ago'  },
-    { type: 'warning', msg: '5 new job postings awaiting review',               time: '3h ago'  },
-    { type: 'success', msg: 'Annual Giving Campaign email sent to 35k+',        time: '6h ago'  },
-    { type: 'info',    msg: '23 new alumni registered this week',               time: '1d ago'  },
+    { type: 'info',    msg: '18 pending approvals require review',                time: '3h ago'  },
+    { type: 'success', msg: 'Annual Giving Campaign email sent to 35k+',          time: '6h ago'  },
+    { type: 'info',    msg: '23 new alumni registered this week',                 time: '1d ago'  },
   ];
 
   return (
@@ -55,13 +56,11 @@ export default function FacultyDashboard() {
 
       <main className="flex-1 overflow-auto p-6">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
           <div className="mb-8">
             <h1 className="font-serif text-2xl font-bold text-navy-900">Faculty Dashboard</h1>
             <p className="text-gray-500">Platform overview and account management</p>
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {statsData.map(({ label, value, change, icon: Icon, color, bg }) => (
               <div key={label} className="card p-5">
@@ -80,7 +79,6 @@ export default function FacultyDashboard() {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Pending approvals */}
             <div className="lg:col-span-2 card p-5">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="font-bold text-navy-900 font-serif flex items-center gap-2">
@@ -127,7 +125,6 @@ export default function FacultyDashboard() {
               </div>
             </div>
 
-            {/* Activity log */}
             <div className="card p-5">
               <h2 className="font-bold text-navy-900 font-serif mb-5 flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-gold-500" />
@@ -137,8 +134,7 @@ export default function FacultyDashboard() {
                 {recentActivity.map((item, i) => (
                   <div key={i} className="flex gap-3">
                     <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
-                      item.type === 'success' ? 'bg-green-500' :
-                      item.type === 'warning' ? 'bg-amber-500' : 'bg-blue-500'
+                      item.type === 'success' ? 'bg-green-500' : 'bg-blue-500'
                     }`} />
                     <div>
                       <p className="text-sm text-gray-700">{item.msg}</p>
@@ -150,7 +146,6 @@ export default function FacultyDashboard() {
             </div>
           </div>
 
-          {/* Alumni table */}
           <div className="card p-5 mt-6">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-bold text-navy-900 font-serif">Recent Alumni Registrations</h2>

@@ -35,6 +35,7 @@ interface AlumniDTO {
 // Notice the 'async' here! This is a Server Component.
 export default async function AlumniProfilePage({ params }: Props) {
   // 1. Fetch real data from your backend
+  console.log(`Fetching profile for alumni ID: ${params.id}`);
   const res = await fetch(`http://localhost:8080/api/alumni/${params.id}`, {
     // Optional: cache the profile for 60 seconds to reduce DB load
     next: { revalidate: 60 },

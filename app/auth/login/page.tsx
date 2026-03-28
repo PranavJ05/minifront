@@ -1,8 +1,8 @@
 "use client";
 // app/auth/login/page.tsx
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   GraduationCap,
   Mail,
@@ -11,13 +11,43 @@ import {
   EyeOff,
   AlertCircle,
   Clock,
+  CheckCircle2,
 } from "lucide-react";
 import AuthInput from "@/components/auth/AuthInput";
-import { UserRole } from "@/types";
+import { BACKEND_URL } from "@/lib/config";
 import { getDashboardPath } from "@/lib/utils";
+import { UserRole } from "@/types";
+
+type LoginResponse = {
+  token?: string;
+  id?: number | null;
+  email?: string;
+  name?: string;
+  roles?: string[];
+  status?: string;
+  message?: string;
+};
+
+function normalizeRole(role?: string | null): string {
+  if (!role) return "";
+  const normalized = role.toLowerCase();
+  return normalized === "batch_admin" ? "alumni" : normalized;
+}
+
+function getRoleLabel(role: UserRole): string {
+  switch (role) {
+    case "faculty":
+      return "Faculty login uses college-issued credentials.";
+    case "student":
+      return "Sign in with your approved student account.";
+    default:
+      return "Sign in with your approved alumni account.";
+  }
+}
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -27,6 +57,11 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const resetSuccess = useMemo(
+    () => searchParams.get("reset") === "success",
+    [searchParams],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,13 +76,16 @@ export default function LoginPage() {
 
     try {
       const payload = {
-        email: formData.email,
+        email: formData.email.trim(),
         password: formData.password,
       };
 
-      console.log("Attempting login for:", formData.email);
+      const loginUrl =
+        formData.role === "faculty"
+          ? `${BACKEND_URL}/auth/faculty/login`
+          : `${BACKEND_URL}/auth/login`;
 
-      const res = await fetch("http://localhost:8080/auth/login", {
+      const res = await fetch(loginUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -55,48 +93,46 @@ export default function LoginPage() {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-      console.log("Login Response:", data);
-      localStorage.setItem("role", data.roles[0]); // ✅ MUST
-      
-  console.log("Stored role:", data.role);
+      const data: LoginResponse = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         throw new Error(data.message || "Login failed");
       }
 
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("email", formData.email); 
+      const apiRole = data.roles?.[0];
+      const normalizedRole = normalizeRole(apiRole);
+
+      if (!data.token || !apiRole || !normalizedRole) {
+        throw new Error("Login response was incomplete. Please try again.");
       }
 
-      const userRole = data.roles?.[0];
-      console.log("User Role:", userRole);
-      // Store user info for dashboard
-      if (userRole) {
-        const user = {
-          email: formData.email,
-          role: userRole.toLowerCase(),
-          fullName: data.name || formData.email.split("@")[0],
-        };
-        localStorage.setItem("alumni_user", JSON.stringify(user));
-      }
-      console.log("User Info:", localStorage.getItem("alumni_user"));
+      const fullName = data.name?.trim() || payload.email;
+      const storedUser = {
+        id: data.id ?? null,
+        email: data.email || payload.email,
+        role: normalizedRole,
+        fullName,
+      };
 
-      if (userRole === "ALUMNI" || userRole === "BATCH_ADMIN") {
-        router.push("/dashboard/alumni");
-      } else if (userRole === "STUDENT") {
-        router.push("/dashboard/student");
-      } else {
-        router.push("/");
-      }
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("email", storedUser.email);
+      localStorage.setItem("role", normalizedRole);
+      localStorage.setItem("alumni_user", JSON.stringify(storedUser));
+      window.dispatchEvent(new Event("storage"));
+
+      router.push(getDashboardPath(normalizedRole));
     } catch (err: any) {
-      console.error("Login error:", err);
       const msg = err.message?.toLowerCase() || "";
       if (msg.includes("pending") || msg.includes("approval")) {
         setError("pending");
+      } else if (
+        msg.includes("invalid") ||
+        msg.includes("unauthorized") ||
+        msg.includes("bad credentials")
+      ) {
+        setError("Invalid email or password.");
       } else {
-        setError(err.message || "Invalid credentials. Please try again.");
+        setError(err.message || "Unable to sign in right now.");
       }
     } finally {
       setLoading(false);
@@ -106,12 +142,11 @@ export default function LoginPage() {
   const roles: { value: UserRole; label: string; desc: string }[] = [
     { value: "alumni", label: "Alumni", desc: "Graduate member" },
     { value: "student", label: "Student", desc: "Current student" },
-    { value: "faculty", label: "Faculty", desc: "Faculty member" },
+    { value: "faculty", label: "Faculty", desc: "College-issued access" },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-navy-950 relative overflow-hidden flex-col justify-between p-12">
         <div className="absolute top-0 right-0 w-96 h-96 bg-gold-500/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-navy-700/50 rounded-full blur-3xl" />
@@ -155,10 +190,8 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Right panel */}
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-          {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <div className="bg-navy-800 p-1.5 rounded-lg">
               <GraduationCap className="h-5 w-5 text-gold-500" />
@@ -175,7 +208,6 @@ export default function LoginPage() {
             <p className="text-gray-500">Access your alumni account</p>
           </div>
 
-          {/* Role selector */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-navy-800 mb-2 font-sans">
               Sign in as
@@ -199,9 +231,23 @@ export default function LoginPage() {
                 </button>
               ))}
             </div>
+            <p className="mt-3 text-xs text-gray-500 font-sans">
+              {getRoleLabel(formData.role)}
+            </p>
           </div>
 
-          {/* Pending account warning */}
+          {resetSuccess && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3 text-green-700">
+              <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-sm">Password reset successful</p>
+                <p className="text-sm mt-0.5">
+                  Sign in with your new password.
+                </p>
+              </div>
+            </div>
+          )}
+
           {error === "pending" && (
             <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
               <Clock className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
@@ -217,7 +263,6 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Generic error */}
           {error && error !== "pending" && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-sm">
               <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -229,7 +274,11 @@ export default function LoginPage() {
             <AuthInput
               label="Email Address"
               type="email"
-              placeholder="your@email.edu"
+              placeholder={
+                formData.role === "faculty"
+                  ? "faculty@mec.ac.in"
+                  : "your@email.edu"
+              }
               icon={Mail}
               value={formData.email}
               onChange={(e) =>
@@ -277,12 +326,12 @@ export default function LoginPage() {
                   Remember me
                 </span>
               </label>
-              <a
-                href="#"
+              <Link
+                href="/forgot-password"
                 className="text-sm text-gold-600 hover:text-gold-700 font-medium font-sans"
               >
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
             <button
@@ -300,12 +349,10 @@ export default function LoginPage() {
 
           <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <p className="text-xs text-amber-700 font-sans font-medium mb-1">
-              Demo credentials:
+              Faculty login example:
             </p>
             <p className="text-xs text-amber-600 font-sans">
-              Email: any@email.com · Password: any
-              <br />
-              Use email with &quot;pending&quot; to see the approval notice
+              Email: faculty1@mec.ac.in · Password: faculty123
             </p>
           </div>
 

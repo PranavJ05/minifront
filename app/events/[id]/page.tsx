@@ -268,7 +268,7 @@ export default function EventDetailPage() {
                   rel="noopener noreferrer"
                   className="btn-gold w-full flex items-center justify-center gap-2 mt-6"
                 >
-                  RSVP Now <ExternalLink className="h-3.5 w-3.5" />
+                  Register Now <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               ) : past ? (
                 <div className="mt-6 p-3 bg-gray-50 rounded-xl text-center text-sm text-gray-400">
