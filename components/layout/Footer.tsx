@@ -1,8 +1,43 @@
 // components/layout/Footer.tsx
 import Link from 'next/link';
-import { GraduationCap, Mail, Phone, MapPin, Linkedin, Twitter, Facebook, Youtube } from 'lucide-react';
+import { GraduationCap, Mail, Phone, MapPin, Linkedin, Facebook, Youtube, X } from 'lucide-react'; // Changed Twitter to X
 
 export default function Footer() {
+ const socialLinks = [
+
+    { 
+
+      Icon: Linkedin, 
+
+      href: "https://www.linkedin.com/school/model-engineering-college/posts/?feedView=all" 
+
+    },
+
+    { 
+
+      Icon: X, 
+
+      href: "https://x.com/MECKochi" 
+
+    },
+
+    { 
+
+      Icon: Facebook, 
+
+      href: "https://www.facebook.com/modelengineeringcollege" 
+
+    },
+
+    { 
+
+      Icon: Youtube, 
+
+      href: "https://www.youtube.com/@ModelEngineeringCollege" // Updated Link
+
+    },
+
+  ];
   return (
     <footer className="bg-navy-950 text-gray-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -19,8 +54,14 @@ export default function Footer() {
               The official platform for university alumni to network, mentor, and find career opportunities.
             </p>
             <div className="flex gap-3">
-              {[Linkedin, Twitter, Facebook, Youtube].map((Icon, i) => (
-                <a key={i} href="#" className="w-9 h-9 bg-navy-800 hover:bg-gold-500 rounded-lg flex items-center justify-center transition-colors group">
+              {socialLinks.map(({ Icon, href }, i) => (
+                <a 
+                  key={i} 
+                  href={href} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="w-9 h-9 bg-navy-800 hover:bg-gold-500 rounded-lg flex items-center justify-center transition-colors group"
+                >
                   <Icon className="h-4 w-4 group-hover:text-navy-950 transition-colors" />
                 </a>
               ))}
@@ -75,7 +116,12 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-3 text-sm text-gray-400">
                 <MapPin className="h-4 w-4 text-gold-500 mt-0.5 flex-shrink-0" />
-                <span>Office of Alumni Relations<br />Model Engineering College<br />Thrikkakkara, Kochi 682021</span>
+                <span>
+                  <a href="https://www.mec.ac.in/" target="_blank" rel="noopener noreferrer" className="hover:text-gold-400 transition-colors">
+                    Office of Alumni Relations<br />Model Engineering College
+                  </a>
+                  <br />Thrikkakkara, Kochi 682021
+                </span>
               </li>
               <li className="flex items-center gap-3 text-sm text-gray-400">
                 <Phone className="h-4 w-4 text-gold-500 flex-shrink-0" />
@@ -91,7 +137,7 @@ export default function Footer() {
 
         <div className="mt-12 pt-8 border-t border-navy-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-gray-500">
-            © 2024 Alumni Network. All rights reserved. Access restricted to verified students, alumni, and faculty.
+            © 2026 Alumni Network. All rights reserved. Access restricted to verified students, alumni, and faculty.
           </p>
           <div className="flex gap-6">
             {['Privacy Policy', 'Terms of Use', 'Accessibility'].map((item) => (
