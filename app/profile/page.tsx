@@ -14,14 +14,24 @@ import {
   Mail,
   MapPin,
   Pencil,
+  Plus,
+  RefreshCw,
   Trash2,
   UserCircle2,
   X,
 } from "lucide-react";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
-import { UserRole } from "@/types";
+import SkillsSection from "@/components/profile/SkillsSection";
+import AddSkillModal from "@/components/profile/AddSkillModal";
+import { getAlumniSkillsSummary, getCourses } from "@/lib/api";
+import { UserRole, AlumniSkillSummary } from "@/types";
+import { hasRole } from "@/lib/roleUtils";
 
 const API_BASE = "http://localhost:8080";
+const LOG = (...args: unknown[]) => console.log("[ProfilePage]", ...args);
+const ERR = (...args: unknown[]) => console.error("[ProfilePage]", ...args);
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type SidebarUser = {
   role: UserRole;
@@ -57,6 +67,8 @@ interface ProfileResponse {
   profession: string | null;
   gmail: string | null;
   linkedinUrl: string | null;
+  courseId: number | null;
+  courseCode: string | null;
   events: ProfileEventSummary[];
   opportunities: ProfileOpportunitySummary[];
 }
@@ -70,6 +82,8 @@ interface ProfileFormValues {
   profession: string;
   linkedinUrl: string;
 }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatDateTime = (value: string) =>
   new Date(value).toLocaleString("en-IN", {
@@ -113,13 +127,17 @@ const syncStoredUserName = (name: string) => {
     localStorage.setItem("alumni_user", JSON.stringify(parsed));
     window.dispatchEvent(new Event("storage"));
   } catch (error) {
-    console.error("Failed to sync stored user name:", error);
+    ERR("Failed to sync stored user name:", error);
   }
 };
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // General Profile State
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [sidebarUser, setSidebarUser] = useState<SidebarUser | null>(null);
   const [formValues, setFormValues] = useState<ProfileFormValues>({
@@ -131,6 +149,7 @@ export default function ProfilePage() {
     profession: "",
     linkedinUrl: "",
   });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -139,78 +158,200 @@ export default function ProfilePage() {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isRemovingPhoto, setIsRemovingPhoto] = useState(false);
 
+  // Skills Specific State
+  const [resolvedCourseId, setResolvedCourseId] = useState<number | null>(null);
+  const [skillsData, setSkillsData] = useState<AlumniSkillSummary | null>(null);
+  const [skillsLoading, setSkillsLoading] = useState(false);
+  const [courseResolving, setCourseResolving] = useState(false);
+  const [skillsError, setSkillsError] = useState<string | null>(null);
+  const [isAddSkillModalOpen, setIsAddSkillModalOpen] = useState(false);
+
+  // ── Load profile & auth on mount ──────────────────────────────────────────
+
   useEffect(() => {
+    LOG("Mounting and checking auth...");
     const storedUser = localStorage.getItem("alumni_user");
     const token = localStorage.getItem("token");
 
     if (!storedUser || !token) {
+      LOG("Missing auth, redirecting to login");
       router.push("/auth/login");
       return;
     }
 
     try {
       const parsedUser = JSON.parse(storedUser);
-      const normalizedRole =
-        parsedUser?.role === "batch_admin" ? "alumni" : parsedUser?.role;
+      // Get all roles or single role
+      const userRoles = parsedUser?.roles || parsedUser?.role || "";
+
+      // Check if user has alumni access (alumni OR batch_admin)
+      const hasAlumniAccess = hasRole(userRoles, ["alumni", "batch_admin"]);
+
+      // Normalize role for display (batch_admin -> alumni)
+      const primaryRole = hasAlumniAccess ? "alumni" : userRoles[0] || "alumni";
+
+      LOG("Parsed user roles:", userRoles, "Primary role:", primaryRole);
 
       setSidebarUser({
-        role: (normalizedRole || "alumni") as UserRole,
+        role: (primaryRole || "alumni") as UserRole,
         name: parsedUser?.fullName || parsedUser?.name || "User",
         email: parsedUser?.email || "",
       });
-    } catch {
+    } catch (err) {
+      ERR("Failed to parse stored user:", err);
       router.push("/auth/login");
       return;
     }
 
-    const loadProfile = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const res = await fetch(`${API_BASE}/api/profile/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (res.status === 401 || res.status === 403) {
-          router.push("/auth/login");
-          return;
-        }
-
-        if (!res.ok) {
-          throw new Error("Failed to load profile");
-        }
-
-        const data: ProfileResponse = await res.json();
-        setProfile(data);
-        setFormValues(toFormValues(data));
-        syncStoredUserName(data.name);
-        setSidebarUser((current) =>
-          current
-            ? {
-                ...current,
-                name: data.name || current.name,
-                email: data.email || current.email,
-              }
-            : current,
-        );
-      } catch (err: any) {
-        setError(err.message || "Failed to load profile");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProfile();
+    loadProfile(token);
   }, [router]);
 
+  // ── Resolve courseId after profile loads ──────────────────────────────────
+
+  useEffect(() => {
+    if (!profile) return;
+
+    if (profile.courseId) {
+      LOG("courseId present in profile:", profile.courseId);
+      setResolvedCourseId(profile.courseId);
+      return;
+    }
+
+    LOG("courseId missing in profile, attempting resolution via /api/courses");
+    resolveCourseId(profile);
+  }, [profile]);
+
+  // ── Load skills after courseId is resolved ────────────────────────────────
+
+  useEffect(() => {
+    if (profile?.alumniId && resolvedCourseId) {
+      LOG("Both alumniId and courseId ready — loading skills");
+      loadSkills(profile.alumniId);
+    }
+  }, [resolvedCourseId]);
+
+  // ─── API Functions ─────────────────────────────────────────────────────────
+
+  async function loadProfile(token: string) {
+    LOG("loadProfile() called");
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/profile/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        LOG("Auth failed on profile fetch, redirecting");
+        router.push("/auth/login");
+        return;
+      }
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "Unknown error");
+        throw new Error(`Failed to load profile (${res.status}): ${text}`);
+      }
+
+      const data: ProfileResponse = await res.json();
+      LOG("Profile loaded successfully:", {
+        alumniId: data.alumniId,
+        courseId: data.courseId,
+        courseCode: data.courseCode,
+      });
+
+      setProfile(data);
+      setFormValues(toFormValues(data));
+      syncStoredUserName(data.name);
+      setSidebarUser((current) =>
+        current
+          ? {
+              ...current,
+              name: data.name || current.name,
+              email: data.email || current.email,
+            }
+          : current,
+      );
+    } catch (err: any) {
+      ERR("Profile load error:", err);
+      setError(err.message || "Failed to load profile");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function resolveCourseId(prof: ProfileResponse) {
+    LOG("resolveCourseId() called — courseCode:", prof.courseCode);
+    setCourseResolving(true);
+
+    try {
+      const courses = await getCourses();
+
+      if (prof.courseCode) {
+        const match = courses.find(
+          (c) => c.code.toLowerCase() === prof.courseCode!.toLowerCase(),
+        );
+        if (match) {
+          LOG("Resolved courseId via courseCode match:", match.id);
+          setResolvedCourseId(match.id);
+          return;
+        }
+      }
+
+      if (prof.department) {
+        const match = courses.find(
+          (c) =>
+            c.name.toLowerCase().includes(prof.department!.toLowerCase()) ||
+            c.department?.name
+              .toLowerCase()
+              .includes(prof.department!.toLowerCase()),
+        );
+        if (match) {
+          LOG("Resolved courseId via department match:", match.id);
+          setResolvedCourseId(match.id);
+          return;
+        }
+      }
+
+      setSkillsError(
+        "Your course could not be determined. Skills cannot be loaded. Please contact support.",
+      );
+    } catch (err: any) {
+      ERR("resolveCourseId error:", err);
+      setSkillsError("Failed to resolve course information: " + err.message);
+    } finally {
+      setCourseResolving(false);
+    }
+  }
+
+  async function loadSkills(alumniId: number) {
+    LOG("loadSkills() called for alumniId:", alumniId);
+    setSkillsLoading(true);
+    setSkillsError(null);
+
+    try {
+      const data = await getAlumniSkillsSummary(alumniId);
+      LOG("Skills loaded:", data.skills.length, "skills found.");
+      setSkillsData(data);
+    } catch (err: any) {
+      ERR("loadSkills error:", err);
+      setSkillsError(err.message || "Failed to load skills");
+    } finally {
+      setSkillsLoading(false);
+    }
+  }
+
+  function handleSkillsRefresh() {
+    if (profile?.alumniId) {
+      LOG("Manual skills refresh triggered");
+      loadSkills(profile.alumniId);
+    }
+  }
+
+  // ── Form Actions ──────────────────────────────────────────────────────────
+
   const updateFormValue = (field: keyof ProfileFormValues, value: string) => {
-    setFormValues((current) => ({
-      ...current,
-      [field]: value,
-    }));
+    setFormValues((current) => ({ ...current, [field]: value }));
   };
 
   const applyProfile = (nextProfile: ProfileResponse, message?: string) => {
@@ -226,9 +367,7 @@ export default function ProfilePage() {
           }
         : current,
     );
-    if (message) {
-      setSuccessMessage(message);
-    }
+    if (message) setSuccessMessage(message);
   };
 
   const handleSaveProfile = async (event: FormEvent<HTMLFormElement>) => {
@@ -282,9 +421,7 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     const token = localStorage.getItem("token");
 
-    if (!file || !token || !profile) {
-      return;
-    }
+    if (!file || !token || !profile) return;
 
     setIsUploadingPhoto(true);
     setError(null);
@@ -296,16 +433,13 @@ export default function ProfilePage() {
 
       const res = await fetch(`${API_BASE}/api/profile/me/photo`, {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
       const body = await res.json().catch(() => null);
-      if (!res.ok) {
+      if (!res.ok)
         throw new Error(body?.message || "Failed to upload profile photo");
-      }
 
       applyProfile(
         {
@@ -318,17 +452,13 @@ export default function ProfilePage() {
       setError(err.message || "Failed to upload profile photo");
     } finally {
       setIsUploadingPhoto(false);
-      if (event.target) {
-        event.target.value = "";
-      }
+      if (event.target) event.target.value = "";
     }
   };
 
   const handleRemovePhoto = async () => {
     const token = localStorage.getItem("token");
-    if (!token || !profile?.profileImageUrl) {
-      return;
-    }
+    if (!token || !profile?.profileImageUrl) return;
 
     setIsRemovingPhoto(true);
     setError(null);
@@ -337,21 +467,15 @@ export default function ProfilePage() {
     try {
       const res = await fetch(`${API_BASE}/api/profile/me/photo`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const body = await res.json().catch(() => null);
-      if (!res.ok) {
+      if (!res.ok)
         throw new Error(body?.message || "Failed to remove profile photo");
-      }
 
       applyProfile(
-        {
-          ...profile,
-          profileImageUrl: null,
-        },
+        { ...profile, profileImageUrl: null },
         body?.message || "Profile photo removed successfully.",
       );
     } catch (err: any) {
@@ -360,6 +484,8 @@ export default function ProfilePage() {
       setIsRemovingPhoto(false);
     }
   };
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   if (loading || !sidebarUser) {
     return (
@@ -370,6 +496,8 @@ export default function ProfilePage() {
   }
 
   const profileImageSrc = resolveImageUrl(profile?.profileImageUrl || null);
+  const canUseSkills = !!(profile?.alumniId && resolvedCourseId);
+  const existingSkillIds = skillsData?.skills.map((s) => s.skillId) ?? [];
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -381,6 +509,7 @@ export default function ProfilePage() {
 
       <main className="flex-1 overflow-auto">
         <div className="max-w-6xl mx-auto p-6 space-y-6">
+          {/* Header */}
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
               <p className="text-sm font-medium text-gold-600 uppercase tracking-wide">
@@ -391,7 +520,7 @@ export default function ProfilePage() {
               </h1>
               <p className="text-gray-500 mt-2 max-w-2xl">
                 Edit your public identity, update your contact details, and
-                manage your profile photo.
+                manage your profile photo and skills.
               </p>
             </div>
 
@@ -423,6 +552,7 @@ export default function ProfilePage() {
             )}
           </div>
 
+          {/* System Messages */}
           {error && (
             <div className="card p-5 border border-red-200 bg-red-50 text-red-700 flex items-start gap-3">
               <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
@@ -441,6 +571,7 @@ export default function ProfilePage() {
 
           {profile && (
             <>
+              {/* Profile Card & Quick Links */}
               <section className="grid xl:grid-cols-[1.2fr,0.8fr] gap-6">
                 <div className="card p-6">
                   <div className="flex flex-col sm:flex-row items-start gap-6">
@@ -463,7 +594,6 @@ export default function ProfilePage() {
                         disabled={isUploadingPhoto}
                         className="absolute bottom-1 right-1 w-10 h-10 rounded-full bg-gold-500 text-navy-950 flex items-center justify-center shadow-lg hover:bg-gold-400 disabled:opacity-60 disabled:cursor-not-allowed"
                         aria-label="Update profile photo"
-                        title="Update profile photo"
                       >
                         {isUploadingPhoto ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -508,11 +638,6 @@ export default function ProfilePage() {
                           </button>
                         )}
                       </div>
-
-                      <p className="text-xs text-gray-400 mt-3">
-                        Tap the camera button to upload a new photo, similar to
-                        social profile updates.
-                      </p>
 
                       <div className="mt-5 grid sm:grid-cols-2 gap-3 text-sm text-gray-600">
                         <p className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-3">
@@ -580,10 +705,12 @@ export default function ProfilePage() {
                 </div>
               </section>
 
+              {/* Edit Details Form & Skills & History */}
               <section className="grid xl:grid-cols-[1fr,0.9fr] gap-6">
+                {/* Edit details form */}
                 <form
                   onSubmit={handleSaveProfile}
-                  className="card p-6 space-y-5"
+                  className="card p-6 h-fit space-y-5"
                 >
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div>
@@ -614,8 +741,8 @@ export default function ProfilePage() {
                       <input
                         type="text"
                         value={formValues.name}
-                        onChange={(event) =>
-                          updateFormValue("name", event.target.value)
+                        onChange={(e) =>
+                          updateFormValue("name", e.target.value)
                         }
                         disabled={!isEditing || isSaving}
                         className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-3 bg-white disabled:bg-gray-50 disabled:text-gray-500"
@@ -623,12 +750,12 @@ export default function ProfilePage() {
                     </label>
 
                     <label className="text-sm font-medium text-navy-800">
-                      Gmail
+                      Personal Email (Optional)
                       <input
                         type="email"
                         value={formValues.gmail}
-                        onChange={(event) =>
-                          updateFormValue("gmail", event.target.value)
+                        onChange={(e) =>
+                          updateFormValue("gmail", e.target.value)
                         }
                         disabled={!isEditing || isSaving}
                         className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-3 bg-white disabled:bg-gray-50 disabled:text-gray-500"
@@ -640,8 +767,8 @@ export default function ProfilePage() {
                       <input
                         type="number"
                         value={formValues.batchYear}
-                        onChange={(event) =>
-                          updateFormValue("batchYear", event.target.value)
+                        onChange={(e) =>
+                          updateFormValue("batchYear", e.target.value)
                         }
                         disabled={!isEditing || isSaving}
                         className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-3 bg-white disabled:bg-gray-50 disabled:text-gray-500"
@@ -653,8 +780,8 @@ export default function ProfilePage() {
                       <input
                         type="text"
                         value={formValues.department}
-                        onChange={(event) =>
-                          updateFormValue("department", event.target.value)
+                        onChange={(e) =>
+                          updateFormValue("department", e.target.value)
                         }
                         disabled={!isEditing || isSaving}
                         className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-3 bg-white disabled:bg-gray-50 disabled:text-gray-500"
@@ -666,8 +793,8 @@ export default function ProfilePage() {
                       <input
                         type="text"
                         value={formValues.location}
-                        onChange={(event) =>
-                          updateFormValue("location", event.target.value)
+                        onChange={(e) =>
+                          updateFormValue("location", e.target.value)
                         }
                         disabled={!isEditing || isSaving}
                         className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-3 bg-white disabled:bg-gray-50 disabled:text-gray-500"
@@ -679,8 +806,8 @@ export default function ProfilePage() {
                       <input
                         type="text"
                         value={formValues.profession}
-                        onChange={(event) =>
-                          updateFormValue("profession", event.target.value)
+                        onChange={(e) =>
+                          updateFormValue("profession", e.target.value)
                         }
                         disabled={!isEditing || isSaving}
                         className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-3 bg-white disabled:bg-gray-50 disabled:text-gray-500"
@@ -692,8 +819,8 @@ export default function ProfilePage() {
                       <input
                         type="url"
                         value={formValues.linkedinUrl}
-                        onChange={(event) =>
-                          updateFormValue("linkedinUrl", event.target.value)
+                        onChange={(e) =>
+                          updateFormValue("linkedinUrl", e.target.value)
                         }
                         disabled={!isEditing || isSaving}
                         className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-3 bg-white disabled:bg-gray-50 disabled:text-gray-500"
@@ -703,6 +830,81 @@ export default function ProfilePage() {
                 </form>
 
                 <div className="space-y-6">
+                  {/* Robust Skills Section */}
+                  <div className="card p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h2 className="font-serif text-xl font-bold text-navy-900">
+                        Skills & Expertise
+                      </h2>
+                    </div>
+
+                    {/* Diagnostics panel: No Alumni Record */}
+                    {!profile.alumniId && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-semibold text-amber-800">
+                              Alumni profile not linked
+                            </p>
+                            <p className="text-sm text-amber-700 mt-1">
+                              Your account is not linked to an alumni record.
+                              Skills cannot be managed.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Diagnostics panel: Resolving Course */}
+                    {profile.alumniId &&
+                      !resolvedCourseId &&
+                      courseResolving && (
+                        <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 flex items-center gap-3">
+                          <Loader2 className="h-5 w-5 animate-spin text-navy-800" />
+                          <p className="text-sm text-gray-600">
+                            Resolving course information…
+                          </p>
+                        </div>
+                      )}
+
+                    {/* Diagnostics panel: Course Missing */}
+                    {profile.alumniId &&
+                      !resolvedCourseId &&
+                      !courseResolving &&
+                      !skillsError && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                          <div className="flex items-start gap-3">
+                            <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="font-semibold text-amber-800">
+                                Course not found in profile
+                              </p>
+                              <p className="text-sm text-amber-700 mt-1">
+                                Your course could not be mapped. Skills cannot
+                                be added until your department is updated.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Skills Component Integration */}
+                    <SkillsSection
+                      alumniId={profile.alumniId}
+                      resolvedCourseId={resolvedCourseId}
+                      skillsData={skillsData || undefined}
+                      isLoading={skillsLoading}
+                      isResolving={courseResolving}
+                      error={skillsError}
+                      canEdit={canUseSkills}
+                      onAddSkillClick={() => setIsAddSkillModalOpen(true)}
+                      onSkillRemoved={handleSkillsRefresh}
+                      onRetry={handleSkillsRefresh}
+                    />
+                  </div>
+
+                  {/* My Events */}
                   <section className="card p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="font-bold text-navy-900">My Events</h2>
@@ -713,7 +915,6 @@ export default function ProfilePage() {
                         View all
                       </Link>
                     </div>
-
                     {profile.events.length === 0 ? (
                       <p className="text-sm text-gray-500">
                         No event summaries available yet.
@@ -740,6 +941,7 @@ export default function ProfilePage() {
                     )}
                   </section>
 
+                  {/* My Opportunities */}
                   <section className="card p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="font-bold text-navy-900">
@@ -752,7 +954,6 @@ export default function ProfilePage() {
                         View all
                       </Link>
                     </div>
-
                     {profile.opportunities.length === 0 ? (
                       <p className="text-sm text-gray-500">
                         No opportunity summaries available yet.
@@ -785,6 +986,18 @@ export default function ProfilePage() {
           )}
         </div>
       </main>
+
+      {/* Add Skill Modal */}
+      {canUseSkills && (
+        <AddSkillModal
+          isOpen={isAddSkillModalOpen}
+          onClose={() => setIsAddSkillModalOpen(false)}
+          alumniId={profile!.alumniId!}
+          courseId={resolvedCourseId!}
+          existingSkillIds={existingSkillIds}
+          onSkillAdded={handleSkillsRefresh}
+        />
+      )}
     </div>
   );
 }

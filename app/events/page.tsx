@@ -13,6 +13,7 @@ import EventListItem from "@/components/events/EventListItem";
 import CreateEventModal from "@/components/events/CreateEventModal";
 import { fetchAllEvents } from "@/lib/api/events";
 import { Event } from "@/lib/types/events";
+import { isAdmin } from "@/lib/roleUtils";
 import { formatMonthYear, isUpcoming, isPast } from "@/lib/utils/dateUtils";
 import { getToken, getUserRole } from "@/lib/auth";
 function groupByMonth(events: Event[]): Map<string, Event[]> {
@@ -77,10 +78,13 @@ export default function EventsPage() {
   }, []);
 
   useEffect(() => {
-  const role = getUserRole();
-  console.log("EVENT PAGE ROLE:", role);
-  setUserRole(role);
-}, []);
+    const role = getUserRole();
+    console.log("EVENT PAGE ROLE:", role);
+    setUserRole(role);
+  }, []);
+
+  // Check if user has admin access (for create button)
+  const hasAdminAccess = isAdmin(userRole);
   // Initial load of public events
   useEffect(() => {
     loadEvents();
@@ -125,15 +129,15 @@ export default function EventsPage() {
               Upcoming events for our alumni community
             </p>
           </div>
-          {(userRole?.toUpperCase() === "ADMIN" || userRole?.toUpperCase() === "BATCH_ADMIN") && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold px-4 py-2 rounded-lg transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Create Event
-          </button>
-        )}
+          {hasAdminAccess && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold px-4 py-2 rounded-lg transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Create Event
+            </button>
+          )}
         </div>
       </div>
 

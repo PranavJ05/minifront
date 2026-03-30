@@ -125,3 +125,73 @@ export interface AuthFormData {
   place?: string;
   profession?: string;
 }
+
+// ==================== Skills Types ====================
+
+export interface Skill {
+  id: number;
+  name: string;
+  normalizedName: string;
+  courseId: number;
+  courseCode: string;
+  courseName: string;
+  isStarter: boolean;
+  isApproved: boolean;
+  createdByAlumniId: number | null;
+  createdByAlumniName: string | null;
+  createdAt: string;
+  approvedAt: string | null;
+  approvedByUserId: number | null;
+}
+
+export interface AlumniSkill {
+  alumniId: number;
+  alumniName: string;
+  skillId: number;
+  skillName: string;
+  skillNormalizedName: string;
+  courseId: number;
+  courseCode: string;
+  isStarter: boolean;
+  addedAt: string;
+}
+
+export interface AlumniSkillSummary {
+  alumniId: number;
+  alumniName: string;
+  courseId: number;
+  courseCode: string;
+  skills: {
+    skillId: number;
+    skillName: string;
+    isStarter: boolean;
+  }[];
+}
+
+export interface CreateSkillRequest {
+  name: string;
+  courseId: number;
+  isStarter?: boolean;
+}
+
+export interface UpdateSkillRequest {
+  name?: string;
+  isStarter?: boolean;
+  isApproved?: boolean;
+}
+
+export interface AddSkillToAlumniRequest {
+  skillId: number;
+}
+
+export interface Course {
+  id: number;
+  departmentId: number;
+  code: string;
+  name: string;
+  department: {
+    id: number;
+    code: string;
+    name: string;
+  };
+}

@@ -109,10 +109,12 @@ export default function Navbar({
   }, [normalizedRole]);
 
   const handleLogout = () => {
+    console.log("[Logout] Clearing all auth data...");
     localStorage.removeItem("alumni_user");
     localStorage.removeItem("token");
     localStorage.removeItem("role");
     localStorage.removeItem("email");
+    console.log("[Logout] localStorage cleared");
     setStoredUser(null);
     setIsOpen(false);
     router.push("/");

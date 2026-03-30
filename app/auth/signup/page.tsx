@@ -1,28 +1,4 @@
 "use client";
-<<<<<<< Updated upstream
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import {
-Mail,
-Lock,
-Eye,
-EyeOff,
-User,
-Phone,
-Linkedin,
-MapPin,
-Briefcase,
-Calendar,
-} from "lucide-react";
-
-import AuthInput from "@/components/auth/AuthInput";
-import { UserRole } from "@/types";
-import { departments } from "@/lib/mockData";
-
-const batchYears = Array.from({ length: 71 }, (_, i) =>
-String(1980 + i)
-);
-=======
 // app/auth/signup/page.tsx
 import { useState } from "react";
 import Link from "next/link";
@@ -43,7 +19,6 @@ import AuthInput from "@/components/auth/AuthInput";
 import { UserRole } from "@/types";
 import { departments, graduationYears } from "@/lib/mockData";
 import { getDashboardPath } from "@/lib/utils";
->>>>>>> Stashed changes
 
 export default function SignupPage() {
 const router = useRouter();

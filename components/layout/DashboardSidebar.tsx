@@ -62,11 +62,13 @@ export default function DashboardSidebar({
         : studentLinks;
 
   const handleLogout = () => {
+    console.log("[Logout] Clearing all auth data from DashboardSidebar...");
     if (typeof window !== "undefined") {
       localStorage.removeItem("alumni_user");
       localStorage.removeItem("token");
       localStorage.removeItem("role");
       localStorage.removeItem("email");
+      console.log("[Logout] localStorage cleared");
     }
     router.push("/");
   };

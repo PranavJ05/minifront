@@ -15,9 +15,11 @@ import {
 } from "lucide-react";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import PendingModal from "@/components/admin/PendingModal";
+import SkillsOnboardingWrapper from "@/components/profile/SkillsOnboardingWrapper";
 import { fetchAllEvents } from "@/lib/api/events";
 import { Event } from "@/lib/types/events";
 import { getToken } from "@/lib/auth";
+import { hasRole } from "@/lib/roleUtils";
 import {
   formatDay,
   formatEventDate,
@@ -65,10 +67,13 @@ export default function AlumniDashboard() {
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [opportunities, setOpportunities] = useState<OpportunityPreview[]>([]);
   const [opportunitiesLoading, setOpportunitiesLoading] = useState(true);
-  const [opportunitiesError, setOpportunitiesError] = useState<string | null>(null);
+  const [opportunitiesError, setOpportunitiesError] = useState<string | null>(
+    null,
+  );
   const [directory, setDirectory] = useState<AlumniPreview[]>([]);
   const [directoryLoading, setDirectoryLoading] = useState(true);
   const [directoryError, setDirectoryError] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -81,17 +86,21 @@ export default function AlumniDashboard() {
     }
 
     const u = JSON.parse(stored);
-    const userRole = (u.role || "").toLowerCase();
-    const isBlockedRole =
-      userRole === "student" ||
-      userRole === "faculty" ||
-      storedRole === "student" ||
-      storedRole === "faculty";
-    const isAllowedRole =
-      userRole === "alumni" ||
-      userRole === "batch_admin" ||
-      storedRole === "alumni" ||
-      storedRole === "batch_admin";
+    const userRole = u.roles || u.role || "";
+
+    // Check if user has BLOCKED roles (student or faculty)
+    const isBlockedRole = hasRole(userRole, ["student", "faculty"]);
+
+    // Check if user has ALLOWED roles (alumni, batch_admin, admin)
+    const isAllowedRole = hasRole(userRole, ["alumni", "batch_admin", "admin"]);
+
+    console.log("[Dashboard] User roles:", userRole);
+    console.log(
+      "[Dashboard] isBlockedRole:",
+      isBlockedRole,
+      "isAllowedRole:",
+      isAllowedRole,
+    );
 
     if (isBlockedRole || !isAllowedRole) {
       router.replace("/auth/login");
@@ -99,6 +108,26 @@ export default function AlumniDashboard() {
     }
 
     setUser(u);
+
+    // Check if we should show onboarding
+    const hasCompleted = localStorage.getItem("skills_onboarding_completed");
+    const hasSkipped = localStorage.getItem("skills_onboarding_skipped");
+
+    console.log("[Dashboard] User data:", u);
+    console.log("[Dashboard] Onboarding status:", {
+      hasCompleted,
+      hasSkipped,
+      alumniId: u?.alumniId,
+      courseId: u?.courseId,
+    });
+
+    // Show onboarding if user is alumni and hasn't completed/skipped
+    if (u?.alumniId && !hasCompleted && !hasSkipped) {
+      console.log("[Dashboard] Showing onboarding");
+      setShowOnboarding(true);
+    } else {
+      console.log("[Dashboard] Not showing onboarding");
+    }
   }, [router]);
 
   useEffect(() => {
@@ -131,7 +160,9 @@ export default function AlumniDashboard() {
       const token = getToken();
       if (!token) {
         setOpportunitiesLoading(false);
-        setOpportunitiesError("You need to sign in again to load opportunities.");
+        setOpportunitiesError(
+          "You need to sign in again to load opportunities.",
+        );
         return;
       }
 
@@ -173,7 +204,9 @@ export default function AlumniDashboard() {
         }
 
         const data = await res.json();
-        const normalized: AlumniPreview[] = (Array.isArray(data) ? data : []).map((item: any) => ({
+        const normalized: AlumniPreview[] = (
+          Array.isArray(data) ? data : []
+        ).map((item: any) => ({
           id: item.id,
           name: item.name || "Unknown",
           profession: item.profession || null,
@@ -198,7 +231,10 @@ export default function AlumniDashboard() {
     [events],
   );
 
-  const opportunityPreview = useMemo(() => opportunities.slice(0, 3), [opportunities]);
+  const opportunityPreview = useMemo(
+    () => opportunities.slice(0, 3),
+    [opportunities],
+  );
   const directoryPreview = useMemo(() => directory.slice(0, 3), [directory]);
 
   if (!user)
@@ -266,7 +302,9 @@ export default function AlumniDashboard() {
 
             {!eventsLoading && !eventsError && upcomingEvents.length === 0 && (
               <div className="card p-8 text-center">
-                <p className="font-semibold text-navy-900">No upcoming events</p>
+                <p className="font-semibold text-navy-900">
+                  No upcoming events
+                </p>
                 <p className="text-sm text-gray-500 mt-1">
                   New events will appear here as soon as they are published.
                 </p>
@@ -347,50 +385,62 @@ export default function AlumniDashboard() {
               <div className="card p-6 border border-red-200 bg-red-50 text-red-700 flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-sm">Could not load opportunities</p>
+                  <p className="font-semibold text-sm">
+                    Could not load opportunities
+                  </p>
                   <p className="text-sm mt-1">{opportunitiesError}</p>
                 </div>
               </div>
             )}
 
-            {!opportunitiesLoading && !opportunitiesError && opportunityPreview.length === 0 && (
-              <div className="card p-8 text-center">
-                <p className="font-semibold text-navy-900">No opportunities yet</p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Your recently posted opportunities will appear here.
-                </p>
-              </div>
-            )}
+            {!opportunitiesLoading &&
+              !opportunitiesError &&
+              opportunityPreview.length === 0 && (
+                <div className="card p-8 text-center">
+                  <p className="font-semibold text-navy-900">
+                    No opportunities yet
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Your recently posted opportunities will appear here.
+                  </p>
+                </div>
+              )}
 
-            {!opportunitiesLoading && !opportunitiesError && opportunityPreview.length > 0 && (
-              <div className="grid md:grid-cols-3 gap-4">
-                {opportunityPreview.map((opportunity) => (
-                  <div key={opportunity.id} className="card p-5">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="badge bg-navy-50 text-navy-700">
-                        {opportunity.type}
-                      </span>
+            {!opportunitiesLoading &&
+              !opportunitiesError &&
+              opportunityPreview.length > 0 && (
+                <div className="grid md:grid-cols-3 gap-4">
+                  {opportunityPreview.map((opportunity) => (
+                    <div key={opportunity.id} className="card p-5">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="badge bg-navy-50 text-navy-700">
+                          {opportunity.type}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-navy-900 mb-1 line-clamp-2">
+                        {opportunity.title}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {opportunity.company}
+                      </p>
+                      <p className="text-sm text-gray-500 flex items-center gap-1 mt-2">
+                        <MapPin className="h-3.5 w-3.5" />{" "}
+                        {opportunity.location}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-4">
+                        Posted {formatPostedDate(opportunity.postedAt)}
+                      </p>
+                      <Link
+                        href="/opportunities"
+                        className="inline-flex items-center gap-1 text-sm text-gold-600 font-medium mt-4"
+                      >
+                        View all opportunities{" "}
+                        <ArrowRight className="h-3 w-3" />
+                      </Link>
                     </div>
-                    <h3 className="font-bold text-navy-900 mb-1 line-clamp-2">
-                      {opportunity.title}
-                    </h3>
-                    <p className="text-sm text-gray-600">{opportunity.company}</p>
-                    <p className="text-sm text-gray-500 flex items-center gap-1 mt-2">
-                      <MapPin className="h-3.5 w-3.5" /> {opportunity.location}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-4">
-                      Posted {formatPostedDate(opportunity.postedAt)}
-                    </p>
-                    <Link
-                      href="/opportunities"
-                      className="inline-flex items-center gap-1 text-sm text-gold-600 font-medium mt-4"
-                    >
-                      View all opportunities <ArrowRight className="h-3 w-3" />
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
           </section>
 
           <section className="mb-8">
@@ -417,58 +467,78 @@ export default function AlumniDashboard() {
               <div className="card p-6 border border-red-200 bg-red-50 text-red-700 flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-sm">Could not load directory</p>
+                  <p className="font-semibold text-sm">
+                    Could not load directory
+                  </p>
                   <p className="text-sm mt-1">{directoryError}</p>
                 </div>
               </div>
             )}
 
-            {!directoryLoading && !directoryError && directoryPreview.length === 0 && (
-              <div className="card p-8 text-center">
-                <p className="font-semibold text-navy-900">No alumni found</p>
-                <p className="text-sm text-gray-500 mt-1">
-                  The alumni directory preview is empty right now.
-                </p>
-              </div>
-            )}
+            {!directoryLoading &&
+              !directoryError &&
+              directoryPreview.length === 0 && (
+                <div className="card p-8 text-center">
+                  <p className="font-semibold text-navy-900">No alumni found</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    The alumni directory preview is empty right now.
+                  </p>
+                </div>
+              )}
 
-            {!directoryLoading && !directoryError && directoryPreview.length > 0 && (
-              <div className="grid md:grid-cols-3 gap-4">
-                {directoryPreview.map((alumni) => {
-                  const avatar = resolveImageUrl(alumni.profileImageUrl);
-                  return (
-                    <div key={alumni.id} className="card p-5 flex items-start gap-3">
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-navy-100 flex items-center justify-center flex-shrink-0">
-                        {avatar ? (
-                          <img
-                            src={avatar}
-                            alt={alumni.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Users className="h-5 w-5 text-navy-500" />
-                        )}
+            {!directoryLoading &&
+              !directoryError &&
+              directoryPreview.length > 0 && (
+                <div className="grid md:grid-cols-3 gap-4">
+                  {directoryPreview.map((alumni) => {
+                    const avatar = resolveImageUrl(alumni.profileImageUrl);
+                    return (
+                      <div
+                        key={alumni.id}
+                        className="card p-5 flex items-start gap-3"
+                      >
+                        <div className="w-12 h-12 rounded-full overflow-hidden bg-navy-100 flex items-center justify-center flex-shrink-0">
+                          {avatar ? (
+                            <img
+                              src={avatar}
+                              alt={alumni.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Users className="h-5 w-5 text-navy-500" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-navy-900 truncate">
+                            {alumni.name}
+                          </p>
+                          <p className="text-sm text-gray-600 truncate">
+                            {alumni.profession || "Professional"}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1 truncate">
+                            {alumni.department || "Department not added"}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1 truncate">
+                            {alumni.location || "Location not added"}
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-navy-900 truncate">{alumni.name}</p>
-                        <p className="text-sm text-gray-600 truncate">
-                          {alumni.profession || "Professional"}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1 truncate">
-                          {alumni.department || "Department not added"}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1 truncate">
-                          {alumni.location || "Location not added"}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              )}
           </section>
         </div>
       </main>
+
+      {/* Skills Onboarding for new users */}
+      {user?.alumniId && showOnboarding && (
+        <SkillsOnboardingWrapper
+          alumniId={user.alumniId}
+          courseId={user.courseId}
+          onComplete={() => setShowOnboarding(false)}
+        />
+      )}
     </div>
   );
 }

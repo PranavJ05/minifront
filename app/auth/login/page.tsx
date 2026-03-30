@@ -15,8 +15,14 @@ import {
 } from "lucide-react";
 import AuthInput from "@/components/auth/AuthInput";
 import { BACKEND_URL } from "@/lib/config";
-import { getDashboardPath } from "@/lib/utils";
 import { UserRole } from "@/types";
+import {
+  isAdmin,
+  isAlumni,
+  isStudent,
+  isFaculty,
+  getPrimaryRole,
+} from "@/lib/roleUtils";
 
 type LoginResponse = {
   token?: string;
@@ -27,23 +33,6 @@ type LoginResponse = {
   status?: string;
   message?: string;
 };
-
-function normalizeRole(role?: string | null): string {
-  if (!role) return "";
-  const normalized = role.toLowerCase();
-  return normalized === "batch_admin" ? "alumni" : normalized;
-}
-
-function getRoleLabel(role: UserRole): string {
-  switch (role) {
-    case "faculty":
-      return "Faculty login uses college-issued credentials.";
-    case "student":
-      return "Sign in with your approved student account.";
-    default:
-      return "Sign in with your approved alumni account.";
-  }
-}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -95,32 +84,129 @@ export default function LoginPage() {
 
       const data: LoginResponse = await res.json().catch(() => ({}));
 
+      console.log("[Login] === RAW BACKEND RESPONSE ===");
+      console.log("[Login] Full response:", data);
+      console.log("[Login] data.roles:", data.roles);
+      console.log(
+        "[Login] data.roles type:",
+        Array.isArray(data.roles) ? "ARRAY" : typeof data.roles,
+      );
+
       if (!res.ok) {
         throw new Error(data.message || "Login failed");
       }
 
-      const apiRole = data.roles?.[0];
-      const normalizedRole = normalizeRole(apiRole);
+      // Get ALL roles from backend (not just first one)
+      // Backend returns roles as array: ["ALUMNI", "ADMIN"] or ["ALUMNI"]
+      let allRoles: string[] = [];
 
-      if (!data.token || !apiRole || !normalizedRole) {
+      if (Array.isArray(data.roles)) {
+        allRoles = data.roles;
+      } else if (typeof data.roles === "string") {
+        // If backend returns single string, convert to array
+        allRoles = [data.roles];
+      } else if (data.status) {
+        // Fallback: use status field if roles not present
+        allRoles = [data.status];
+      }
+
+      // LAST RESORT: Use the role user selected to login
+      if (allRoles.length === 0) {
+        console.warn(
+          "[Login] No roles in response, using formData.role as fallback",
+        );
+        allRoles = [formData.role.toUpperCase()];
+      }
+
+      console.log("[Login] === PROCESSED ROLES ===");
+      console.log("[Login] allRoles array:", allRoles);
+      console.log("[Login] allRoles length:", allRoles.length);
+
+      if (!data.token || allRoles.length === 0) {
+        console.error("[Login] CRITICAL: Missing token or roles!");
         throw new Error("Login response was incomplete. Please try again.");
       }
 
       const fullName = data.name?.trim() || payload.email;
+
+      // Fetch additional user data from profile if alumniId/courseId not in login response
+      const fetchUserProfile = async () => {
+        try {
+          const profileRes = await fetch(
+            "http://localhost:8080/api/profile/me",
+            {
+              headers: {
+                Authorization: `Bearer ${data.token}`,
+              },
+            },
+          );
+
+          if (profileRes.ok) {
+            const profileData = await profileRes.json();
+            console.log("[Login] Profile data:", profileData);
+            return {
+              alumniId: profileData.alumniId ?? null,
+              courseId: profileData.courseId ?? null,
+            };
+          }
+        } catch (error) {
+          console.error("[Login] Failed to fetch profile:", error);
+        }
+        return { alumniId: null, courseId: null };
+      };
+
+      const additionalData = await fetchUserProfile();
+
       const storedUser = {
         id: data.id ?? null,
+        alumniId: data.alumniId ?? additionalData.alumniId,
+        courseId: data.courseId ?? additionalData.courseId,
         email: data.email || payload.email,
-        role: normalizedRole,
+        roles: allRoles, // Store ALL roles as array (RAW from backend)
         fullName,
       };
 
+      console.log("[Login] === BEFORE STORAGE ===");
+      console.log("[Login] storedUser object:", storedUser);
+      console.log("[Login] storedUser.roles:", storedUser.roles);
+      console.log(
+        "[Login] storedUser.roles type:",
+        Array.isArray(storedUser.roles) ? "ARRAY" : typeof storedUser.roles,
+      );
+      console.log("[Login] JSON.stringify result:", JSON.stringify(storedUser));
+
       localStorage.setItem("token", data.token);
       localStorage.setItem("email", storedUser.email);
-      localStorage.setItem("role", normalizedRole);
       localStorage.setItem("alumni_user", JSON.stringify(storedUser));
+
+      // Verify what was actually stored
+      const stored = localStorage.getItem("alumni_user");
+      console.log("[Login] === AFTER STORAGE ===");
+      console.log("[Login] Raw from localStorage:", stored);
+      console.log("[Login] Parsed from localStorage:", JSON.parse(stored!));
+      console.log("[Login] Parsed roles:", JSON.parse(stored!).roles);
+
       window.dispatchEvent(new Event("storage"));
 
-      router.push(getDashboardPath(normalizedRole));
+      // Determine dashboard based on roles using utility functions
+      let dashboardPath = "/";
+
+      if (isAdmin(allRoles) || isAlumni(allRoles)) {
+        dashboardPath = "/dashboard/alumni";
+      } else if (isFaculty(allRoles)) {
+        dashboardPath = "/dashboard/faculty";
+      } else if (isStudent(allRoles)) {
+        dashboardPath = "/dashboard/student";
+      }
+
+      const primaryRole = getPrimaryRole(allRoles);
+      console.log(
+        "[Login] Primary role:",
+        primaryRole,
+        "→ Redirecting to:",
+        dashboardPath,
+      );
+      router.push(dashboardPath);
     } catch (err: any) {
       const msg = err.message?.toLowerCase() || "";
       if (msg.includes("pending") || msg.includes("approval")) {
@@ -232,7 +318,11 @@ export default function LoginPage() {
               ))}
             </div>
             <p className="mt-3 text-xs text-gray-500 font-sans">
-              {getRoleLabel(formData.role)}
+              {formData.role === "faculty"
+                ? "Faculty login uses college-issued credentials."
+                : formData.role === "student"
+                  ? "Sign in with your approved student account."
+                  : "Sign in with your approved alumni account."}
             </p>
           </div>
 
@@ -240,7 +330,9 @@ export default function LoginPage() {
             <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3 text-green-700">
               <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-sm">Password reset successful</p>
+                <p className="font-semibold text-sm">
+                  Password reset successful
+                </p>
                 <p className="text-sm mt-0.5">
                   Sign in with your new password.
                 </p>
