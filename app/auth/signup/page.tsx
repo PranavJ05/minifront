@@ -1,245 +1,425 @@
 "use client";
-// app/auth/signup/page.tsx
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  GraduationCap,
-  Mail,
-  Lock,
+  Briefcase,
+  Building2,
+  CheckCircle,
   Eye,
   EyeOff,
-  User,
-  Phone,
+  GraduationCap,
   Linkedin,
-  AlertCircle,
-  CheckCircle,
+  Lock,
+  Mail,
+  MapPin,
+  Phone,
+  User,
 } from "lucide-react";
+
 import AuthInput from "@/components/auth/AuthInput";
+import { BACKEND_URL } from "@/lib/config";
+import { departments } from "@/lib/mockData";
 import { UserRole } from "@/types";
-import { departments, graduationYears } from "@/lib/mockData";
-import { getDashboardPath } from "@/lib/utils";
+
+const batchYears = Array.from(
+  { length: new Date().getFullYear() - 1979 + 4 },
+  (_, index) => String(1980 + index),
+);
+
+// The 10 specific branches from your database
+const branchesList = [
+  "CSA",
+  "CSB",
+  "CSC",
+  "CSBS",
+  "ECA",
+  "ECB",
+  "EV",
+  "EEE",
+  "EB",
+  "ME",
+];
+
+type SignupResponse = {
+  id?: string | number | null;
+  email?: string;
+  name?: string;
+  department?: string;
+  batchYear?: string | number;
+  accountStatus?: string;
+  location?: string;
+  message?: string;
+};
+
+type LocationCountry = {
+  name: string;
+  iso2: string;
+  latitude?: string | null;
+  longitude?: string | null;
+};
+
+type LocationState = {
+  name: string;
+  iso2: string;
+  latitude?: string | null;
+  longitude?: string | null;
+};
+
+type LocationCity = {
+  name: string;
+  latitude?: string | null;
+  longitude?: string | null;
+};
 
 export default function SignupPage() {
-const router = useRouter();
-
-<<<<<<< Updated upstream
-const [step, setStep] = useState(1);
-const [showPassword, setShowPassword] = useState(false);
-const [loading, setLoading] = useState(false);
-const [errors, setErrors] = useState<Record<string, string>>({});
-
-const [formData, setFormData] = useState({
-fullName: "",
-rollNumber: "",
-email: "",
-password: "",
-confirmPassword: "",
-role: "alumni" as UserRole,
-department: "",
-batchYear: "",
-phone: "",
-linkedin: "",
-place: "",
-profession: "",
-gmail: "",
-});
-
-const update = (key: string, value: string) => {
-setFormData((prev) => ({ ...prev, [key]: value }));
-if (errors[key]) setErrors((prev) => ({ ...prev, [key]: "" }));
-};
-
-// ================= VALIDATIONS =================
-
-const validateStep1 = () => {
-const e: Record<string, string> = {};
-
-
-if (formData.role === "student" && !formData.rollNumber.trim()) {
-  e.rollNumber = "Roll Number is required";
-}
-
-if (formData.role !== "student" && !formData.fullName.trim()) {
-  e.fullName = "Full name is required";
-}
-
-if (!formData.email.includes("@")) {
-  e.email = "Valid email required";
-}
-
-if (formData.password.length < 6) {
-  e.password = "Password must be at least 6 characters";
-}
-
-if (formData.password !== formData.confirmPassword) {
-  e.confirmPassword = "Passwords do not match";
-}
-
-setErrors(e);
-return Object.keys(e).length === 0;
-
-
-};
-
-const validateStep2 = () => {
-const e: Record<string, string> = {};
-
-
-if (!formData.department) {
-  e.department = "Department is required";
-}
-
-if (!formData.batchYear) {
-  e.batchYear = "Batch year is required";
-}
-
-if (formData.role !== "student" && !formData.place.trim()) {
-  e.place = "Place is required";
-}
-
-setErrors(e);
-return Object.keys(e).length === 0;
-
-
-};
-
-const handleNext = () => {
-if (validateStep1()) setStep(2);
-};
-
-// ================= MAIN SUBMIT =================
-
-const handleSubmit = async (e: React.FormEvent) => {
-e.preventDefault();
-
-
-if (!validateStep2()) return;
-
-setLoading(true);
-
-try {
-  const payload = {
-    name:
-      formData.role === "student"
-        ? formData.rollNumber // student uses roll number
-        : formData.fullName,
-
-    email: formData.email,
-    password: formData.password,
-
-    role: formData.role.toUpperCase(), // 🔥 IMPORTANT
-
-    batchYear: parseInt(formData.batchYear),
-    department: formData.department,
-
-    // Alumni fields
-    placeOfResidence: formData.place,
-    profession: formData.profession,
-    linkedinUrl: formData.linkedin,
-  };
-  console.log("Submitting payload:", payload);
-  const res = await fetch("http://localhost:8080/auth/register", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [countries, setCountries] = useState<LocationCountry[]>([]);
+  const [states, setStates] = useState<LocationState[]>([]);
+  const [cities, setCities] = useState<LocationCity[]>([]);
+  const [locationLoading, setLocationLoading] = useState({
+    countries: false,
+    states: false,
+    cities: false,
   });
 
-  if (!res.ok) {
-    throw new Error("Registration failed");
-  }
-
-  const data = await res.json();
-
-  const pendingUser = {
-    email: data.email,
-    name: data.name,
-    role: formData.role,
-    status: data.accountStatus || "pending",
-  };
-
-  localStorage.setItem(
-    "alumni_pending_user",
-    JSON.stringify(pendingUser)
-=======
   const [formData, setFormData] = useState({
     fullName: "",
+    rollNumber: "",
     email: "",
     password: "",
     confirmPassword: "",
     role: "alumni" as UserRole,
     department: "",
-    graduationYear: "",
+    branch: "", // NEW: Branch field added here
+    batchYear: "",
+    batch: "",
     phone: "",
     linkedin: "",
+    currentRole: "",
+    company: "",
+    countryCode: "",
+    country: "",
+    stateCode: "",
+    state: "",
+    city: "",
   });
 
   const update = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
-    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: "" }));
+    if (errors[key]) {
+      setErrors((prev) => ({ ...prev, [key]: "" }));
+    }
+  };
+
+  useEffect(() => {
+    const loadCountries = async () => {
+      setLocationLoading((prev) => ({ ...prev, countries: true }));
+
+      try {
+        const res = await fetch("/api/location/countries");
+        if (!res.ok) {
+          throw new Error("Failed to load countries");
+        }
+
+        const data: LocationCountry[] = await res.json();
+        setCountries(data);
+      } catch (error) {
+        console.error(error);
+        setErrors((prev) => ({
+          ...prev,
+          location: "Country, state, and city could not be loaded.",
+        }));
+      } finally {
+        setLocationLoading((prev) => ({ ...prev, countries: false }));
+      }
+    };
+
+    loadCountries();
+  }, []);
+
+  useEffect(() => {
+    if (!formData.countryCode) {
+      setStates([]);
+      return;
+    }
+
+    const loadStates = async () => {
+      setLocationLoading((prev) => ({ ...prev, states: true }));
+
+      try {
+        const res = await fetch(
+          `/api/location/states?countryCode=${formData.countryCode}`,
+        );
+        if (!res.ok) {
+          throw new Error("Failed to load states");
+        }
+
+        const data: LocationState[] = await res.json();
+        setStates(data);
+      } catch (error) {
+        console.error(error);
+        setErrors((prev) => ({
+          ...prev,
+          state: "States could not be loaded for that country.",
+        }));
+      } finally {
+        setLocationLoading((prev) => ({ ...prev, states: false }));
+      }
+    };
+
+    loadStates();
+  }, [formData.countryCode]);
+
+  useEffect(() => {
+    if (!formData.countryCode || !formData.stateCode) {
+      setCities([]);
+      return;
+    }
+
+    const loadCities = async () => {
+      setLocationLoading((prev) => ({ ...prev, cities: true }));
+
+      try {
+        const res = await fetch(
+          `/api/location/cities?countryCode=${formData.countryCode}&stateCode=${formData.stateCode}`,
+        );
+        if (!res.ok) {
+          throw new Error("Failed to load cities");
+        }
+
+        const data: LocationCity[] = await res.json();
+        setCities(data);
+      } catch (error) {
+        console.error(error);
+        setErrors((prev) => ({
+          ...prev,
+          city: "Cities could not be loaded for that state.",
+        }));
+      } finally {
+        setLocationLoading((prev) => ({ ...prev, cities: false }));
+      }
+    };
+
+    loadCities();
+  }, [formData.countryCode, formData.stateCode]);
+
+  const handleCountryChange = (countryCode: string) => {
+    const country = countries.find((item) => item.iso2 === countryCode);
+
+    setFormData((prev) => ({
+      ...prev,
+      countryCode,
+      country: country?.name || "",
+      stateCode: "",
+      state: "",
+      city: "",
+    }));
+    setStates([]);
+    setCities([]);
+    setErrors((prev) => ({
+      ...prev,
+      country: "",
+      state: "",
+      city: "",
+      location: "",
+    }));
+  };
+
+  const handleStateChange = (stateCode: string) => {
+    const state = states.find((item) => item.iso2 === stateCode);
+
+    setFormData((prev) => ({
+      ...prev,
+      stateCode,
+      state: state?.name || "",
+      city: "",
+    }));
+    setCities([]);
+    setErrors((prev) => ({
+      ...prev,
+      state: "",
+      city: "",
+    }));
+  };
+
+  const handleCityChange = (city: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      city,
+    }));
+    if (errors.city) {
+      setErrors((prev) => ({ ...prev, city: "" }));
+    }
   };
 
   const validateStep1 = () => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
-    if (!formData.email.includes("@")) newErrors.email = "Valid email required";
-    if (formData.password.length < 8)
-      newErrors.password = "Password must be at least 8 characters";
-    if (formData.password !== formData.confirmPassword)
-      newErrors.confirmPassword = "Passwords do not match";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const nextErrors: Record<string, string> = {};
+
+    if (formData.role === "student") {
+      if (!formData.rollNumber.trim()) {
+        nextErrors.rollNumber = "Roll number is required";
+      }
+    } else if (!formData.fullName.trim()) {
+      nextErrors.fullName = "Full name is required";
+    }
+
+    if (!formData.email.includes("@")) {
+      nextErrors.email = "Valid email required";
+    }
+
+    if (formData.password.length < 8) {
+      nextErrors.password = "Password must be at least 8 characters";
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      nextErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
   const validateStep2 = () => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.department) newErrors.department = "Department is required";
-    if (!formData.graduationYear)
-      newErrors.graduationYear = "Graduation year is required";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const nextErrors: Record<string, string> = {};
+
+    if (!formData.department) {
+      nextErrors.department = "Department is required";
+    }
+
+    if (!formData.branch) {
+      nextErrors.branch = "Branch is required";
+    }
+
+    if (!formData.batchYear) {
+      nextErrors.batchYear = "Batch year is required";
+    }
+
+    if (!formData.countryCode || !formData.country) {
+      nextErrors.country = "Country is required";
+    }
+
+    if (!formData.stateCode || !formData.state) {
+      nextErrors.state = "State is required";
+    }
+
+    if (!formData.city) {
+      nextErrors.city = "City is required";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
   const handleNext = () => {
-    if (step === 1 && validateStep1()) setStep(2);
+    if (validateStep1()) {
+      setStep(2);
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
     if (!validateStep2()) return;
+
     setLoading(true);
 
     try {
-      // Only send required fields to backend
-      const signupData = {
-        fullName: formData.fullName,
-        email: formData.email,
+      const selectedCountry = countries.find(
+        (country) => country.iso2 === formData.countryCode,
+      );
+      const selectedState = states.find(
+        (state) => state.iso2 === formData.stateCode,
+      );
+      const selectedCity = cities.find((city) => city.name === formData.city);
+      const location = [formData.city, formData.state, formData.country]
+        .filter(Boolean)
+        .join(", ");
+
+      const payload = {
+        name:
+          formData.role === "student"
+            ? formData.rollNumber.trim()
+            : formData.fullName.trim(),
+        email: formData.email.trim(),
         password: formData.password,
+        role: formData.role.toUpperCase(),
+        batchYear: Number(formData.batchYear),
+        batch: formData.batch,
         department: formData.department,
-        graduationYear: Number(formData.graduationYear),
+        branch: formData.branch, // Sending the selected branch to the backend
+        phone: formData.phone.trim() || undefined,
+        profession: formData.currentRole.trim() || undefined,
+        company: formData.company.trim() || undefined,
+        linkedinUrl: formData.linkedin.trim() || undefined,
+        location,
+        country: formData.country,
+        state: formData.state,
+        city: formData.city,
+        countryCode: formData.countryCode,
+        stateCode: formData.stateCode,
+        latitude:
+          selectedCity?.latitude ||
+          selectedState?.latitude ||
+          selectedCountry?.latitude ||
+          undefined,
+        longitude:
+          selectedCity?.longitude ||
+          selectedState?.longitude ||
+          selectedCountry?.longitude ||
+          undefined,
       };
 
-      // Dynamically import authService to avoid SSR issues
-      const { default: authService } =
-        await import("@/lib/services/authService");
-      const pendingUser = await authService.signUp(signupData);
+      const res = await fetch(`${BACKEND_URL}/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data: SignupResponse = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
 
       if (typeof window !== "undefined") {
         localStorage.setItem(
           "pendingUserData",
           JSON.stringify({
-            user: pendingUser,
+            user: {
+              id: data.id ?? "",
+              name: data.name || payload.name,
+              email: data.email || payload.email,
+              department: data.department || payload.department,
+              batchYear: data.batchYear ?? payload.batchYear,
+              status: data.accountStatus || "PENDING",
+              location: data.location || payload.location,
+              profession: payload.profession || null,
+              company: payload.company || null,
+              country: payload.country,
+              state: payload.state,
+              city: payload.city,
+              latitude: payload.latitude || null,
+              longitude: payload.longitude || null,
+            },
             status: "PENDING",
             timestamp: Date.now(),
           }),
         );
       }
-      router.push("/pending");
+
+      router.push("/auth/pending");
     } catch (err: any) {
-      console.error("Signup error:", err);
-      setErrors({ submit: err.message || "Signup failed. Please try again." });
+      setErrors({
+        submit: err?.message || "Signup failed. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -252,13 +432,14 @@ try {
   ];
 
   const passwordStrength = () => {
-    const p = formData.password;
-    if (!p) return 0;
+    const password = formData.password;
+    if (!password) return 0;
+
     let score = 0;
-    if (p.length >= 8) score++;
-    if (/[A-Z]/.test(p)) score++;
-    if (/[0-9]/.test(p)) score++;
-    if (/[^A-Za-z0-9]/.test(p)) score++;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
     return score;
   };
 
@@ -271,10 +452,52 @@ try {
   ];
   const strengthLabels = ["", "Weak", "Fair", "Good", "Strong"];
   const strength = passwordStrength();
+  const selectedCountry = countries.find(
+    (country) => country.iso2 === formData.countryCode,
+  );
+  const selectedState = states.find(
+    (state) => state.iso2 === formData.stateCode,
+  );
+  const selectedCity = cities.find((city) => city.name === formData.city);
+  const locationPreview = [formData.city, formData.state, formData.country]
+    .filter(Boolean)
+    .join(", ");
+
+  const payloadPreview = {
+    name:
+      formData.role === "student"
+        ? formData.rollNumber || "STUDENT_ROLL_NO"
+        : formData.fullName || "Jane Smith",
+    email: formData.email || "jane@email.com",
+    password: "********",
+    role: formData.role.toUpperCase(),
+    batchYear: formData.batchYear ? Number(formData.batchYear) : 2024,
+    department: formData.department || "CSE",
+    branch: formData.branch || "CSA", // Shows up in the preview window
+    phone: formData.phone || "+91 9876543210",
+    profession: formData.currentRole || "Software Engineer",
+    company: formData.company || "Google",
+    linkedinUrl: formData.linkedin || "https://linkedin.com/in/yourname",
+    location: locationPreview || "Kochi, Kerala, India",
+    country: formData.country || "India",
+    state: formData.state || "Kerala",
+    city: formData.city || "Kochi",
+    countryCode: formData.countryCode || "IN",
+    stateCode: formData.stateCode || "KL",
+    latitude:
+      selectedCity?.latitude ||
+      selectedState?.latitude ||
+      selectedCountry?.latitude ||
+      "9.9312",
+    longitude:
+      selectedCity?.longitude ||
+      selectedState?.longitude ||
+      selectedCountry?.longitude ||
+      "76.2673",
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-navy-950 relative overflow-hidden flex-col justify-between p-12">
         <div className="absolute top-0 right-0 w-96 h-96 bg-gold-500/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-navy-700/50 rounded-full blur-3xl" />
@@ -299,28 +522,27 @@ try {
             connections, and opportunities.
           </p>
 
-          {/* Steps indicator */}
           <div className="space-y-3">
             {[
               { num: 1, label: "Account Setup", done: step > 1 },
               { num: 2, label: "Academic Details", done: false },
-            ].map((s) => (
-              <div key={s.num} className="flex items-center gap-3">
+            ].map((item) => (
+              <div key={item.num} className="flex items-center gap-3">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
-                    s.done
+                    item.done
                       ? "bg-green-500 text-white"
-                      : step === s.num
+                      : step === item.num
                         ? "bg-gold-500 text-navy-950"
                         : "bg-navy-800 text-gray-400"
                   }`}
                 >
-                  {s.done ? <CheckCircle className="h-4 w-4" /> : s.num}
+                  {item.done ? <CheckCircle className="h-4 w-4" /> : item.num}
                 </div>
                 <span
-                  className={`text-sm ${step === s.num ? "text-white font-medium" : "text-gray-400"}`}
+                  className={`text-sm ${step === item.num ? "text-white font-medium" : "text-gray-400"}`}
                 >
-                  {s.label}
+                  {item.label}
                 </span>
               </div>
             ))}
@@ -332,7 +554,6 @@ try {
         </p>
       </div>
 
-      {/* Right panel - Form */}
       <div className="flex-1 flex items-center justify-center px-4 py-12 overflow-y-auto">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
@@ -364,13 +585,12 @@ try {
             <p className="text-gray-500 text-sm">
               {step === 1
                 ? "Step 1 of 2 — Basic information"
-                : "Step 2 of 2 — Tell us about your studies"}
+                : "Step 2 of 2 — Tell us about your studies and location"}
             </p>
           </div>
 
           {step === 1 && (
             <div className="space-y-4">
-              {/* Role */}
               <div>
                 <label className="block text-sm font-medium text-navy-800 mb-2 font-sans">
                   I am a
@@ -396,15 +616,27 @@ try {
                 </div>
               </div>
 
-              <AuthInput
-                label="Full Name"
-                type="text"
-                placeholder="Jane Smith"
-                icon={User}
-                value={formData.fullName}
-                onChange={(e) => update("fullName", e.target.value)}
-                error={errors.fullName}
-              />
+              {formData.role === "student" ? (
+                <AuthInput
+                  label="Roll Number"
+                  type="text"
+                  placeholder="Enter your roll number"
+                  icon={User}
+                  value={formData.rollNumber}
+                  onChange={(e) => update("rollNumber", e.target.value)}
+                  error={errors.rollNumber}
+                />
+              ) : (
+                <AuthInput
+                  label="Full Name"
+                  type="text"
+                  placeholder="Jane Smith"
+                  icon={User}
+                  value={formData.fullName}
+                  onChange={(e) => update("fullName", e.target.value)}
+                  error={errors.fullName}
+                />
+              )}
 
               <AuthInput
                 label="Email Address"
@@ -442,10 +674,10 @@ try {
                 {formData.password && (
                   <div className="mt-1.5 flex items-center gap-2">
                     <div className="flex-1 flex gap-1">
-                      {[1, 2, 3, 4].map((i) => (
+                      {[1, 2, 3, 4].map((index) => (
                         <div
-                          key={i}
-                          className={`h-1.5 flex-1 rounded-full ${i <= strength ? strengthColors[strength] : "bg-gray-200"}`}
+                          key={index}
+                          className={`h-1.5 flex-1 rounded-full ${index <= strength ? strengthColors[strength] : "bg-gray-200"}`}
                         />
                       ))}
                     </div>
@@ -483,6 +715,13 @@ try {
                   {errors.submit}
                 </div>
               )}
+
+              {errors.location && (
+                <div className="bg-amber-50 text-amber-700 px-3 py-2 rounded">
+                  {errors.location}
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
                   Department *
@@ -493,9 +732,9 @@ try {
                   className="input-field cursor-pointer"
                 >
                   <option value="">Select department</option>
-                  {departments.slice(1).map((dept) => (
-                    <option key={dept} value={dept}>
-                      {dept}
+                  {departments.map((department) => (
+                    <option key={department} value={department}>
+                      {department}
                     </option>
                   ))}
                 </select>
@@ -506,28 +745,128 @@ try {
                 )}
               </div>
 
+              {/* NEW: Branch Dropdown */}
+              <div>
+                <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
+                  Branch *
+                </label>
+                <select
+                  value={formData.branch}
+                  onChange={(e) => update("branch", e.target.value)}
+                  className="input-field cursor-pointer"
+                >
+                  <option value="">Select branch</option>
+                  {branchesList.map((branch) => (
+                    <option key={branch} value={branch}>
+                      {branch}
+                    </option>
+                  ))}
+                </select>
+                {errors.branch && (
+                  <p className="mt-1 text-sm text-red-600">{errors.branch}</p>
+                )}
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
                   {formData.role === "student"
                     ? "Expected Graduation Year *"
-                    : "Graduation Year *"}
+                    : "Batch Year *"}
                 </label>
                 <select
-                  value={formData.graduationYear}
-                  onChange={(e) => update("graduationYear", e.target.value)}
+                  value={formData.batchYear}
+                  onChange={(e) => update("batchYear", e.target.value)}
                   className="input-field cursor-pointer"
                 >
                   <option value="">Select year</option>
-                  {graduationYears.map((year) => (
+                  {batchYears.map((year) => (
                     <option key={year} value={year}>
                       {year}
                     </option>
                   ))}
                 </select>
-                {errors.graduationYear && (
+                {errors.batchYear && (
                   <p className="mt-1 text-sm text-red-600">
-                    {errors.graduationYear}
+                    {errors.batchYear}
                   </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
+                  Country *
+                </label>
+                <select
+                  value={formData.countryCode}
+                  onChange={(e) => handleCountryChange(e.target.value)}
+                  className="input-field cursor-pointer"
+                  disabled={locationLoading.countries}
+                >
+                  <option value="">
+                    {locationLoading.countries
+                      ? "Loading countries..."
+                      : "Select country"}
+                  </option>
+                  {countries.map((country) => (
+                    <option key={country.iso2} value={country.iso2}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.country && (
+                  <p className="mt-1 text-sm text-red-600">{errors.country}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
+                  State *
+                </label>
+                <select
+                  value={formData.stateCode}
+                  onChange={(e) => handleStateChange(e.target.value)}
+                  className="input-field cursor-pointer"
+                  disabled={!formData.countryCode || locationLoading.states}
+                >
+                  <option value="">
+                    {locationLoading.states
+                      ? "Loading states..."
+                      : "Select state"}
+                  </option>
+                  {states.map((state) => (
+                    <option key={state.iso2} value={state.iso2}>
+                      {state.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.state && (
+                  <p className="mt-1 text-sm text-red-600">{errors.state}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
+                  City *
+                </label>
+                <select
+                  value={formData.city}
+                  onChange={(e) => handleCityChange(e.target.value)}
+                  className="input-field cursor-pointer"
+                  disabled={!formData.stateCode || locationLoading.cities}
+                >
+                  <option value="">
+                    {locationLoading.cities
+                      ? "Loading cities..."
+                      : "Select city"}
+                  </option>
+                  {cities.map((city) => (
+                    <option key={city.name} value={city.name}>
+                      {city.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.city && (
+                  <p className="mt-1 text-sm text-red-600">{errors.city}</p>
                 )}
               </div>
 
@@ -541,6 +880,24 @@ try {
               />
 
               <AuthInput
+                label="Current Role"
+                type="text"
+                placeholder="Senior Product Designer"
+                icon={Briefcase}
+                value={formData.currentRole}
+                onChange={(e) => update("currentRole", e.target.value)}
+              />
+
+              <AuthInput
+                label="Company"
+                type="text"
+                placeholder="Figma"
+                icon={Building2}
+                value={formData.company}
+                onChange={(e) => update("company", e.target.value)}
+              />
+
+              <AuthInput
                 label="LinkedIn Profile (Optional)"
                 type="url"
                 placeholder="linkedin.com/in/yourname"
@@ -548,6 +905,50 @@ try {
                 value={formData.linkedin}
                 onChange={(e) => update("linkedin", e.target.value)}
               />
+
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <p className="font-semibold">Privacy notice</p>
+                <p className="mt-1">
+                  Your current role, company, and location details are used to
+                  support alumni discovery and future map views. They are not
+                  intended to be shared outside the alumni platform for
+                  unrelated third-party use.
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-navy-50 border border-navy-100 px-3 py-2 text-sm text-navy-700">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  <span className="font-medium">Map location</span>
+                </div>
+                <p className="mt-1 text-navy-600">
+                  {formData.city && formData.state && formData.country
+                    ? `${formData.city}, ${formData.state}, ${formData.country}`
+                    : "Choose country, state, and city to place this user on the alumni map."}
+                </p>
+                <p className="mt-1 text-xs text-navy-500">
+                  Latitude:{" "}
+                  {selectedCity?.latitude ||
+                    selectedState?.latitude ||
+                    selectedCountry?.latitude ||
+                    "pending"}
+                  {" · "}
+                  Longitude:{" "}
+                  {selectedCity?.longitude ||
+                    selectedState?.longitude ||
+                    selectedCountry?.longitude ||
+                    "pending"}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-gray-200 bg-white p-3">
+                <p className="text-xs font-medium text-gray-500 mb-2">
+                  Example payload sent to backend
+                </p>
+                <pre className="overflow-x-auto rounded-lg bg-gray-950 p-3 text-xs text-gray-100">
+                  {JSON.stringify(payloadPreview, null, 2)}
+                </pre>
+              </div>
 
               <div className="flex gap-3">
                 <button
@@ -584,219 +985,5 @@ try {
         </div>
       </div>
     </div>
->>>>>>> Stashed changes
   );
-
-  router.push("/auth/pending");
-} catch (error) {
-  console.error(error);
-  alert("Registration failed. Please try again.");
-} finally {
-  setLoading(false);
-}
-
-
-};
-
-// ================= UI =================
-
-const roles: { value: UserRole; label: string; icon: string }[] = [
-{ value: "alumni", label: "Alumni", icon: "🎓" },
-{ value: "student", label: "Student", icon: "📚" },
-];
-
-return ( <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4"> <div className="w-full max-w-lg bg-white p-8 rounded-xl shadow-md">
-
-```
-    <h2 className="text-2xl font-bold mb-4">
-      {step === 1 ? "Create Account" : "Academic Details"}
-    </h2>
-
-    {/* ================= STEP 1 ================= */}
-    {step === 1 && (
-      <div className="space-y-4">
-
-        {/* ROLE */}
-        <div className="grid grid-cols-2 gap-2">
-          {roles.map((r) => (
-            <button
-              key={r.value}
-              type="button"
-              onClick={() => update("role", r.value)}
-              className={`p-3 border rounded ${
-                formData.role === r.value
-                  ? "border-blue-600 bg-blue-50"
-                  : ""
-              }`}
-            >
-              {r.icon} {r.label}
-            </button>
-          ))}
-        </div>
-
-        {/* NAME / ROLL */}
-        {formData.role === "student" ? (
-          <AuthInput
-            label="Roll Number"
-            value={formData.rollNumber}
-            onChange={(e) =>
-              update("rollNumber", e.target.value)
-            }
-            error={errors.rollNumber}
-            icon={User}
-          />
-        ) : (
-          <AuthInput
-            label="Full Name"
-            value={formData.fullName}
-            onChange={(e) =>
-              update("fullName", e.target.value)
-            }
-            error={errors.fullName}
-            icon={User}
-          />
-        )}
-
-        {/* EMAIL */}
-        <AuthInput
-          label="Email"
-          value={formData.email}
-          onChange={(e) => update("email", e.target.value)}
-          error={errors.email}
-          icon={Mail}
-        />
-
-        {/* PASSWORD */}
-        <AuthInput
-          label="Password"
-          type={showPassword ? "text" : "password"}
-          value={formData.password}
-          onChange={(e) =>
-            update("password", e.target.value)
-          }
-          error={errors.password}
-          icon={Lock}
-          rightElement={
-            <button
-              type="button"
-              onClick={() =>
-                setShowPassword(!showPassword)
-              }
-            >
-              {showPassword ? <EyeOff /> : <Eye />}
-            </button>
-          }
-        />
-
-        {/* CONFIRM */}
-        <AuthInput
-          label="Confirm Password"
-          type="password"
-          value={formData.confirmPassword}
-          onChange={(e) =>
-            update("confirmPassword", e.target.value)
-          }
-          error={errors.confirmPassword}
-          icon={Lock}
-        />
-
-        <button
-          onClick={handleNext}
-          className="w-full bg-blue-600 text-white py-2 rounded"
-        >
-          Continue →
-        </button>
-      </div>
-    )}
-
-    {/* ================= STEP 2 ================= */}
-    {step === 2 && (
-      <form onSubmit={handleSubmit} className="space-y-4">
-
-        {/* DEPT */}
-        <select
-          value={formData.department}
-          onChange={(e) =>
-            update("department", e.target.value)
-          }
-          className="w-full border p-2 rounded"
-        >
-          <option value="">Select Department</option>
-          {departments.map((d) => (
-            <option key={d}>{d}</option>
-          ))}
-        </select>
-
-        {/* BATCH */}
-        <select
-          value={formData.batchYear}
-          onChange={(e) =>
-            update("batchYear", e.target.value)
-          }
-          className="w-full border p-2 rounded"
-        >
-          <option value="">Select Batch Year</option>
-          {batchYears.map((y) => (
-            <option key={y}>{y}</option>
-          ))}
-        </select>
-
-        {/* ALUMNI EXTRA */}
-        {formData.role !== "student" && (
-          <>
-            <AuthInput
-              label="Place"
-              value={formData.place}
-              onChange={(e) =>
-                update("place", e.target.value)
-              }
-              error={errors.place}
-              icon={MapPin}
-            />
-
-            <AuthInput
-              label="Profession"
-              value={formData.profession}
-              onChange={(e) =>
-                update("profession", e.target.value)
-              }
-              icon={Briefcase}
-            />
-
-
-            <AuthInput
-              label="LinkedIn"
-              value={formData.linkedin}
-              onChange={(e) =>
-                update("linkedin", e.target.value)
-              }
-              icon={Linkedin}
-            />
-          </>
-        )}
-
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setStep(1)}
-            className="flex-1 border py-2 rounded"
-          >
-            Back
-          </button>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 bg-green-600 text-white py-2 rounded"
-          >
-            {loading ? "Submitting..." : "Submit"}
-          </button>
-        </div>
-      </form>
-    )}
-  </div>
-</div>
-
-
-);
 }
