@@ -14,6 +14,7 @@ import Footer from "@/components/layout/Footer";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import ReferralRequestModal from "@/components/referrals/ReferralRequestModal";
+import { hasRole, isAlumni } from "@/lib/roleUtils";
 interface Opportunity {
   id: number;
   title: string;
@@ -42,6 +43,36 @@ export default function OpportunitiesPage() {
   );
   // Friendly fetch error state (used when token is missing or auth fails)
   const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // User role check - determine what actions user can perform
+  const [userPermissions, setUserPermissions] = useState({
+    canPostOpportunity: false, // Only alumni
+    canViewReceivedReferrals: false, // Only alumni who post opportunities
+    canRequestReferral: true, // Students AND alumni can request referrals
+  });
+
+  useEffect(() => {
+    const stored = localStorage.getItem("alumni_user");
+    if (stored) {
+      try {
+        const user = JSON.parse(stored);
+        const userRole = user?.roles || user?.role || "";
+        // Only alumni (including batch_admin) can post opportunities and view received referrals
+        const isAlumniUser = isAlumni(userRole);
+        setUserPermissions({
+          canPostOpportunity: isAlumniUser,
+          canViewReceivedReferrals: isAlumniUser,
+          canRequestReferral: true, // Everyone can request referrals
+        });
+      } catch {
+        setUserPermissions({
+          canPostOpportunity: false,
+          canViewReceivedReferrals: false,
+          canRequestReferral: true,
+        });
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const fetchOpportunities = async () => {
@@ -125,26 +156,31 @@ export default function OpportunitiesPage() {
           </div>
 
           <div className="flex gap-3">
-            {/* Link to My Referrals */}
+            {/* My Referrals - visible to everyone (students can track their requests, alumni can see theirs) */}
             <Link href="/referrals/mine">
               <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-navy-200 text-navy-700 text-sm font-medium hover:bg-navy-50 transition-colors">
                 <Users className="h-4 w-4" />
                 My Referrals
               </button>
             </Link>
-            {/* Link to Received Referrals (for alumni who post) */}
-            <Link href="/referrals/received">
-              <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-navy-200 text-navy-700 text-sm font-medium hover:bg-navy-50 transition-colors">
-                <Users className="h-4 w-4" />
-                Referral Requests
-              </button>
-            </Link>
-            <Link href="/opportunities/new">
-              <button className="btn-primary flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Post Opportunity
-              </button>
-            </Link>
+
+            {/* Referral Requests & Post Opportunity - alumni only */}
+            {userPermissions.canPostOpportunity && (
+              <>
+                <Link href="/referrals/received">
+                  <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-navy-200 text-navy-700 text-sm font-medium hover:bg-navy-50 transition-colors">
+                    <Users className="h-4 w-4" />
+                    Referral Requests
+                  </button>
+                </Link>
+                <Link href="/opportunities/new">
+                  <button className="btn-primary flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Post Opportunity
+                  </button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
@@ -213,16 +249,17 @@ export default function OpportunitiesPage() {
                     >
                       Apply Now <ArrowRight className="h-4 w-4" />
                     </a>
-                    {opportunity.allowReferrals && (
-                      <button
-                        onClick={() => setReferralTarget(opportunity)}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-navy-200 text-navy-700 text-sm font-medium hover:bg-navy-50 transition-colors shrink-0"
-                        title="Request a Referral"
-                      >
-                        <Users className="h-4 w-4" />
-                        Refer Me
-                      </button>
-                    )}
+                    {opportunity.allowReferrals &&
+                      userPermissions.canRequestReferral && (
+                        <button
+                          onClick={() => setReferralTarget(opportunity)}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-navy-200 text-navy-700 text-sm font-medium hover:bg-navy-50 transition-colors shrink-0"
+                          title="Request a Referral"
+                        >
+                          <Users className="h-4 w-4" />
+                          Refer Me
+                        </button>
+                      )}
                   </div>
                 </div>
               </article>

@@ -3,22 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Briefcase,
-  Building2,
-  CheckCircle,
-  Eye,
-  EyeOff,
-  GraduationCap,
-  Linkedin,
-  Lock,
-  Mail,
-  MapPin,
-  Phone,
-  User,
-} from "lucide-react";
+import { CheckCircle, GraduationCap } from "lucide-react";
 
 import AuthInput from "@/components/auth/AuthInput";
+import RoleSelector from "@/components/auth/RoleSelector";
+import StudentSignupForm from "@/components/auth/StudentSignupForm";
+import AlumniSignupForm from "@/components/auth/AlumniSignupForm";
+import AcademicDetails from "@/components/auth/AcademicDetails";
+import LocationSelector from "@/components/auth/LocationSelector";
 import { BACKEND_URL } from "@/lib/config";
 import { departments } from "@/lib/mockData";
 import { UserRole } from "@/types";
@@ -28,7 +20,6 @@ const batchYears = Array.from(
   (_, index) => String(1980 + index),
 );
 
-// The 10 specific branches from your database
 const branchesList = [
   "CSA",
   "CSB",
@@ -73,6 +64,47 @@ type LocationCity = {
   longitude?: string | null;
 };
 
+// Base form data interface
+interface BaseFormData {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  role: UserRole;
+  department: string;
+  branch: string;
+  batchYear: string;
+  countryCode: string;
+  country: string;
+  stateCode: string;
+  state: string;
+  city: string;
+}
+
+// Student-specific fields
+interface StudentFields {
+  fullName: string;
+  rollNumber: string;
+  linkedinUrl: string;
+  githubUrl: string;
+  portfolioUrl: string;
+  profileUrl: string;
+  currentSemester: string;
+  cgpa: string;
+  bio: string;
+}
+
+// Alumni-specific fields
+interface AlumniFields {
+  fullName: string;
+  linkedinUrl: string;
+  currentRole: string;
+  company: string;
+  phone: string;
+}
+
+// Combined form data type
+type FormData = BaseFormData & StudentFields & AlumniFields;
+
 export default function SignupPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -88,26 +120,34 @@ export default function SignupPage() {
     cities: false,
   });
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    rollNumber: "",
+  const [formData, setFormData] = useState<FormData>({
+    // Base fields
     email: "",
     password: "",
     confirmPassword: "",
-    role: "alumni" as UserRole,
+    role: "alumni",
     department: "",
-    branch: "", // NEW: Branch field added here
+    branch: "",
     batchYear: "",
-    batch: "",
-    phone: "",
-    linkedin: "",
-    currentRole: "",
-    company: "",
     countryCode: "",
     country: "",
     stateCode: "",
     state: "",
     city: "",
+    // Student fields
+    fullName: "",
+    rollNumber: "",
+    linkedinUrl: "",
+    githubUrl: "",
+    portfolioUrl: "",
+    profileUrl: "",
+    currentSemester: "",
+    cgpa: "",
+    bio: "",
+    // Alumni fields
+    currentRole: "",
+    company: "",
+    phone: "",
   });
 
   const update = (key: string, value: string) => {
@@ -117,16 +157,13 @@ export default function SignupPage() {
     }
   };
 
+  // Load countries on mount
   useEffect(() => {
     const loadCountries = async () => {
       setLocationLoading((prev) => ({ ...prev, countries: true }));
-
       try {
         const res = await fetch("/api/location/countries");
-        if (!res.ok) {
-          throw new Error("Failed to load countries");
-        }
-
+        if (!res.ok) throw new Error("Failed to load countries");
         const data: LocationCountry[] = await res.json();
         setCountries(data);
       } catch (error) {
@@ -139,27 +176,22 @@ export default function SignupPage() {
         setLocationLoading((prev) => ({ ...prev, countries: false }));
       }
     };
-
     loadCountries();
   }, []);
 
+  // Load states when country changes
   useEffect(() => {
     if (!formData.countryCode) {
       setStates([]);
       return;
     }
-
     const loadStates = async () => {
       setLocationLoading((prev) => ({ ...prev, states: true }));
-
       try {
         const res = await fetch(
           `/api/location/states?countryCode=${formData.countryCode}`,
         );
-        if (!res.ok) {
-          throw new Error("Failed to load states");
-        }
-
+        if (!res.ok) throw new Error("Failed to load states");
         const data: LocationState[] = await res.json();
         setStates(data);
       } catch (error) {
@@ -172,27 +204,22 @@ export default function SignupPage() {
         setLocationLoading((prev) => ({ ...prev, states: false }));
       }
     };
-
     loadStates();
   }, [formData.countryCode]);
 
+  // Load cities when state changes
   useEffect(() => {
     if (!formData.countryCode || !formData.stateCode) {
       setCities([]);
       return;
     }
-
     const loadCities = async () => {
       setLocationLoading((prev) => ({ ...prev, cities: true }));
-
       try {
         const res = await fetch(
           `/api/location/cities?countryCode=${formData.countryCode}&stateCode=${formData.stateCode}`,
         );
-        if (!res.ok) {
-          throw new Error("Failed to load cities");
-        }
-
+        if (!res.ok) throw new Error("Failed to load cities");
         const data: LocationCity[] = await res.json();
         setCities(data);
       } catch (error) {
@@ -205,13 +232,11 @@ export default function SignupPage() {
         setLocationLoading((prev) => ({ ...prev, cities: false }));
       }
     };
-
     loadCities();
   }, [formData.countryCode, formData.stateCode]);
 
   const handleCountryChange = (countryCode: string) => {
     const country = countries.find((item) => item.iso2 === countryCode);
-
     setFormData((prev) => ({
       ...prev,
       countryCode,
@@ -233,7 +258,6 @@ export default function SignupPage() {
 
   const handleStateChange = (stateCode: string) => {
     const state = states.find((item) => item.iso2 === stateCode);
-
     setFormData((prev) => ({
       ...prev,
       stateCode,
@@ -249,10 +273,7 @@ export default function SignupPage() {
   };
 
   const handleCityChange = (city: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      city,
-    }));
+    setFormData((prev) => ({ ...prev, city }));
     if (errors.city) {
       setErrors((prev) => ({ ...prev, city: "" }));
     }
@@ -324,7 +345,6 @@ export default function SignupPage() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-
     if (!validateStep2()) return;
 
     setLoading(true);
@@ -352,11 +372,29 @@ export default function SignupPage() {
         batchYear: Number(formData.batchYear),
         batch: formData.batch,
         department: formData.department,
-        branch: formData.branch, // Sending the selected branch to the backend
+        branch: formData.branch,
+        // Student specific
+        rollNumber:
+          formData.role === "student" ? formData.rollNumber : undefined,
+        fullName: formData.role !== "student" ? formData.fullName : undefined,
+        currentSemester:
+          formData.role === "student" ? formData.currentSemester : undefined,
+        cgpa: formData.role === "student" ? formData.cgpa : undefined,
+        bio: formData.role === "student" ? formData.bio : undefined,
+        githubUrl: formData.role === "student" ? formData.githubUrl : undefined,
+        portfolioUrl:
+          formData.role === "student" ? formData.portfolioUrl : undefined,
+        profileUrl:
+          formData.role === "student"
+            ? formData.profileUrl
+            : formData.profileUrl || undefined,
+        // Alumni specific
         phone: formData.phone.trim() || undefined,
-        profession: formData.currentRole.trim() || undefined,
-        company: formData.company.trim() || undefined,
-        linkedinUrl: formData.linkedin.trim() || undefined,
+        currentRole:
+          formData.role === "alumni" ? formData.currentRole : undefined,
+        company: formData.role === "alumni" ? formData.company : undefined,
+        // Common
+        linkedinUrl: formData.linkedinUrl.trim() || undefined,
         location,
         country: formData.country,
         state: formData.state,
@@ -377,9 +415,7 @@ export default function SignupPage() {
 
       const res = await fetch(`${BACKEND_URL}/auth/register`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -401,7 +437,7 @@ export default function SignupPage() {
               batchYear: data.batchYear ?? payload.batchYear,
               status: data.accountStatus || "PENDING",
               location: data.location || payload.location,
-              profession: payload.profession || null,
+              profession: payload.currentRole || null,
               company: payload.company || null,
               country: payload.country,
               state: payload.state,
@@ -425,33 +461,6 @@ export default function SignupPage() {
     }
   };
 
-  const roles: { value: UserRole; label: string; icon: string }[] = [
-    { value: "alumni", label: "Alumni", icon: "🎓" },
-    { value: "student", label: "Student", icon: "📚" },
-    { value: "faculty", label: "Faculty", icon: "👩‍🏫" },
-  ];
-
-  const passwordStrength = () => {
-    const password = formData.password;
-    if (!password) return 0;
-
-    let score = 0;
-    if (password.length >= 8) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[^A-Za-z0-9]/.test(password)) score++;
-    return score;
-  };
-
-  const strengthColors = [
-    "",
-    "bg-red-400",
-    "bg-orange-400",
-    "bg-yellow-400",
-    "bg-green-500",
-  ];
-  const strengthLabels = ["", "Weak", "Fair", "Good", "Strong"];
-  const strength = passwordStrength();
   const selectedCountry = countries.find(
     (country) => country.iso2 === formData.countryCode,
   );
@@ -459,45 +468,10 @@ export default function SignupPage() {
     (state) => state.iso2 === formData.stateCode,
   );
   const selectedCity = cities.find((city) => city.name === formData.city);
-  const locationPreview = [formData.city, formData.state, formData.country]
-    .filter(Boolean)
-    .join(", ");
-
-  const payloadPreview = {
-    name:
-      formData.role === "student"
-        ? formData.rollNumber || "STUDENT_ROLL_NO"
-        : formData.fullName || "Jane Smith",
-    email: formData.email || "jane@email.com",
-    password: "********",
-    role: formData.role.toUpperCase(),
-    batchYear: formData.batchYear ? Number(formData.batchYear) : 2024,
-    department: formData.department || "CSE",
-    branch: formData.branch || "CSA", // Shows up in the preview window
-    phone: formData.phone || "+91 9876543210",
-    profession: formData.currentRole || "Software Engineer",
-    company: formData.company || "Google",
-    linkedinUrl: formData.linkedin || "https://linkedin.com/in/yourname",
-    location: locationPreview || "Kochi, Kerala, India",
-    country: formData.country || "India",
-    state: formData.state || "Kerala",
-    city: formData.city || "Kochi",
-    countryCode: formData.countryCode || "IN",
-    stateCode: formData.stateCode || "KL",
-    latitude:
-      selectedCity?.latitude ||
-      selectedState?.latitude ||
-      selectedCountry?.latitude ||
-      "9.9312",
-    longitude:
-      selectedCity?.longitude ||
-      selectedState?.longitude ||
-      selectedCountry?.longitude ||
-      "76.2673",
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* Left Panel - Desktop */}
       <div className="hidden lg:flex lg:w-1/2 bg-navy-950 relative overflow-hidden flex-col justify-between p-12">
         <div className="absolute top-0 right-0 w-96 h-96 bg-gold-500/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-navy-700/50 rounded-full blur-3xl" />
@@ -540,7 +514,11 @@ export default function SignupPage() {
                   {item.done ? <CheckCircle className="h-4 w-4" /> : item.num}
                 </div>
                 <span
-                  className={`text-sm ${step === item.num ? "text-white font-medium" : "text-gray-400"}`}
+                  className={`text-sm ${
+                    step === item.num
+                      ? "text-white font-medium"
+                      : "text-gray-400"
+                  }`}
                 >
                   {item.label}
                 </span>
@@ -554,8 +532,10 @@ export default function SignupPage() {
         </p>
       </div>
 
+      {/* Right Panel - Form */}
       <div className="flex-1 flex items-center justify-center px-4 py-12 overflow-y-auto">
         <div className="w-full max-w-md">
+          {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <div className="bg-navy-800 p-1.5 rounded-lg">
               <GraduationCap className="h-5 w-5 text-gold-500" />
@@ -565,16 +545,25 @@ export default function SignupPage() {
             </span>
           </div>
 
+          {/* Progress Indicator */}
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-2">
               <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${step === 1 ? "bg-navy-800 text-white" : "bg-green-500 text-white"}`}
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                  step === 1
+                    ? "bg-navy-800 text-white"
+                    : "bg-green-500 text-white"
+                }`}
               >
                 {step === 1 ? "1" : "✓"}
               </div>
               <div className="h-0.5 w-8 bg-gray-200" />
               <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${step === 2 ? "bg-navy-800 text-white" : "bg-gray-200 text-gray-400"}`}
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                  step === 2
+                    ? "bg-navy-800 text-white"
+                    : "bg-gray-200 text-gray-400"
+                }`}
               >
                 2
               </div>
@@ -589,114 +578,53 @@ export default function SignupPage() {
             </p>
           </div>
 
+          {/* Step 1: Basic Info */}
           {step === 1 && (
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-navy-800 mb-2 font-sans">
-                  I am a
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {roles.map((role) => (
-                    <button
-                      key={role.value}
-                      type="button"
-                      onClick={() => update("role", role.value)}
-                      className={`p-3 rounded-lg border-2 text-center transition-all ${
-                        formData.role === role.value
-                          ? "border-navy-800 bg-navy-50"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      <div className="text-xl mb-0.5">{role.icon}</div>
-                      <div className="text-xs font-semibold text-navy-900">
-                        {role.label}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <RoleSelector
+                selectedRole={formData.role}
+                onSelectRole={(role) => update("role", role)}
+              />
 
               {formData.role === "student" ? (
-                <AuthInput
-                  label="Roll Number"
-                  type="text"
-                  placeholder="Enter your roll number"
-                  icon={User}
-                  value={formData.rollNumber}
-                  onChange={(e) => update("rollNumber", e.target.value)}
-                  error={errors.rollNumber}
+                <StudentSignupForm
+                  formData={{
+                    fullName: formData.fullName,
+                    rollNumber: formData.rollNumber,
+                    email: formData.email,
+                    password: formData.password,
+                    confirmPassword: formData.confirmPassword,
+                    linkedinUrl: formData.linkedinUrl,
+                    githubUrl: formData.githubUrl,
+                    portfolioUrl: formData.portfolioUrl,
+                    profileUrl: formData.profileUrl,
+                    currentSemester: formData.currentSemester,
+                    cgpa: formData.cgpa,
+                    bio: formData.bio,
+                  }}
+                  onChange={update}
+                  errors={errors}
+                  showPassword={showPassword}
+                  onTogglePassword={() => setShowPassword(!showPassword)}
                 />
               ) : (
-                <AuthInput
-                  label="Full Name"
-                  type="text"
-                  placeholder="Jane Smith"
-                  icon={User}
-                  value={formData.fullName}
-                  onChange={(e) => update("fullName", e.target.value)}
-                  error={errors.fullName}
+                <AlumniSignupForm
+                  formData={{
+                    fullName: formData.fullName,
+                    email: formData.email,
+                    password: formData.password,
+                    confirmPassword: formData.confirmPassword,
+                    linkedinUrl: formData.linkedinUrl,
+                    currentRole: formData.currentRole,
+                    company: formData.company,
+                    phone: formData.phone,
+                  }}
+                  onChange={update}
+                  errors={errors}
+                  showPassword={showPassword}
+                  onTogglePassword={() => setShowPassword(!showPassword)}
                 />
               )}
-
-              <AuthInput
-                label="Email Address"
-                type="email"
-                placeholder="jane@email.com"
-                icon={Mail}
-                value={formData.email}
-                onChange={(e) => update("email", e.target.value)}
-                error={errors.email}
-              />
-
-              <div>
-                <AuthInput
-                  label="Password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Min 8 characters"
-                  icon={Lock}
-                  value={formData.password}
-                  onChange={(e) => update("password", e.target.value)}
-                  error={errors.password}
-                  rightElement={
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  }
-                />
-                {formData.password && (
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <div className="flex-1 flex gap-1">
-                      {[1, 2, 3, 4].map((index) => (
-                        <div
-                          key={index}
-                          className={`h-1.5 flex-1 rounded-full ${index <= strength ? strengthColors[strength] : "bg-gray-200"}`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {strengthLabels[strength]}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <AuthInput
-                label="Confirm Password"
-                type="password"
-                placeholder="Repeat password"
-                icon={Lock}
-                value={formData.confirmPassword}
-                onChange={(e) => update("confirmPassword", e.target.value)}
-                error={errors.confirmPassword}
-              />
 
               <button
                 type="button"
@@ -708,278 +636,70 @@ export default function SignupPage() {
             </div>
           )}
 
+          {/* Step 2: Academic & Location */}
           {step === 2 && (
             <form onSubmit={handleSubmit} className="space-y-4">
               {errors.submit && (
-                <div className="bg-red-100 text-red-700 px-3 py-2 rounded mb-2">
+                <div className="bg-red-100 text-red-700 px-3 py-2 rounded text-sm">
                   {errors.submit}
                 </div>
               )}
 
-              {errors.location && (
-                <div className="bg-amber-50 text-amber-700 px-3 py-2 rounded">
-                  {errors.location}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
-                  Department *
-                </label>
-                <select
-                  value={formData.department}
-                  onChange={(e) => update("department", e.target.value)}
-                  className="input-field cursor-pointer"
-                >
-                  <option value="">Select department</option>
-                  {departments.map((department) => (
-                    <option key={department} value={department}>
-                      {department}
-                    </option>
-                  ))}
-                </select>
-                {errors.department && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.department}
-                  </p>
-                )}
-              </div>
-
-              {/* NEW: Branch Dropdown */}
-              <div>
-                <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
-                  Branch *
-                </label>
-                <select
-                  value={formData.branch}
-                  onChange={(e) => update("branch", e.target.value)}
-                  className="input-field cursor-pointer"
-                >
-                  <option value="">Select branch</option>
-                  {branchesList.map((branch) => (
-                    <option key={branch} value={branch}>
-                      {branch}
-                    </option>
-                  ))}
-                </select>
-                {errors.branch && (
-                  <p className="mt-1 text-sm text-red-600">{errors.branch}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
-                  {formData.role === "student"
-                    ? "Expected Graduation Year *"
-                    : "Batch Year *"}
-                </label>
-                <select
-                  value={formData.batchYear}
-                  onChange={(e) => update("batchYear", e.target.value)}
-                  className="input-field cursor-pointer"
-                >
-                  <option value="">Select year</option>
-                  {batchYears.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-                {errors.batchYear && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.batchYear}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
-                  Country *
-                </label>
-                <select
-                  value={formData.countryCode}
-                  onChange={(e) => handleCountryChange(e.target.value)}
-                  className="input-field cursor-pointer"
-                  disabled={locationLoading.countries}
-                >
-                  <option value="">
-                    {locationLoading.countries
-                      ? "Loading countries..."
-                      : "Select country"}
-                  </option>
-                  {countries.map((country) => (
-                    <option key={country.iso2} value={country.iso2}>
-                      {country.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.country && (
-                  <p className="mt-1 text-sm text-red-600">{errors.country}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
-                  State *
-                </label>
-                <select
-                  value={formData.stateCode}
-                  onChange={(e) => handleStateChange(e.target.value)}
-                  className="input-field cursor-pointer"
-                  disabled={!formData.countryCode || locationLoading.states}
-                >
-                  <option value="">
-                    {locationLoading.states
-                      ? "Loading states..."
-                      : "Select state"}
-                  </option>
-                  {states.map((state) => (
-                    <option key={state.iso2} value={state.iso2}>
-                      {state.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.state && (
-                  <p className="mt-1 text-sm text-red-600">{errors.state}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
-                  City *
-                </label>
-                <select
-                  value={formData.city}
-                  onChange={(e) => handleCityChange(e.target.value)}
-                  className="input-field cursor-pointer"
-                  disabled={!formData.stateCode || locationLoading.cities}
-                >
-                  <option value="">
-                    {locationLoading.cities
-                      ? "Loading cities..."
-                      : "Select city"}
-                  </option>
-                  {cities.map((city) => (
-                    <option key={city.name} value={city.name}>
-                      {city.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.city && (
-                  <p className="mt-1 text-sm text-red-600">{errors.city}</p>
-                )}
-              </div>
-
-              <AuthInput
-                label="Phone Number"
-                type="tel"
-                placeholder="+1 (234) 567-890"
-                icon={Phone}
-                value={formData.phone}
-                onChange={(e) => update("phone", e.target.value)}
+              <AcademicDetails
+                role={formData.role}
+                departments={departments}
+                branches={branchesList}
+                batchYears={batchYears}
+                selectedDepartment={formData.department}
+                selectedBranch={formData.branch}
+                selectedBatchYear={formData.batchYear}
+                errors={errors}
+                onDepartmentChange={(v) => update("department", v)}
+                onBranchChange={(v) => update("branch", v)}
+                onBatchYearChange={(v) => update("batchYear", v)}
               />
 
-              <AuthInput
-                label="Current Role"
-                type="text"
-                placeholder="Senior Product Designer"
-                icon={Briefcase}
-                value={formData.currentRole}
-                onChange={(e) => update("currentRole", e.target.value)}
+              <LocationSelector
+                countries={countries}
+                states={states}
+                cities={cities}
+                selectedCountryCode={formData.countryCode}
+                selectedStateCode={formData.stateCode}
+                selectedCity={formData.city}
+                loading={locationLoading}
+                errors={errors}
+                onCountryChange={handleCountryChange}
+                onStateChange={handleStateChange}
+                onCityChange={handleCityChange}
               />
 
-              <AuthInput
-                label="Company"
-                type="text"
-                placeholder="Figma"
-                icon={Building2}
-                value={formData.company}
-                onChange={(e) => update("company", e.target.value)}
-              />
-
-              <AuthInput
-                label="LinkedIn Profile (Optional)"
-                type="url"
-                placeholder="linkedin.com/in/yourname"
-                icon={Linkedin}
-                value={formData.linkedin}
-                onChange={(e) => update("linkedin", e.target.value)}
-              />
-
-              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                <p className="font-semibold">Privacy notice</p>
-                <p className="mt-1">
-                  Your current role, company, and location details are used to
-                  support alumni discovery and future map views. They are not
-                  intended to be shared outside the alumni platform for
-                  unrelated third-party use.
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-navy-50 border border-navy-100 px-3 py-2 text-sm text-navy-700">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  <span className="font-medium">Map location</span>
-                </div>
-                <p className="mt-1 text-navy-600">
-                  {formData.city && formData.state && formData.country
-                    ? `${formData.city}, ${formData.state}, ${formData.country}`
-                    : "Choose country, state, and city to place this user on the alumni map."}
-                </p>
-                <p className="mt-1 text-xs text-navy-500">
-                  Latitude:{" "}
-                  {selectedCity?.latitude ||
-                    selectedState?.latitude ||
-                    selectedCountry?.latitude ||
-                    "pending"}
-                  {" · "}
-                  Longitude:{" "}
-                  {selectedCity?.longitude ||
-                    selectedState?.longitude ||
-                    selectedCountry?.longitude ||
-                    "pending"}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-gray-200 bg-white p-3">
-                <p className="text-xs font-medium text-gray-500 mb-2">
-                  Example payload sent to backend
-                </p>
-                <pre className="overflow-x-auto rounded-lg bg-gray-950 p-3 text-xs text-gray-100">
-                  {JSON.stringify(payloadPreview, null, 2)}
-                </pre>
-              </div>
-
-              <div className="flex gap-3">
+              <div className="flex gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="flex-1 border-2 border-navy-800 text-navy-800 font-semibold py-3 rounded-lg hover:bg-navy-50 transition-colors"
+                  className="flex-1 py-2.5 px-4 border-2 border-navy-800 text-navy-800 font-semibold rounded-lg hover:bg-navy-50 transition-colors"
                 >
                   ← Back
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-2 btn-gold flex-1 flex items-center justify-center gap-2 disabled:opacity-60"
+                  className="flex-1 btn-primary disabled:opacity-50"
                 >
-                  {loading ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    "Create Account"
-                  )}
+                  {loading ? "Creating Account..." : "Create Account"}
                 </button>
               </div>
             </form>
           )}
 
-          <p className="mt-6 text-center text-sm text-gray-500 font-sans">
-            Already a member?{" "}
+          {/* Footer */}
+          <p className="text-center text-sm text-gray-500 mt-8">
+            Already have an account?{" "}
             <Link
               href="/auth/login"
-              className="text-gold-600 hover:text-gold-700 font-semibold"
+              className="text-navy-800 font-semibold hover:underline"
             >
-              Sign In
+              Sign in
             </Link>
           </p>
         </div>

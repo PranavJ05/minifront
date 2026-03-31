@@ -23,9 +23,10 @@ import {
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import SkillsSection from "@/components/profile/SkillsSection";
 import AddSkillModal from "@/components/profile/AddSkillModal";
+import StudentProfile from "@/components/profile/StudentProfile";
 import { getAlumniSkillsSummary, getCourses } from "@/lib/api";
 import { UserRole, AlumniSkillSummary } from "@/types";
-import { hasRole } from "@/lib/roleUtils";
+import { hasRole, isStudent } from "@/lib/roleUtils";
 
 const API_BASE = "http://localhost:8080";
 const LOG = (...args: unknown[]) => console.log("[ProfilePage]", ...args);
@@ -134,6 +135,36 @@ const syncStoredUserName = (name: string) => {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [roleChecked, setRoleChecked] = useState(false);
+
+  // Check role on mount and render appropriate component
+  useEffect(() => {
+    const storedUser = localStorage.getItem("alumni_user");
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        const roles = parsed?.roles || parsed?.role || "";
+        setUserRole(roles);
+      } catch {
+        setUserRole(null);
+      }
+    }
+    setRoleChecked(true);
+  }, []);
+
+  // If user is a student, render StudentProfile component
+  if (roleChecked && isStudent(userRole)) {
+    return <StudentProfile />;
+  }
+
+  // Otherwise, render the alumni profile (existing code)
+  return <AlumniProfileContent />;
+}
+
+// Alumni Profile Content (extracted from original component)
+function AlumniProfileContent() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 

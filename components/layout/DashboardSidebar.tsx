@@ -17,7 +17,7 @@ import { UserRole } from "@/types";
 
 interface SidebarProps {
   role: UserRole;
-  userName: string;
+  userName: string | null;
   userEmail: string;
 }
 
@@ -103,11 +103,11 @@ export default function DashboardSidebar({
       <div className="p-5 border-b border-navy-800">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gold-500 rounded-full flex items-center justify-center font-bold text-navy-950 text-sm flex-shrink-0">
-            {userName.charAt(0).toUpperCase()}
+            {userName ? userName.charAt(0).toUpperCase() : "U"}
           </div>
           <div className="overflow-hidden">
             <p className="text-white font-semibold text-sm truncate">
-              {userName}
+              {userName || "User"}
             </p>
             <p className="text-gray-400 text-xs truncate">{userEmail}</p>
           </div>
