@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ExternalLink,
   GraduationCap,
@@ -17,6 +18,7 @@ import {
   Briefcase,
   AlertCircle,
   Users,
+  ChevronRight,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -56,6 +58,7 @@ export default function AlumniDirectoryMap() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<AlumniMapPin | null>(null);
+  const [clusterList, setClusterList] = useState<AlumniMapPin[] | null>(null); // NEW: State for cluster hover panel
   const [mapReady, setMapReady] = useState(false);
 
   // ── Fetch pins from backend ─────────────────────────────────────────────
@@ -92,15 +95,12 @@ export default function AlumniDirectoryMap() {
     let cancelled = false;
 
     // Dynamic import keeps Leaflet out of the SSR bundle
-    // Must load leaflet FIRST, then markercluster (which depends on global L)
     import("leaflet")
       .then((L) => {
         if (cancelled) return;
 
-        // Set L globally for markercluster
         (window as any).L = L;
 
-        // Fix broken default icon paths in Next.js
         delete (L.Icon.Default.prototype as any)._getIconUrl;
         L.Icon.Default.mergeOptions({
           iconRetinaUrl:
@@ -111,7 +111,6 @@ export default function AlumniDirectoryMap() {
             "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
         });
 
-        // Now load markercluster (depends on global L, modifies it)
         return import("leaflet.markercluster");
       })
       .then(() => {
@@ -121,26 +120,42 @@ export default function AlumniDirectoryMap() {
 
         const L = (window as any).L;
 
-        // Create map
         const map = L.map(mapContainer.current!, {
           center: MAP_CENTER,
           zoom: MAP_ZOOM,
           zoomControl: true,
         });
 
-        // Tile layer — OpenStreetMap (free, no API key)
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution:
             '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
           maxZoom: 18,
         }).addTo(map);
 
-        // Marker cluster group - use global L
         const cluster = L.markerClusterGroup({
           chunkedLoading: true,
           maxClusterRadius: 60,
           spiderfyOnMaxZoom: true,
           showCoverageOnHover: false,
+        });
+
+        // NEW: Listen for hover events on the clusters!
+        cluster.on("clustermouseover", (a: any) => {
+          // Extract all child markers inside this specific cluster
+          const markers = a.layer.getAllChildMarkers();
+
+          // Map them back to the original AlumniMapPin data we attached earlier
+          const alumniInCluster = markers.map((m: any) => m.alumniData);
+
+          // Show the side panel, and hide the single-pin panel if it's open
+          setClusterList(alumniInCluster);
+          setSelected(null);
+        });
+
+        // Click anywhere on the map background to clear panels
+        map.on("click", () => {
+          setSelected(null);
+          setClusterList(null);
         });
 
         map.addLayer(cluster);
@@ -188,16 +203,19 @@ export default function AlumniDirectoryMap() {
     pins.forEach((pin) => {
       const marker = L.marker([pin.latitude, pin.longitude]);
 
-      // Bind a minimal tooltip (shown on hover)
+      // 🌟 MAGIC SAUCE: Attach the raw data to the Leaflet marker object
+      // This allows the cluster group to read it back out on hover!
+      (marker as any).alumniData = pin;
+
       marker.bindTooltip(
         `<strong>${pin.name}</strong><br>${pin.displayLocation ?? ""}`,
         { direction: "top", offset: [0, -10] },
       );
 
-      // On click: show the side panel
       marker.on("click", () => {
         LOG("Marker clicked:", pin.alumniId, pin.name);
         setSelected(pin);
+        setClusterList(null); // Hide cluster panel if open
       });
 
       cluster.addLayer(marker);
@@ -215,7 +233,7 @@ export default function AlumniDirectoryMap() {
         style={{ minHeight: 600 }}
       />
 
-      {/* ── Loading overlay ── */}
+      {/* ── Loading & Error overlays (unchanged) ── */}
       {loading && (
         <div className="absolute inset-0 z-[500] flex items-center justify-center bg-white/70 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-3">
@@ -227,7 +245,6 @@ export default function AlumniDirectoryMap() {
         </div>
       )}
 
-      {/* ── Error overlay ── */}
       {error && !loading && (
         <div className="absolute inset-0 z-[500] flex items-center justify-center bg-white/80 backdrop-blur-sm">
           <div className="bg-white rounded-2xl border border-red-200 p-6 max-w-sm w-full shadow-lg mx-4">
@@ -275,7 +292,81 @@ export default function AlumniDirectoryMap() {
         <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
       </button>
 
-      {/* ── Selected alumni card (bottom panel) ── */}
+      {/* ── NEW: Cluster Hover Panel (Right Side Slide-out) ── */}
+      <div
+        className={`
+          absolute top-0 right-0 bottom-0 z-[450] w-80 bg-white shadow-[-4px_0_25px_rgba(0,0,0,0.1)]
+          transition-transform duration-300 ease-in-out flex flex-col border-l border-gray-200
+          ${clusterList && clusterList.length > 0 ? "translate-x-0" : "translate-x-full"}
+        `}
+      >
+        {/* Header */}
+        <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-navy-50">
+          <div>
+            <h3 className="font-bold text-navy-900 text-lg">
+              {clusterList?.length} Alumni
+            </h3>
+            <p className="text-xs text-navy-600 mt-0.5">In this area</p>
+          </div>
+          <button
+            onClick={() => setClusterList(null)}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-navy-900 hover:bg-white transition-colors shadow-sm border border-transparent hover:border-gray-200"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Scrollable List */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50/50">
+          {clusterList?.map((alumni, index) => (
+            <div
+              key={`${alumni.alumniId}-${index}`}
+              className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow group"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-[#f0f4ff] border border-[#1a2744]/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {alumni.profileImageUrl ? (
+                    <img
+                      src={alumni.profileImageUrl}
+                      alt={alumni.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-[#1a2744] font-bold text-sm">
+                      {alumni.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-[#1a2744] text-sm truncate">
+                    {alumni.name}
+                  </p>
+                  {alumni.profession && (
+                    <p className="text-xs text-gray-500 truncate">
+                      {alumni.profession}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-gray-50 pt-3 mt-1">
+                <span className="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-md truncate max-w-[130px]">
+                  {alumni.department || "Alumni"}
+                </span>
+
+                <Link
+                  href={`/alumni/${alumni.alumniId}`}
+                  className="inline-flex items-center text-xs font-semibold text-gold-600 hover:text-gold-700 group-hover:underline"
+                >
+                  View Profile <ChevronRight className="h-3 w-3 ml-0.5" />
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Selected Single Alumni card (bottom panel) ── */}
       {selected && (
         <div
           className="
@@ -312,7 +403,7 @@ export default function AlumniDirectoryMap() {
               </p>
             )}
 
-            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 mb-3">
               {selected.department && (
                 <span className="text-xs text-gray-500 flex items-center gap-1">
                   <GraduationCap className="h-3 w-3" />
@@ -328,16 +419,25 @@ export default function AlumniDirectoryMap() {
               )}
             </div>
 
-            {selected.linkedinUrl && (
-              <a
-                href={selected.linkedinUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center gap-1 text-xs text-[#1a2744] font-semibold hover:text-[#c8a84b] transition-colors"
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/alumni/${selected.alumniId}`}
+                className="inline-flex items-center gap-1 text-xs text-white bg-[#1a2744] px-3 py-1.5 rounded-lg font-semibold hover:bg-[#243460] transition-colors"
               >
-                <ExternalLink className="h-3 w-3" /> LinkedIn
-              </a>
-            )}
+                View Profile <ChevronRight className="h-3 w-3" />
+              </Link>
+
+              {selected.linkedinUrl && (
+                <a
+                  href={selected.linkedinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-gray-500 font-semibold hover:text-[#0077b5] transition-colors"
+                >
+                  <ExternalLink className="h-3 w-3" /> LinkedIn
+                </a>
+              )}
+            </div>
           </div>
 
           {/* Close */}

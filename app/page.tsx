@@ -1,18 +1,26 @@
-'use client';
+"use client";
 
-// app/page.tsx
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import Image from 'next/image';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import {
-  GraduationCap, Users, Briefcase, BookOpen,
-  ArrowRight, Shield, Star, ChevronRight, Quote, Lock
-} from 'lucide-react';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
-import { mockAlumni, stats } from '@/lib/mockData';
-import { getDashboardPath } from '@/lib/utils';
+  GraduationCap,
+  Users,
+  Briefcase,
+  BookOpen,
+  ArrowRight,
+  Shield,
+  Star,
+  ChevronRight,
+  Quote,
+  Lock,
+} from "lucide-react";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
+import { mockAlumni, stats } from "@/lib/mockData";
+// ✅ Import your robust role utilities
+import { isAdmin, isAlumni, isFaculty, isStudent } from "@/lib/roleUtils";
 
 /**
  * LandingPage component
@@ -26,8 +34,8 @@ export default function LandingPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('alumni_user');
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("alumni_user");
 
     if (!token || !storedUser) {
       setIsCheckingAuth(false);
@@ -36,17 +44,30 @@ export default function LandingPage() {
 
     try {
       const user = JSON.parse(storedUser);
-      const rawRole = typeof user?.role === 'string' ? user.role.toLowerCase() : '';
-      const normalizedRole = rawRole === 'batch_admin' ? 'alumni' : rawRole;
-      const dashboardPath = getDashboardPath(normalizedRole);
+      // Support both new array format (roles) and fallback old string format (role)
+      const userRoles = user?.roles || user?.role;
 
-      if (dashboardPath !== '/') {
+      let dashboardPath = "/";
+
+      // ✅ Use roleUtils to determine the correct dashboard routing
+      if (isAdmin(userRoles) || isAlumni(userRoles)) {
+        dashboardPath = "/dashboard/alumni";
+      } else if (isFaculty(userRoles)) {
+        dashboardPath = "/dashboard/faculty";
+      } else if (isStudent(userRoles)) {
+        dashboardPath = "/dashboard/student";
+      }
+
+      // If a valid dashboard path is found, redirect immediately
+      if (dashboardPath !== "/") {
         router.replace(dashboardPath);
-        return;
+        return; // Return early so we don't flash the landing page UI
       }
     } catch (error) {
-      console.error('Failed to parse stored user:', error);
-      localStorage.removeItem('alumni_user');
+      console.error("Failed to parse stored user:", error);
+      // Clean up corrupted storage
+      localStorage.removeItem("alumni_user");
+      localStorage.removeItem("token");
     }
 
     setIsCheckingAuth(false);
@@ -81,21 +102,26 @@ export default function LandingPage() {
             </div>
 
             <h1 className="font-serif text-5xl lg:text-6xl font-bold leading-[1.1] mb-6">
-              Your Journey<br />
-              Doesn't End at<br />
+              Your Journey
+              <br />
+              Doesn't End at
+              <br />
               <span className="gradient-text">Graduation.</span>
             </h1>
 
             <p className="text-gray-300 text-lg leading-relaxed mb-4 max-w-lg">
-              Thousands of graduates are already growing careers, mentoring
-              the next generation, and giving back all through one platform.
+              Thousands of graduates are already growing careers, mentoring the
+              next generation, and giving back all through one platform.
             </p>
             <p className="text-gold-400 font-medium mb-10 max-w-lg">
               Your network is waiting. Are you in?
             </p>
 
             <div className="flex flex-wrap gap-4">
-              <Link href="/auth/signup" className="btn-gold flex items-center gap-2 text-base px-8 py-4">
+              <Link
+                href="/auth/signup"
+                className="btn-gold flex items-center gap-2 text-base px-8 py-4"
+              >
                 Join the Network
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -110,13 +136,15 @@ export default function LandingPage() {
 
             <div className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-6 pt-10 border-t border-white/10">
               {[
-                { label: 'Alumni', value: stats.alumni },
-                { label: 'Jobs Posted', value: stats.jobs },
-                { label: 'Events/Year', value: stats.events },
-                { label: 'Mentors', value: stats.mentors },
+                { label: "Alumni", value: stats.alumni },
+                { label: "Jobs Posted", value: stats.jobs },
+                { label: "Events/Year", value: stats.events },
+                { label: "Mentors", value: stats.mentors },
               ].map(({ label, value }) => (
                 <div key={label}>
-                  <div className="text-2xl font-bold text-gold-400 font-serif">{value}</div>
+                  <div className="text-2xl font-bold text-gold-400 font-serif">
+                    {value}
+                  </div>
                   <div className="text-gray-400 text-sm mt-0.5">{label}</div>
                 </div>
               ))}
@@ -128,7 +156,7 @@ export default function LandingPage() {
             {mockAlumni.slice(0, 4).map((alumni, i) => (
               <div
                 key={alumni.id}
-                className={`bg-navy-800/70 backdrop-blur rounded-xl p-4 border border-navy-700/40 ${i % 2 === 1 ? 'translate-y-5' : ''}`}
+                className={`bg-navy-800/70 backdrop-blur rounded-xl p-4 border border-navy-700/40 ${i % 2 === 1 ? "translate-y-5" : ""}`}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <Image
@@ -139,8 +167,12 @@ export default function LandingPage() {
                     className="rounded-full object-cover ring-2 ring-gold-500/40"
                   />
                   <div>
-                    <p className="text-white text-xs font-semibold">{alumni.fullName.split(' ')[0]}</p>
-                    <p className="text-gray-400 text-xs">{alumni.currentCompany}</p>
+                    <p className="text-white text-xs font-semibold">
+                      {alumni.fullName.split(" ")[0]}
+                    </p>
+                    <p className="text-gray-400 text-xs">
+                      {alumni.currentCompany}
+                    </p>
                   </div>
                 </div>
                 <p className="text-gray-300 text-xs">{alumni.currentRole}</p>
@@ -160,7 +192,11 @@ export default function LandingPage() {
             <p className="text-gold-600 font-semibold text-sm uppercase tracking-widest mb-3">
               Why Alumni Log In Every Day
             </p>
-            <h2 className="section-title mb-4">Everything You Need,<br />In One Place</h2>
+            <h2 className="section-title mb-4">
+              Everything You Need,
+              <br />
+              In One Place
+            </h2>
             <p className="text-gray-500 max-w-xl mx-auto leading-relaxed">
               Behind the login, a world of exclusive opportunities, connections,
               and resources built specifically for our graduates.
@@ -171,32 +207,41 @@ export default function LandingPage() {
             {[
               {
                 icon: Users,
-                title: 'Global Alumni Directory',
-                desc: 'Search and connect with 35,000+ verified graduates across every industry, country, and graduating class.',
-                color: 'bg-blue-50 text-blue-600',
-                cta: 'Browse Profiles',
+                title: "Global Alumni Directory",
+                desc: "Search and connect with 35,000+ verified graduates across every industry, country, and graduating class.",
+                color: "bg-blue-50 text-blue-600",
+                cta: "Browse Profiles",
               },
               {
                 icon: Briefcase,
-                title: 'Exclusive Opportunities',
-                desc: 'Jobs, internships, and freelance gigs posted directly by alumni-led companies and top recruiters not available anywhere else.',
-                color: 'bg-green-50 text-green-600',
-                cta: 'Explore Jobs',
+                title: "Exclusive Opportunities",
+                desc: "Jobs, internships, and freelance gigs posted directly by alumni-led companies and top recruiters not available anywhere else.",
+                color: "bg-green-50 text-green-600",
+                cta: "Explore Jobs",
               },
               {
                 icon: BookOpen,
-                title: 'Mentorship Hub',
+                title: "Mentorship Hub",
                 desc: "Get 1-on-1 guidance from senior alumni in your field. Whether you're job hunting or scaling a startup, someone's been there.",
-                color: 'bg-purple-50 text-purple-600',
-                cta: 'Find a Mentor',
+                color: "bg-purple-50 text-purple-600",
+                cta: "Find a Mentor",
               },
             ].map((item) => (
-              <div key={item.title} className="card p-8 group hover:-translate-y-1 transition-all duration-300">
-                <div className={`w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center mb-6`}>
+              <div
+                key={item.title}
+                className="card p-8 group hover:-translate-y-1 transition-all duration-300"
+              >
+                <div
+                  className={`w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center mb-6`}
+                >
                   <item.icon className="h-7 w-7" />
                 </div>
-                <h3 className="font-bold text-navy-900 text-xl mb-3 font-serif">{item.title}</h3>
-                <p className="text-gray-500 leading-relaxed mb-5 text-sm">{item.desc}</p>
+                <h3 className="font-bold text-navy-900 text-xl mb-3 font-serif">
+                  {item.title}
+                </h3>
+                <p className="text-gray-500 leading-relaxed mb-5 text-sm">
+                  {item.desc}
+                </p>
                 <div className="flex items-center text-gold-600 font-semibold text-sm gap-1 group-hover:gap-2 transition-all">
                   {item.cta} <ChevronRight className="h-4 w-4" />
                 </div>
@@ -213,21 +258,33 @@ export default function LandingPage() {
             <p className="text-gold-600 font-semibold text-sm uppercase tracking-widest mb-3">
               Hear It From Them
             </p>
-            <h2 className="section-title">Alumni Who Came Back<br />Never Looked Back</h2>
+            <h2 className="section-title">
+              Alumni Who Came Back
+              <br />
+              Never Looked Back
+            </h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
             {mockAlumni.slice(0, 3).map((alumni) => (
-              <div key={alumni.id} className="card p-7 hover:-translate-y-1 transition-all duration-300">
+              <div
+                key={alumni.id}
+                className="card p-7 hover:-translate-y-1 transition-all duration-300"
+              >
                 <div className="flex items-center gap-1 mb-5">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-gold-400 text-gold-400" />
+                    <Star
+                      key={i}
+                      className="h-4 w-4 fill-gold-400 text-gold-400"
+                    />
                   ))}
                 </div>
                 <div className="flex items-start gap-2 mb-6">
                   <Quote className="h-5 w-5 text-gold-400 mt-0.5 flex-shrink-0" />
                   <p className="text-gray-600 text-sm italic leading-relaxed">
-                    {alumni.bio.length > 120 ? alumni.bio.slice(0, 120) + '…' : alumni.bio}
+                    {alumni.bio.length > 120
+                      ? alumni.bio.slice(0, 120) + "…"
+                      : alumni.bio}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 pt-5 border-t border-gray-100">
@@ -239,8 +296,12 @@ export default function LandingPage() {
                     className="rounded-full object-cover ring-2 ring-gold-400/30"
                   />
                   <div>
-                    <p className="font-bold text-navy-900 text-sm">{alumni.fullName}</p>
-                    <p className="text-gold-600 text-xs">{alumni.currentRole} · {alumni.currentCompany}</p>
+                    <p className="font-bold text-navy-900 text-sm">
+                      {alumni.fullName}
+                    </p>
+                    <p className="text-gold-600 text-xs">
+                      {alumni.currentRole} · {alumni.currentCompany}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -259,7 +320,8 @@ export default function LandingPage() {
             <Lock className="h-8 w-8 text-gold-400" />
           </div>
           <h2 className="font-serif text-4xl font-bold text-white mb-5">
-            Exclusive Content Awaits<br />
+            Exclusive Content Awaits
+            <br />
             <span className="gradient-text">Behind Your Login</span>
           </h2>
           <p className="text-gray-300 text-lg max-w-2xl mx-auto mb-4 leading-relaxed">
@@ -271,7 +333,10 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link href="/auth/signup" className="btn-gold flex items-center gap-2 px-8 py-4 text-base">
+            <Link
+              href="/auth/signup"
+              className="btn-gold flex items-center gap-2 px-8 py-4 text-base"
+            >
               <GraduationCap className="h-5 w-5" />
               Create Free Account
             </Link>

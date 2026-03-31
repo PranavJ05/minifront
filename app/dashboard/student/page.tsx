@@ -14,6 +14,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
+import { hasRole } from "@/lib/roleUtils";
 
 interface OpportunityPreview {
   id: number;
@@ -60,7 +61,12 @@ export default function StudentDashboard() {
     }
 
     const u = JSON.parse(stored);
-    if (u.role.toLowerCase() !== "student") {
+    const userRole = u.roles || u.role || "";
+
+    // ✅ Robust Role Check - only allow student role
+    const isAllowedRole = hasRole(userRole, ["student"]);
+
+    if (!isAllowedRole) {
       router.replace("/auth/login");
       return;
     }
@@ -108,7 +114,9 @@ export default function StudentDashboard() {
         }
 
         const data = await res.json();
-        const normalized: AlumniPreview[] = (Array.isArray(data) ? data : []).map((item: any) => ({
+        const normalized: AlumniPreview[] = (
+          Array.isArray(data) ? data : []
+        ).map((item: any) => ({
           id: item.id,
           name: item.name || "Unknown",
           profession: item.profession || null,
@@ -128,7 +136,10 @@ export default function StudentDashboard() {
     loadDirectory();
   }, []);
 
-  const opportunityPreview = useMemo(() => opportunities.slice(0, 3), [opportunities]);
+  const opportunityPreview = useMemo(
+    () => opportunities.slice(0, 3),
+    [opportunities],
+  );
   const directoryPreview = useMemo(() => directory.slice(0, 3), [directory]);
 
   if (!user)
@@ -193,7 +204,9 @@ export default function StudentDashboard() {
               {
                 label: "Departments",
                 value: String(
-                  new Set(directory.map((item) => item.department).filter(Boolean)).size,
+                  new Set(
+                    directory.map((item) => item.department).filter(Boolean),
+                  ).size,
                 ),
                 icon: Calendar,
                 color: "text-purple-600",
@@ -202,7 +215,9 @@ export default function StudentDashboard() {
               {
                 label: "Locations",
                 value: String(
-                  new Set(directory.map((item) => item.location).filter(Boolean)).size,
+                  new Set(
+                    directory.map((item) => item.location).filter(Boolean),
+                  ).size,
                 ),
                 icon: MapPin,
                 color: "text-gold-600",
@@ -210,7 +225,9 @@ export default function StudentDashboard() {
               },
             ].map(({ label, value, icon: Icon, color, bg }) => (
               <div key={label} className="card p-5 text-center">
-                <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mx-auto mb-3`}>
+                <div
+                  className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mx-auto mb-3`}
+                >
                   <Icon className={`h-5 w-5 ${color}`} />
                 </div>
                 <div className="text-2xl font-bold text-navy-900 font-serif">
@@ -226,7 +243,10 @@ export default function StudentDashboard() {
               <h2 className="font-bold text-navy-900 font-serif">
                 Current Opportunities
               </h2>
-              <Link href="/opportunities" className="text-xs text-gold-600 font-medium">
+              <Link
+                href="/opportunities"
+                className="text-xs text-gold-600 font-medium"
+              >
                 View All
               </Link>
             </div>
@@ -240,13 +260,17 @@ export default function StudentDashboard() {
               <div className="card p-6 border border-red-200 bg-red-50 text-red-700 flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-sm">Could not load opportunities</p>
+                  <p className="font-semibold text-sm">
+                    Could not load opportunities
+                  </p>
                   <p className="text-sm mt-1">{opportunityError}</p>
                 </div>
               </div>
             ) : opportunityPreview.length === 0 ? (
               <div className="card p-8 text-center">
-                <p className="font-semibold text-navy-900">No opportunities available</p>
+                <p className="font-semibold text-navy-900">
+                  No opportunities available
+                </p>
                 <p className="text-sm text-gray-500 mt-1">
                   Check back soon for new openings from the alumni network.
                 </p>
@@ -263,7 +287,9 @@ export default function StudentDashboard() {
                     <h3 className="font-bold text-navy-900 mb-1 line-clamp-2">
                       {opportunity.title}
                     </h3>
-                    <p className="text-sm text-gray-600">{opportunity.company}</p>
+                    <p className="text-sm text-gray-600">
+                      {opportunity.company}
+                    </p>
                     <p className="text-sm text-gray-500 flex items-center gap-1 mt-2">
                       <MapPin className="h-3.5 w-3.5" /> {opportunity.location}
                     </p>
@@ -284,7 +310,10 @@ export default function StudentDashboard() {
               <h2 className="font-bold text-navy-900 font-serif">
                 Directory Snapshot
               </h2>
-              <Link href="/alumni" className="text-xs text-gold-600 font-medium">
+              <Link
+                href="/alumni"
+                className="text-xs text-gold-600 font-medium"
+              >
                 View All
               </Link>
             </div>
@@ -298,7 +327,9 @@ export default function StudentDashboard() {
               <div className="card p-6 border border-red-200 bg-red-50 text-red-700 flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-sm">Could not load directory</p>
+                  <p className="font-semibold text-sm">
+                    Could not load directory
+                  </p>
                   <p className="text-sm mt-1">{directoryError}</p>
                 </div>
               </div>
@@ -314,7 +345,10 @@ export default function StudentDashboard() {
                 {directoryPreview.map((alumni) => {
                   const avatar = resolveImageUrl(alumni.profileImageUrl);
                   return (
-                    <div key={alumni.id} className="card p-5 flex items-start gap-3">
+                    <div
+                      key={alumni.id}
+                      className="card p-5 flex items-start gap-3"
+                    >
                       <div className="w-12 h-12 rounded-full overflow-hidden bg-navy-100 flex items-center justify-center flex-shrink-0">
                         {avatar ? (
                           <img
@@ -327,7 +361,9 @@ export default function StudentDashboard() {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-navy-900 truncate">{alumni.name}</p>
+                        <p className="font-semibold text-navy-900 truncate">
+                          {alumni.name}
+                        </p>
                         <p className="text-sm text-gray-600 truncate">
                           {alumni.profession || "Professional"}
                         </p>

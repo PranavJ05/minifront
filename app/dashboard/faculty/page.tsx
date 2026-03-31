@@ -1,81 +1,182 @@
 "use client";
 // app/dashboard/faculty/page.tsx
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
-  Users, Calendar, TrendingUp,
-  CheckCircle, AlertCircle, Eye, UserPlus, GraduationCap
-} from 'lucide-react';
-import DashboardSidebar from '@/components/layout/DashboardSidebar';
-import { mockAlumni } from '@/lib/mockData';
+  Users,
+  Calendar,
+  TrendingUp,
+  CheckCircle,
+  AlertCircle,
+  Eye,
+  UserPlus,
+  GraduationCap,
+} from "lucide-react";
+import DashboardSidebar from "@/components/layout/DashboardSidebar";
+import { hasRole } from "@/lib/roleUtils";
+import { mockAlumni } from "@/lib/mockData";
 
 export default function FacultyDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const stored = localStorage.getItem('alumni_user');
-    if (!token || !stored) { router.replace('/auth/login'); return; }
+    const token = localStorage.getItem("token");
+    const stored = localStorage.getItem("alumni_user");
+    if (!token || !stored) {
+      router.replace("/auth/login");
+      return;
+    }
     const u = JSON.parse(stored);
-    if (u.role !== 'faculty') { router.replace('/auth/login'); return; }
+    const userRole = u.roles || u.role || "";
+
+    // ✅ Robust Role Check - only allow faculty role
+    const isAllowedRole = hasRole(userRole, ["faculty"]);
+
+    if (!isAllowedRole) {
+      router.replace("/auth/login");
+      return;
+    }
     setUser(u);
   }, [router]);
 
-  if (!user) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-navy-800 border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  if (!user)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-navy-800 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
 
   const statsData = [
-    { label: 'Total Alumni',    value: '35,247', change: '+5%', icon: GraduationCap, color: 'text-blue-600',   bg: 'bg-blue-50' },
-    { label: 'Active Students', value: '4,821',  change: '+3%', icon: Users,         color: 'text-green-600',  bg: 'bg-green-50' },
-    { label: 'Upcoming Events', value: '23',     change: '+3',  icon: Calendar,      color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Pending Approvals', value: '18',   change: '+4',  icon: UserPlus,      color: 'text-gold-600',   bg: 'bg-gold-50' },
+    {
+      label: "Total Alumni",
+      value: "35,247",
+      change: "+5%",
+      icon: GraduationCap,
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+    },
+    {
+      label: "Active Students",
+      value: "4,821",
+      change: "+3%",
+      icon: Users,
+      color: "text-green-600",
+      bg: "bg-green-50",
+    },
+    {
+      label: "Upcoming Events",
+      value: "23",
+      change: "+3",
+      icon: Calendar,
+      color: "text-purple-600",
+      bg: "bg-purple-50",
+    },
+    {
+      label: "Pending Approvals",
+      value: "18",
+      change: "+4",
+      icon: UserPlus,
+      color: "text-gold-600",
+      bg: "bg-gold-50",
+    },
   ];
 
   const pendingUsers = [
-    { name: 'Rahul Mehta',  email: 'rahul.m@email.com',  role: 'alumni',  dept: 'Computer Science', year: '2022', time: '2h ago' },
-    { name: 'Priya Singh',  email: 'priya.s@email.com',  role: 'student', dept: 'MBA',              year: '2026', time: '4h ago' },
-    { name: 'James Brown',  email: 'james.b@email.com',  role: 'alumni',  dept: 'Law',              year: '2018', time: '1d ago' },
-    { name: 'Meera Nair',   email: 'meera.n@email.com',  role: 'alumni',  dept: 'EEE',              year: '2020', time: '1d ago' },
+    {
+      name: "Rahul Mehta",
+      email: "rahul.m@email.com",
+      role: "alumni",
+      dept: "Computer Science",
+      year: "2022",
+      time: "2h ago",
+    },
+    {
+      name: "Priya Singh",
+      email: "priya.s@email.com",
+      role: "student",
+      dept: "MBA",
+      year: "2026",
+      time: "4h ago",
+    },
+    {
+      name: "James Brown",
+      email: "james.b@email.com",
+      role: "alumni",
+      dept: "Law",
+      year: "2018",
+      time: "1d ago",
+    },
+    {
+      name: "Meera Nair",
+      email: "meera.n@email.com",
+      role: "alumni",
+      dept: "EEE",
+      year: "2020",
+      time: "1d ago",
+    },
   ];
 
   const recentActivity = [
-    { type: 'success', msg: 'Event "Tech Alumni Mixer" published successfully', time: '1h ago'  },
-    { type: 'info',    msg: '18 pending approvals require review',                time: '3h ago'  },
-    { type: 'success', msg: 'Annual Giving Campaign email sent to 35k+',          time: '6h ago'  },
-    { type: 'info',    msg: '23 new alumni registered this week',                 time: '1d ago'  },
+    {
+      type: "success",
+      msg: 'Event "Tech Alumni Mixer" published successfully',
+      time: "1h ago",
+    },
+    {
+      type: "info",
+      msg: "18 pending approvals require review",
+      time: "3h ago",
+    },
+    {
+      type: "success",
+      msg: "Annual Giving Campaign email sent to 35k+",
+      time: "6h ago",
+    },
+    { type: "info", msg: "23 new alumni registered this week", time: "1d ago" },
   ];
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <DashboardSidebar role="faculty" userName={user.fullName} userEmail={user.email} />
+      <DashboardSidebar
+        role="faculty"
+        userName={user.fullName}
+        userEmail={user.email}
+      />
 
       <main className="flex-1 overflow-auto p-6">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
-            <h1 className="font-serif text-2xl font-bold text-navy-900">Faculty Dashboard</h1>
-            <p className="text-gray-500">Platform overview and account management</p>
+            <h1 className="font-serif text-2xl font-bold text-navy-900">
+              Faculty Dashboard
+            </h1>
+            <p className="text-gray-500">
+              Platform overview and account management
+            </p>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {statsData.map(({ label, value, change, icon: Icon, color, bg }) => (
-              <div key={label} className="card p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center`}>
-                    <Icon className={`h-5 w-5 ${color}`} />
+            {statsData.map(
+              ({ label, value, change, icon: Icon, color, bg }) => (
+                <div key={label} className="card p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div
+                      className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center`}
+                    >
+                      <Icon className={`h-5 w-5 ${color}`} />
+                    </div>
+                    <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                      {change}
+                    </span>
                   </div>
-                  <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                    {change}
-                  </span>
+                  <div className="text-2xl font-bold text-navy-900 font-serif">
+                    {value}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">{label}</div>
                 </div>
-                <div className="text-2xl font-bold text-navy-900 font-serif">{value}</div>
-                <div className="text-xs text-gray-500 mt-1">{label}</div>
-              </div>
-            ))}
+              ),
+            )}
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
@@ -88,20 +189,31 @@ export default function FacultyDashboard() {
                     {pendingUsers.length}
                   </span>
                 </h2>
-                <button className="text-xs text-gold-600 font-medium">View All</button>
+                <button className="text-xs text-gold-600 font-medium">
+                  View All
+                </button>
               </div>
               <div className="space-y-3">
                 {pendingUsers.map((u, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
+                  >
                     <div className="w-10 h-10 bg-navy-800 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                       {u.name.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold text-navy-900 text-sm">{u.name}</p>
-                        <span className={`badge text-xs ${
-                          u.role === 'alumni' ? 'bg-gold-100 text-gold-700' : 'bg-blue-100 text-blue-700'
-                        }`}>
+                        <p className="font-semibold text-navy-900 text-sm">
+                          {u.name}
+                        </p>
+                        <span
+                          className={`badge text-xs ${
+                            u.role === "alumni"
+                              ? "bg-gold-100 text-gold-700"
+                              : "bg-blue-100 text-blue-700"
+                          }`}
+                        >
                           {u.role}
                         </span>
                       </div>
@@ -110,13 +222,22 @@ export default function FacultyDashboard() {
                       </p>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
-                      <button className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Approve">
+                      <button
+                        className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Approve"
+                      >
                         <CheckCircle className="h-4 w-4" />
                       </button>
-                      <button className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Reject">
+                      <button
+                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Reject"
+                      >
                         <AlertCircle className="h-4 w-4" />
                       </button>
-                      <button className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors" title="View">
+                      <button
+                        className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="View"
+                      >
                         <Eye className="h-4 w-4" />
                       </button>
                     </div>
@@ -133,12 +254,16 @@ export default function FacultyDashboard() {
               <div className="space-y-4">
                 {recentActivity.map((item, i) => (
                   <div key={i} className="flex gap-3">
-                    <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
-                      item.type === 'success' ? 'bg-green-500' : 'bg-blue-500'
-                    }`} />
+                    <div
+                      className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                        item.type === "success" ? "bg-green-500" : "bg-blue-500"
+                      }`}
+                    />
                     <div>
                       <p className="text-sm text-gray-700">{item.msg}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{item.time}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {item.time}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -148,8 +273,12 @@ export default function FacultyDashboard() {
 
           <div className="card p-5 mt-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-bold text-navy-900 font-serif">Recent Alumni Registrations</h2>
-              <button className="btn-outline text-sm py-2 px-4">Manage All</button>
+              <h2 className="font-bold text-navy-900 font-serif">
+                Recent Alumni Registrations
+              </h2>
+              <button className="btn-outline text-sm py-2 px-4">
+                Manage All
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -164,7 +293,10 @@ export default function FacultyDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {mockAlumni.slice(0, 5).map((alumni) => (
-                    <tr key={alumni.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={alumni.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
                       <td className="py-3 pr-4">
                         <div className="flex items-center gap-3">
                           <Image
@@ -175,18 +307,32 @@ export default function FacultyDashboard() {
                             className="rounded-full object-cover"
                           />
                           <div>
-                            <p className="font-semibold text-navy-900 text-sm">{alumni.fullName}</p>
-                            <p className="text-xs text-gray-400">{alumni.email}</p>
+                            <p className="font-semibold text-navy-900 text-sm">
+                              {alumni.fullName}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {alumni.email}
+                            </p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 pr-4 text-sm text-gray-600">{alumni.department}</td>
-                      <td className="py-3 pr-4 text-sm text-gray-600">{alumni.currentCompany}</td>
-                      <td className="py-3 pr-4 text-sm text-gray-500">{alumni.location}</td>
+                      <td className="py-3 pr-4 text-sm text-gray-600">
+                        {alumni.department}
+                      </td>
+                      <td className="py-3 pr-4 text-sm text-gray-600">
+                        {alumni.currentCompany}
+                      </td>
+                      <td className="py-3 pr-4 text-sm text-gray-500">
+                        {alumni.location}
+                      </td>
                       <td className="py-3">
                         <div className="flex gap-2">
-                          <button className="text-xs text-navy-700 hover:text-navy-900 font-medium">View</button>
-                          <button className="text-xs text-red-500 hover:text-red-700 font-medium">Remove</button>
+                          <button className="text-xs text-navy-700 hover:text-navy-900 font-medium">
+                            View
+                          </button>
+                          <button className="text-xs text-red-500 hover:text-red-700 font-medium">
+                            Remove
+                          </button>
                         </div>
                       </td>
                     </tr>
