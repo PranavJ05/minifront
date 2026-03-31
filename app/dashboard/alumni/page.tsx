@@ -15,11 +15,11 @@ import {
 } from "lucide-react";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import PendingModal from "@/components/admin/PendingModal";
-import SkillsOnboardingWrapper from "@/components/profile/SkillsOnboardingWrapper";
+import SkillsOnboardingModal from "@/components/profile/SkillsOnboardingModal";
 import { fetchAllEvents } from "@/lib/api/events";
 import { Event } from "@/lib/types/events";
 import { getToken } from "@/lib/auth";
-import { hasRole } from "@/lib/roleUtils";
+import { hasRole, isAlumni } from "@/lib/roleUtils";
 import {
   formatDay,
   formatEventDate,
@@ -78,29 +78,18 @@ export default function AlumniDashboard() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const stored = localStorage.getItem("alumni_user");
-    const storedRole = localStorage.getItem("role")?.toLowerCase() || "";
 
     if (!token || !stored) {
       router.replace("/auth/login");
       return;
     }
 
-    const u = JSON.parse(stored);
+    let u = JSON.parse(stored);
     const userRole = u.roles || u.role || "";
 
-    // Check if user has BLOCKED roles (student or faculty)
+    // ✅ Robust Role Checks
     const isBlockedRole = hasRole(userRole, ["student", "faculty"]);
-
-    // Check if user has ALLOWED roles (alumni, batch_admin, admin)
     const isAllowedRole = hasRole(userRole, ["alumni", "batch_admin", "admin"]);
-
-    console.log("[Dashboard] User roles:", userRole);
-    console.log(
-      "[Dashboard] isBlockedRole:",
-      isBlockedRole,
-      "isAllowedRole:",
-      isAllowedRole,
-    );
 
     if (isBlockedRole || !isAllowedRole) {
       router.replace("/auth/login");
@@ -109,27 +98,37 @@ export default function AlumniDashboard() {
 
     setUser(u);
 
-    // Check if we should show onboarding
+    // ─── ONBOARDING LOGIC ────────────────────────────────────────────────
     const hasCompleted = localStorage.getItem("skills_onboarding_completed");
     const hasSkipped = localStorage.getItem("skills_onboarding_skipped");
 
-    console.log("[Dashboard] User data:", u);
-    console.log("[Dashboard] Onboarding status:", {
-      hasCompleted,
-      hasSkipped,
-      alumniId: u?.alumniId,
-      courseId: u?.courseId,
-    });
+    // If user is Alumni but missing their alumniId in localStorage, fetch it!
+    if (isAlumni(userRole) && !u.alumniId) {
+      fetch(`${API_BASE}/api/profile/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.alumniId) {
+            u = { ...u, alumniId: data.alumniId, courseId: data.courseId };
+            setUser(u);
+            localStorage.setItem("alumni_user", JSON.stringify(u));
 
-    // Show onboarding if user is alumni and hasn't completed/skipped
-    if (u?.alumniId && !hasCompleted && !hasSkipped) {
-      console.log("[Dashboard] Showing onboarding");
+            // Now check onboarding since we just secured the alumniId
+            if (!hasCompleted && !hasSkipped) {
+              setShowOnboarding(true);
+            }
+          }
+        })
+        .catch((err) =>
+          console.error("Failed to sync profile for onboarding", err),
+        );
+    }
+    // If they already have their ID, just check standard flags
+    else if (isAlumni(userRole) && !hasCompleted && !hasSkipped) {
       setShowOnboarding(true);
-    } else {
-      console.log("[Dashboard] Not showing onboarding");
     }
   }, [router]);
-
   useEffect(() => {
     const loadEvents = async () => {
       const token = getToken();
@@ -531,12 +530,18 @@ export default function AlumniDashboard() {
         </div>
       </main>
 
-      {/* Skills Onboarding for new users */}
-      {user?.alumniId && showOnboarding && (
-        <SkillsOnboardingWrapper
+      {/* ✅ SKILLS ONBOARDING MODAL */}
+      {showOnboarding && user?.alumniId && (
+        <SkillsOnboardingModal
+          isOpen={showOnboarding}
+          onClose={() => setShowOnboarding(false)}
           alumniId={user.alumniId}
           courseId={user.courseId}
-          onComplete={() => setShowOnboarding(false)}
+          onComplete={() => {
+            // Backup save flag just in case they click outside or close via a non-standard route
+            localStorage.setItem("skills_onboarding_completed", "true");
+            setShowOnboarding(false);
+          }}
         />
       )}
     </div>

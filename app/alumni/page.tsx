@@ -5,8 +5,9 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AlumniCard from "@/components/alumni/AlumniCard";
 import AlumniFiltersPanel from "@/components/alumni/AlumniFilters";
+import AlumniDirectoryMap from "@/components/alumni/AlumniDirectoryMap";
 import { AlumniFilters } from "@/types";
-import { Grid3X3, List, Users } from "lucide-react";
+import { List, MapPin, Users } from "lucide-react";
 
 const API_BASE = "http://localhost:8080";
 
@@ -16,7 +17,7 @@ const resolveImageUrl = (value: string | null | undefined) => {
 };
 
 export default function AlumniDirectoryPage() {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
   const [filters, setFilters] = useState<AlumniFilters>({
     search: "",
@@ -139,16 +140,26 @@ export default function AlumniDirectoryPage() {
 
           <div className="flex gap-2">
             <button
-              onClick={() => setViewMode("grid")}
-              className="p-2 rounded hover:bg-gray-200"
+              onClick={() => setViewMode("list")}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                viewMode === "list"
+                  ? "bg-navy-800 text-white"
+                  : "bg-white text-navy-700 border border-navy-300 hover:bg-navy-50"
+              }`}
             >
-              <Grid3X3 />
+              <List className="h-4 w-4" />
+              List
             </button>
             <button
-              onClick={() => setViewMode("list")}
-              className="p-2 rounded hover:bg-gray-200"
+              onClick={() => setViewMode("map")}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                viewMode === "map"
+                  ? "bg-navy-800 text-white"
+                  : "bg-white text-navy-700 border border-navy-300 hover:bg-navy-50"
+              }`}
             >
-              <List />
+              <MapPin className="h-4 w-4" />
+              Map
             </button>
           </div>
         </div>
@@ -156,16 +167,12 @@ export default function AlumniDirectoryPage() {
         {/* RESULTS */}
         {loading ? (
           <p className="text-center py-10">Loading alumni...</p>
+        ) : viewMode === "map" ? (
+          <AlumniDirectoryMap />
         ) : alumni.length > 0 ? (
-          <div
-            className={
-              viewMode === "grid"
-                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
-                : "space-y-3"
-            }
-          >
+          <div className="space-y-3">
             {alumni.map((a) => (
-              <AlumniCard key={a.id} alumni={a} variant={viewMode} />
+              <AlumniCard key={a.id} alumni={a} variant="list" />
             ))}
           </div>
         ) : (

@@ -145,6 +145,10 @@ export default function SkillsOnboardingModal({
         addSkillToAlumni(alumniId, skillId),
       );
       await Promise.all(promises);
+
+      // ✅ ADD THIS LINE: Tell the browser they are officially onboarded
+      localStorage.setItem("skills_onboarding_completed", "true");
+
       setStep("complete");
     } catch (err: any) {
       setError(err.message || "Failed to save skills");
@@ -152,7 +156,6 @@ export default function SkillsOnboardingModal({
       setSaving(false);
     }
   };
-
   const handleClose = () => {
     setStep("course");
     setSelectedCourse(null);
