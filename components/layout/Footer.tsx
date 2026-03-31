@@ -1,4 +1,6 @@
-// components/layout/Footer.tsx
+"use client";
+
+import { useRouter } from "next/navigation";
 import {
   GraduationCap,
   Mail,
@@ -7,24 +9,37 @@ import {
   Linkedin,
   Facebook,
   Youtube,
-  X
+  X,
 } from "lucide-react";
 
 export default function Footer() {
+  const router = useRouter();
+
   const socialLinks = [
-    { Icon: Linkedin, href: "https://www.linkedin.com/school/model-engineering-college/posts/?feedView=all" },
+    {
+      Icon: Linkedin,
+      href: "https://www.linkedin.com/school/model-engineering-college/posts/?feedView=all",
+    },
     { Icon: X, href: "https://x.com/MECKochi" },
-    { Icon: Facebook, href: "https://www.facebook.com/modelengineeringcollege" },
-    { Icon: Youtube, href: "https://www.youtube.com/@ModelEngineeringCollege" }
+    {
+      Icon: Facebook,
+      href: "https://www.facebook.com/modelengineeringcollege",
+    },
+    { Icon: Youtube, href: "https://www.youtube.com/@ModelEngineeringCollege" },
+  ];
+
+  // Map the labels to their specific local routes
+  const quickLinks = [
+    { label: "Alumni Directory", path: "/alumni" },
+    { label: "Events & News", path: "/events" },
+    { label: "Opportunities", path: "/opportunities" },
   ];
 
   return (
     <footer className="bg-navy-950 text-gray-300 border-t border-navy-900">
       <div className="max-w-7xl mx-auto px-6 py-16">
-
         {/* GRID */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-
           {/* BRAND */}
           <div className="space-y-5">
             <div className="flex items-center gap-3">
@@ -37,8 +52,9 @@ export default function Footer() {
             </div>
 
             <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
-              The official platform for university alumni to network, mentor, and explore career opportunities. 
-              Connecting students with alumni across generations.
+              The official platform for university alumni to network, mentor,
+              and explore career opportunities. Connecting students with alumni
+              across generations.
             </p>
 
             {/* SOCIAL */}
@@ -64,18 +80,14 @@ export default function Footer() {
             </h3>
 
             <ul className="space-y-3 text-sm">
-              {[
-                "Alumni Directory",
-                "Events & News",
-                "Opportunities"
-              ].map((item, i) => (
+              {quickLinks.map((item, i) => (
                 <li key={i}>
-                  <a
-                    href="#"
-                    className="text-gray-400 hover:text-gold-400 transition"
+                  <button
+                    onClick={() => router.push(item.path)}
+                    className="text-gray-400 hover:text-gold-400 transition text-left"
                   >
-                    {item}
-                  </a>
+                    {item.label}
+                  </button>
                 </li>
               ))}
             </ul>
@@ -88,7 +100,6 @@ export default function Footer() {
             </h3>
 
             <div className="space-y-4 text-sm">
-
               {/* ADDRESS */}
               <div className="flex items-start gap-3">
                 <MapPin className="h-4 w-4 text-gold-500 mt-1" />
@@ -97,7 +108,8 @@ export default function Footer() {
                     Office of Alumni Relations
                   </p>
                   <p className="text-gray-400">
-                    Model Engineering College<br />
+                    Model Engineering College
+                    <br />
                     Thrikkakkara, Kochi, Kerala 682021
                   </p>
                 </div>
@@ -130,9 +142,8 @@ export default function Footer() {
 
         {/* BOTTOM */}
         <div className="mt-12 pt-6 border-t border-navy-900 flex flex-col md:flex-row items-center justify-between gap-4">
-
           <p className="text-xs text-gray-500 text-center md:text-left">
-            © 2026 MECCONNECT. All rights reserved.  
+            © 2026 MECCONNECT. All rights reserved.
             <span className="block md:inline md:ml-2">
               Access restricted to verified members.
             </span>
@@ -150,7 +161,6 @@ export default function Footer() {
             ))}
           </div>
         </div>
-
       </div>
     </footer>
   );

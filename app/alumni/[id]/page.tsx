@@ -24,6 +24,7 @@ import {
   ExternalLink,
   Bookmark,
   Clock,
+  ChevronRight,
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -46,7 +47,7 @@ interface Event {
   title: string;
   description: string;
   eventDate: string;
-  location: string;
+  location: string | null;
   registrationLink: string | null;
 }
 
@@ -74,9 +75,7 @@ interface AlumniProfile {
   branchName: string | null;
   department: string | null;
   profession: string | null;
-  company: string | null;
   linkedinUrl: string | null;
-  placeOfResidence: string | null;
   city: string | null;
   state: string | null;
   country: string | null;
@@ -93,6 +92,8 @@ interface AlumniProfile {
   totalOpportunities: number;
 }
 
+const API_BASE = "http://localhost:8080";
+
 export default function AlumniProfilePage({ params }: Props) {
   const [alumni, setAlumni] = useState<AlumniProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -102,7 +103,7 @@ export default function AlumniProfilePage({ params }: Props) {
     async function fetchProfile() {
       try {
         const res = await fetch(
-          `http://localhost:8080/api/alumni/${params.id}/public-profile`,
+          `http://localhost:8080/api/alumni/${params.id}`,
           { cache: "no-store" },
         );
 
@@ -172,6 +173,7 @@ export default function AlumniProfilePage({ params }: Props) {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
+      {/* Hero Section */}
       <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800 text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Back */}
@@ -218,12 +220,6 @@ export default function AlumniProfilePage({ params }: Props) {
               </p>
 
               <div className="flex flex-wrap gap-4 text-sm text-gray-300 mb-4">
-                {alumni.company && (
-                  <div className="flex items-center gap-1.5">
-                    <Building className="h-4 w-4" />
-                    <span>{alumni.company}</span>
-                  </div>
-                )}
                 {alumni.fullLocation && (
                   <div className="flex items-center gap-1.5">
                     <MapPin className="h-4 w-4" />
@@ -251,14 +247,6 @@ export default function AlumniProfilePage({ params }: Props) {
                     View LinkedIn Profile
                   </a>
                 )}
-                <button className="inline-flex items-center gap-2 bg-gold-500 hover:bg-gold-600 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors">
-                  <UserPlus className="h-4 w-4" />
-                  Connect
-                </button>
-                <button className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors border border-white/20">
-                  <MessageSquare className="h-4 w-4" />
-                  Message
-                </button>
               </div>
             </div>
 
@@ -307,16 +295,6 @@ export default function AlumniProfilePage({ params }: Props) {
                 Academic Information
               </h3>
               <div className="space-y-3 text-sm">
-                {alumni.courseName && (
-                  <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wide">
-                      Course
-                    </p>
-                    <p className="font-medium text-navy-900">
-                      {alumni.courseName}
-                    </p>
-                  </div>
-                )}
                 {alumni.branchName && (
                   <div>
                     <p className="text-xs text-gray-400 uppercase tracking-wide">
@@ -327,13 +305,13 @@ export default function AlumniProfilePage({ params }: Props) {
                     </p>
                   </div>
                 )}
-                {alumni.department && (
+                {alumni.courseName && (
                   <div>
                     <p className="text-xs text-gray-400 uppercase tracking-wide">
                       Department
                     </p>
                     <p className="font-medium text-navy-900">
-                      {alumni.department}
+                      {alumni.courseName}
                     </p>
                   </div>
                 )}
@@ -371,30 +349,6 @@ export default function AlumniProfilePage({ params }: Props) {
                 )}
               </div>
             </div>
-
-            {/* Location Map Preview */}
-            {alumni.latitude && alumni.longitude && (
-              <div className="card overflow-hidden">
-                <div className="bg-navy-800 px-4 py-3">
-                  <h3 className="font-bold text-white text-sm flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-gold-400" />
-                    Location
-                  </h3>
-                </div>
-                <div className="h-40 bg-gray-200 relative">
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    frameBorder="0"
-                    scrolling="no"
-                    marginHeight={0}
-                    marginWidth={0}
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${alumni.longitude - 0.01},${alumni.latitude - 0.01},${alumni.longitude + 0.01},${alumni.latitude + 0.01}&layer=mapnik&marker=${alumni.latitude},${alumni.longitude}`}
-                    className="grayscale hover:grayscale-0 transition-all"
-                  />
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Right Column - Main Content */}
@@ -402,13 +356,15 @@ export default function AlumniProfilePage({ params }: Props) {
             {/* Skills */}
             {alumni.skills && alumni.skills.length > 0 && (
               <div className="card p-6">
-                <h2 className="font-bold text-navy-900 text-lg mb-4 font-serif flex items-center gap-2">
-                  <Globe className="h-5 w-5 text-gold-500" />
-                  Skills & Expertise
-                  <span className="ml-auto text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-bold text-navy-900 text-lg font-serif flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-gold-500" />
+                    Skills & Expertise
+                  </h2>
+                  <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
                     {alumni.totalSkills} skills
                   </span>
-                </h2>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {alumni.skills.map((skill) => (
                     <span
@@ -430,13 +386,15 @@ export default function AlumniProfilePage({ params }: Props) {
             {/* Events */}
             {alumni.events && alumni.events.length > 0 && (
               <div className="card p-6">
-                <h2 className="font-bold text-navy-900 text-lg mb-4 font-serif flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-gold-500" />
-                  Events
-                  <span className="ml-auto text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-bold text-navy-900 text-lg font-serif flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-gold-500" />
+                    Events
+                  </h2>
+                  <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
                     {alumni.totalEvents} events
                   </span>
-                </h2>
+                </div>
                 <div className="space-y-4">
                   {alumni.events.map((event) => (
                     <div
@@ -471,8 +429,8 @@ export default function AlumniProfilePage({ params }: Props) {
                             rel="noopener noreferrer"
                             className="flex-shrink-0 inline-flex items-center gap-1 bg-navy-800 hover:bg-navy-700 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors"
                           >
-                            <ExternalLink className="h-3 w-3" />
                             Register
+                            <ExternalLink className="h-3 w-3" />
                           </a>
                         )}
                       </div>
@@ -485,13 +443,15 @@ export default function AlumniProfilePage({ params }: Props) {
             {/* Opportunities */}
             {alumni.opportunities && alumni.opportunities.length > 0 && (
               <div className="card p-6">
-                <h2 className="font-bold text-navy-900 text-lg mb-4 font-serif flex items-center gap-2">
-                  <Briefcase className="h-5 w-5 text-gold-500" />
-                  Opportunities
-                  <span className="ml-auto text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-bold text-navy-900 text-lg font-serif flex items-center gap-2">
+                    <Briefcase className="h-5 w-5 text-gold-500" />
+                    Opportunities
+                  </h2>
+                  <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
                     {alumni.totalOpportunities} posted
                   </span>
-                </h2>
+                </div>
                 <div className="space-y-4">
                   {alumni.opportunities.map((opp) => (
                     <div
@@ -559,6 +519,12 @@ export default function AlumniProfilePage({ params }: Props) {
                     This alumni member hasn't added their skills, events, or
                     opportunities yet.
                   </p>
+                  <Link
+                    href="/alumni"
+                    className="inline-flex items-center gap-1 text-gold-600 font-medium text-sm mt-4 hover:text-gold-700"
+                  >
+                    Browse other profiles <ChevronRight className="h-4 w-4" />
+                  </Link>
                 </div>
               )}
           </div>
