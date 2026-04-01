@@ -439,15 +439,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-xs text-amber-700 font-sans font-medium mb-1">
-              Faculty login example:
-            </p>
-            <p className="text-xs text-amber-600 font-sans">
-              Email: faculty1@mec.ac.in · Password: faculty123
-            </p>
-          </div>
-
           <p className="mt-6 text-center text-sm text-gray-500 font-sans">
             Don&apos;t have an account?{" "}
             <Link
