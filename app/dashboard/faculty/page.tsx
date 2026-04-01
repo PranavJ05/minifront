@@ -1,8 +1,9 @@
 "use client";
 // app/dashboard/faculty/page.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Users,
   Calendar,
@@ -12,15 +13,61 @@ import {
   Eye,
   UserPlus,
   GraduationCap,
+  Briefcase,
+  Loader2,
+  ArrowRight,
+  MapPin,
+  Search,
 } from "lucide-react";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import { hasRole } from "@/lib/roleUtils";
-import { mockAlumni } from "@/lib/mockData";
+import { fetchAllEvents } from "@/lib/api/events";
+import { Event } from "@/lib/types/events";
+import { getToken } from "@/lib/auth";
+
+const API_BASE = "http://localhost:8080";
+
+interface OpportunityPreview {
+  id: number;
+  title: string;
+  company: string;
+  location: string;
+  type: string;
+  postedAt: string;
+}
+
+interface AlumniPreview {
+  id: number;
+  name: string;
+  profession: string | null;
+  department: string | null;
+  location: string | null;
+  profileImageUrl: string | null;
+}
+
+const resolveImageUrl = (value: string | null) => {
+  if (!value) return null;
+  return value.startsWith("http") ? value : `${API_BASE}${value}`;
+};
 
 export default function FacultyDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
 
+  // Data states - using same endpoints as alumni/student dashboards
+  const [events, setEvents] = useState<Event[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState<string | null>(null);
+  const [opportunities, setOpportunities] = useState<OpportunityPreview[]>([]);
+  const [opportunitiesLoading, setOpportunitiesLoading] = useState(true);
+  const [opportunitiesError, setOpportunitiesError] = useState<string | null>(
+    null,
+  );
+  const [directory, setDirectory] = useState<AlumniPreview[]>([]);
+  const [directoryLoading, setDirectoryLoading] = useState(true);
+  const [directoryError, setDirectoryError] = useState<string | null>(null);
+
+  // Auth check
   useEffect(() => {
     const token = localStorage.getItem("token");
     const stored = localStorage.getItem("alumni_user");
@@ -41,101 +88,162 @@ export default function FacultyDashboard() {
     setUser(u);
   }, [router]);
 
-  if (!user)
+  // Load events (same as alumni dashboard)
+  useEffect(() => {
+    const loadEvents = async () => {
+      const token = getToken();
+      if (!token) {
+        setEventsLoading(false);
+        setEventsError("You need to sign in again to load events.");
+        return;
+      }
+
+      setEventsLoading(true);
+      setEventsError(null);
+
+      try {
+        const data = await fetchAllEvents(token);
+        setEvents(data);
+      } catch (err: any) {
+        setEventsError(err.message || "Failed to load upcoming events.");
+      } finally {
+        setEventsLoading(false);
+      }
+    };
+
+    loadEvents();
+  }, []);
+
+  // Load opportunities (same as alumni/student dashboard)
+  useEffect(() => {
+    const loadOpportunities = async () => {
+      setOpportunitiesLoading(true);
+      setOpportunitiesError(null);
+
+      try {
+        const res = await fetch(`${API_BASE}/opportunities/all`, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch opportunities: ${res.status}`);
+        }
+
+        const data: OpportunityPreview[] = await res.json();
+        setOpportunities(data);
+      } catch (err: any) {
+        setOpportunitiesError(err.message || "Failed to load opportunities.");
+      } finally {
+        setOpportunitiesLoading(false);
+      }
+    };
+
+    loadOpportunities();
+  }, []);
+
+  // Load alumni directory (same as alumni/student dashboard)
+  useEffect(() => {
+    const loadDirectory = async () => {
+      setDirectoryLoading(true);
+      setDirectoryError(null);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/alumni/search`);
+        if (!res.ok) {
+          throw new Error(`Failed to fetch alumni: ${res.status}`);
+        }
+
+        const data = await res.json();
+        const normalized: AlumniPreview[] = (
+          Array.isArray(data) ? data : []
+        ).map((item: any) => ({
+          id: item.id,
+          name: item.name || "Unknown",
+          profession: item.profession || null,
+          department: item.department || null,
+          location: item.location || item.placeOfResidence || null,
+          profileImageUrl: item.profileImageUrl || null,
+        }));
+
+        setDirectory(normalized);
+      } catch (err: any) {
+        setDirectoryError(err.message || "Failed to load alumni directory.");
+      } finally {
+        setDirectoryLoading(false);
+      }
+    };
+
+    loadDirectory();
+  }, []);
+
+  // Format date helper
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const upcomingEvents = useMemo(
+    () => events.filter((e) => new Date(e.eventDate) >= new Date()).slice(0, 5),
+    [events],
+  );
+
+  const opportunityPreview = useMemo(
+    () => opportunities.slice(0, 3),
+    [opportunities],
+  );
+
+  const directoryPreview = useMemo(() => directory.slice(0, 3), [directory]);
+
+  // Calculate stats from loaded data
+  const statsData = useMemo(
+    () => [
+      {
+        label: "Total Alumni",
+        value: String(directory.length || 0),
+        icon: GraduationCap,
+        color: "text-blue-600",
+        bg: "bg-blue-50",
+      },
+      {
+        label: "Open Opportunities",
+        value: String(opportunities.length || 0),
+        icon: Briefcase,
+        color: "text-green-600",
+        bg: "bg-green-50",
+      },
+      {
+        label: "Upcoming Events",
+        value: String(upcomingEvents.length || 0),
+        icon: Calendar,
+        color: "text-purple-600",
+        bg: "bg-purple-50",
+      },
+      {
+        label: "Departments",
+        value: String(
+          new Set(directory.map((item) => item.department).filter(Boolean))
+            .size,
+        ),
+        icon: UserPlus,
+        color: "text-gold-600",
+        bg: "bg-gold-50",
+      },
+    ],
+    [directory, opportunities, upcomingEvents],
+  );
+
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-navy-800 border-t-transparent rounded-full animate-spin" />
       </div>
     );
-
-  const statsData = [
-    {
-      label: "Total Alumni",
-      value: "35,247",
-      change: "+5%",
-      icon: GraduationCap,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
-    },
-    {
-      label: "Active Students",
-      value: "4,821",
-      change: "+3%",
-      icon: Users,
-      color: "text-green-600",
-      bg: "bg-green-50",
-    },
-    {
-      label: "Upcoming Events",
-      value: "23",
-      change: "+3",
-      icon: Calendar,
-      color: "text-purple-600",
-      bg: "bg-purple-50",
-    },
-    {
-      label: "Pending Approvals",
-      value: "18",
-      change: "+4",
-      icon: UserPlus,
-      color: "text-gold-600",
-      bg: "bg-gold-50",
-    },
-  ];
-
-  const pendingUsers = [
-    {
-      name: "Rahul Mehta",
-      email: "rahul.m@email.com",
-      role: "alumni",
-      dept: "Computer Science",
-      year: "2022",
-      time: "2h ago",
-    },
-    {
-      name: "Priya Singh",
-      email: "priya.s@email.com",
-      role: "student",
-      dept: "MBA",
-      year: "2026",
-      time: "4h ago",
-    },
-    {
-      name: "James Brown",
-      email: "james.b@email.com",
-      role: "alumni",
-      dept: "Law",
-      year: "2018",
-      time: "1d ago",
-    },
-    {
-      name: "Meera Nair",
-      email: "meera.n@email.com",
-      role: "alumni",
-      dept: "EEE",
-      year: "2020",
-      time: "1d ago",
-    },
-  ];
-
-  const recentActivity = [
-    {
-      type: "success",
-      msg: 'Event "Tech Alumni Mixer" published successfully',
-      time: "1h ago",
-    },
-    {
-      type: "info",
-      msg: "18 pending approvals require review",
-      time: "3h ago",
-    },
-    {
-      type: "success",
-      msg: "Annual Giving Campaign email sent to 35k+",
-      time: "6h ago",
-    },
-    { type: "info", msg: "23 new alumni registered this week", time: "1d ago" },
-  ];
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -146,200 +254,222 @@ export default function FacultyDashboard() {
       />
 
       <main className="flex-1 overflow-auto p-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
           <div className="mb-8">
             <h1 className="font-serif text-2xl font-bold text-navy-900">
               Faculty Dashboard
             </h1>
             <p className="text-gray-500">
-              Platform overview and account management
+              Platform overview and community insights
             </p>
           </div>
 
+          {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {statsData.map(
-              ({ label, value, change, icon: Icon, color, bg }) => (
-                <div key={label} className="card p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div
-                      className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center`}
-                    >
-                      <Icon className={`h-5 w-5 ${color}`} />
-                    </div>
-                    <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                      {change}
-                    </span>
+            {statsData.map(({ label, value, icon: Icon, color, bg }) => (
+              <div key={label} className="card p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div
+                    className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center`}
+                  >
+                    <Icon className={`h-5 w-5 ${color}`} />
                   </div>
-                  <div className="text-2xl font-bold text-navy-900 font-serif">
-                    {value}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">{label}</div>
                 </div>
-              ),
-            )}
+                <div className="text-2xl font-bold text-navy-900 font-serif">
+                  {value}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Search Alumni */}
+          <div className="card p-5 mb-6 bg-navy-950">
+            <h2 className="text-white font-bold mb-3">Find Alumni Fast</h2>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name, company, or field..."
+                className="w-full pl-10 pr-4 py-3 bg-navy-800 border border-navy-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-gold-500"
+              />
+            </div>
+            <Link
+              href="/alumni"
+              className="inline-flex items-center gap-2 mt-3 text-gold-400 text-sm hover:text-gold-300"
+            >
+              Browse full directory <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">
+            {/* Upcoming Events */}
+            <div className="card p-5">
+              <h2 className="font-bold text-navy-900 font-serif mb-5 flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-gold-500" />
+                Upcoming Events
+              </h2>
+
+              {eventsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                </div>
+              ) : eventsError ? (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+                  {eventsError}
+                </div>
+              ) : upcomingEvents.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No upcoming events</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {upcomingEvents.map((event) => (
+                    <div key={event.id} className="flex gap-3">
+                      <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-gold-500" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-700">
+                          {event.title}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                          <Calendar className="h-3 w-3" />
+                          <span>{formatDate(event.eventDate)}</span>
+                        </div>
+                        {event.location && (
+                          <div className="flex items-center gap-1 mt-0.5 text-xs text-gray-500">
+                            <MapPin className="h-3 w-3" />
+                            <span>{event.location}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Opportunities */}
             <div className="lg:col-span-2 card p-5">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="font-bold text-navy-900 font-serif flex items-center gap-2">
-                  <UserPlus className="h-5 w-5 text-gold-500" />
-                  Pending Account Approvals
-                  <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full ml-1">
-                    {pendingUsers.length}
-                  </span>
+                  <Briefcase className="h-5 w-5 text-gold-500" />
+                  Current Opportunities
                 </h2>
-                <button className="text-xs text-gold-600 font-medium">
+                <Link
+                  href="/opportunities"
+                  className="text-xs text-gold-600 font-medium"
+                >
                   View All
-                </button>
+                </Link>
               </div>
-              <div className="space-y-3">
-                {pendingUsers.map((u, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
-                  >
-                    <div className="w-10 h-10 bg-navy-800 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                      {u.name.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-navy-900 text-sm">
-                          {u.name}
-                        </p>
-                        <span
-                          className={`badge text-xs ${
-                            u.role === "alumni"
-                              ? "bg-gold-100 text-gold-700"
-                              : "bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          {u.role}
+
+              {opportunitiesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                </div>
+              ) : opportunitiesError ? (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+                  {opportunitiesError}
+                </div>
+              ) : opportunityPreview.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No opportunities available</p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-3 gap-4">
+                  {opportunityPreview.map((opp) => (
+                    <div
+                      key={opp.id}
+                      className="border border-gray-200 rounded-xl p-4 hover:border-navy-300 hover:shadow-md transition-all"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="badge bg-navy-50 text-navy-700">
+                          {opp.type}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-400 truncate">
-                        {u.email} · {u.dept} · {u.year}
+                      <h4 className="font-semibold text-navy-900 mb-1 line-clamp-2">
+                        {opp.title}
+                      </h4>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {opp.company}
                       </p>
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <MapPin className="h-3 w-3" />
+                        <span>{opp.location}</span>
+                      </div>
                     </div>
-                    <div className="flex gap-2 flex-shrink-0">
-                      <button
-                        className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                        title="Approve"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                      </button>
-                      <button
-                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Reject"
-                      >
-                        <AlertCircle className="h-4 w-4" />
-                      </button>
-                      <button
-                        className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="View"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="card p-5">
-              <h2 className="font-bold text-navy-900 font-serif mb-5 flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-gold-500" />
-                Recent Activity
-              </h2>
-              <div className="space-y-4">
-                {recentActivity.map((item, i) => (
-                  <div key={i} className="flex gap-3">
-                    <div
-                      className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
-                        item.type === "success" ? "bg-green-500" : "bg-blue-500"
-                      }`}
-                    />
-                    <div>
-                      <p className="text-sm text-gray-700">{item.msg}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {item.time}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
+          {/* Alumni Directory Preview */}
           <div className="card p-5 mt-6">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-bold text-navy-900 font-serif">
-                Recent Alumni Registrations
+                Alumni Directory Snapshot
               </h2>
-              <button className="btn-outline text-sm py-2 px-4">
-                Manage All
-              </button>
+              <Link
+                href="/alumni"
+                className="text-xs text-gold-600 font-medium"
+              >
+                View All
+              </Link>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">
-                    <th className="pb-3 pr-4">Member</th>
-                    <th className="pb-3 pr-4">Department</th>
-                    <th className="pb-3 pr-4">Company</th>
-                    <th className="pb-3 pr-4">Location</th>
-                    <th className="pb-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {mockAlumni.slice(0, 5).map((alumni) => (
-                    <tr
+
+            {directoryLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              </div>
+            ) : directoryError ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+                {directoryError}
+              </div>
+            ) : directoryPreview.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>No alumni found</p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-3 gap-4">
+                {directoryPreview.map((alumni) => {
+                  const avatar = resolveImageUrl(alumni.profileImageUrl);
+                  return (
+                    <div
                       key={alumni.id}
-                      className="hover:bg-gray-50 transition-colors"
+                      className="card p-5 flex items-start gap-3"
                     >
-                      <td className="py-3 pr-4">
-                        <div className="flex items-center gap-3">
-                          <Image
-                            src={alumni.profilePicture}
-                            alt={alumni.fullName}
-                            width={32}
-                            height={32}
-                            className="rounded-full object-cover"
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-navy-100 flex items-center justify-center flex-shrink-0">
+                        {avatar ? (
+                          <img
+                            src={avatar}
+                            alt={alumni.name}
+                            className="w-full h-full object-cover"
                           />
-                          <div>
-                            <p className="font-semibold text-navy-900 text-sm">
-                              {alumni.fullName}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {alumni.email}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4 text-sm text-gray-600">
-                        {alumni.department}
-                      </td>
-                      <td className="py-3 pr-4 text-sm text-gray-600">
-                        {alumni.currentCompany}
-                      </td>
-                      <td className="py-3 pr-4 text-sm text-gray-500">
-                        {alumni.location}
-                      </td>
-                      <td className="py-3">
-                        <div className="flex gap-2">
-                          <button className="text-xs text-navy-700 hover:text-navy-900 font-medium">
-                            View
-                          </button>
-                          <button className="text-xs text-red-500 hover:text-red-700 font-medium">
-                            Remove
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        ) : (
+                          <Users className="h-5 w-5 text-navy-500" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-navy-900 truncate">
+                          {alumni.name}
+                        </p>
+                        <p className="text-sm text-gray-600 truncate">
+                          {alumni.profession || "Professional"}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1 truncate">
+                          {alumni.department || "Department not added"}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1 truncate">
+                          {alumni.location || "Location not added"}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </main>

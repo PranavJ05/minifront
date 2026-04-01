@@ -23,16 +23,17 @@ interface SidebarProps {
 
 const facultyLinks = [
   { href: "/dashboard/faculty", label: "Overview", icon: Home },
-  { href: "/students", label: "Students", icon: Users },
   { href: "/alumni", label: "Alumni", icon: GraduationCap },
+  { href: "/faculty", label: "Faculty Directory", icon: Users },
   { href: "/events", label: "Events", icon: Calendar },
   { href: "/opportunities", label: "Job Board", icon: Briefcase },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/profile", label: "My Profile", icon: User },
 ];
 
 const alumniLinks = [
   { href: "/dashboard/alumni", label: "Home", icon: Home },
   { href: "/alumni", label: "My Network", icon: Users },
+  { href: "/faculty", label: "Faculty", icon: GraduationCap },
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/events", label: "Events", icon: Calendar },
   { href: "/profile", label: "My Profile", icon: User },
@@ -41,6 +42,7 @@ const alumniLinks = [
 const studentLinks = [
   { href: "/dashboard/student", label: "Home", icon: Home },
   { href: "/alumni", label: "Find Alumni", icon: Users },
+  { href: "/faculty", label: "Faculty", icon: GraduationCap },
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/events", label: "Events", icon: Calendar },
   { href: "/profile", label: "My Profile", icon: User },

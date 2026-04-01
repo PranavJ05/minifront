@@ -24,9 +24,10 @@ import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import SkillsSection from "@/components/profile/SkillsSection";
 import AddSkillModal from "@/components/profile/AddSkillModal";
 import StudentProfile from "@/components/profile/StudentProfile";
+import FacultyProfile from "@/components/profile/FacultyProfile";
 import { getAlumniSkillsSummary, getCourses } from "@/lib/api";
 import { UserRole, AlumniSkillSummary } from "@/types";
-import { hasRole, isStudent } from "@/lib/roleUtils";
+import { hasRole, isStudent, isFaculty } from "@/lib/roleUtils";
 
 const API_BASE = "http://localhost:8080";
 const LOG = (...args: unknown[]) => console.log("[ProfilePage]", ...args);
@@ -157,6 +158,11 @@ export default function ProfilePage() {
   // If user is a student, render StudentProfile component
   if (roleChecked && isStudent(userRole)) {
     return <StudentProfile />;
+  }
+
+  // If user is faculty, render FacultyProfile component
+  if (roleChecked && isFaculty(userRole)) {
+    return <FacultyProfile />;
   }
 
   // Otherwise, render the alumni profile (existing code)

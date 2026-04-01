@@ -92,6 +92,7 @@ export default function Navbar({
       return [
         { href: "/dashboard/faculty", label: "Overview", icon: Home },
         { href: "/alumni", label: "Alumni", icon: Users },
+        { href: "/faculty", label: "Faculty", icon: GraduationCap },
         { href: "/events", label: "Events", icon: Calendar },
         { href: "/opportunities", label: "Jobs", icon: Briefcase },
       ];
@@ -103,6 +104,7 @@ export default function Navbar({
         label: normalizedRole === "student" ? "Find Alumni" : "Network",
         icon: Users,
       },
+      { href: "/faculty", label: "Faculty", icon: GraduationCap },
       { href: "/events", label: "Events", icon: Calendar },
       { href: "/opportunities", label: "Opportunities", icon: Briefcase },
     ];
