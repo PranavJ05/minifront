@@ -107,8 +107,6 @@ export interface AlumniFilters {
   search: string;
   batch: string;
   department: string;
-  company: string;
-  location: string;
 }
 
 export interface AuthFormData {

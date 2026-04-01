@@ -23,8 +23,6 @@ export default function AlumniDirectoryPage() {
     search: "",
     batch: "",
     department: "",
-    company: "",
-    location: "",
   });
 
   const [alumni, setAlumni] = useState<any[]>([]);
@@ -56,12 +54,6 @@ export default function AlumniDirectoryPage() {
 
       if (debouncedFilters.department)
         query.append("department", debouncedFilters.department);
-
-      if (debouncedFilters.company)
-        query.append("company", debouncedFilters.company);
-
-      if (debouncedFilters.location)
-        query.append("location", debouncedFilters.location);
 
       try {
         const res = await fetch(
@@ -99,7 +91,7 @@ export default function AlumniDirectoryPage() {
           ),
           skills: a.skills || [], // ✅ prevent crash
         }));
-
+        console.log("SAFE department:", safeData[0].department);
         setAlumni(safeData);
       } catch (err) {
         console.error("Fetch error:", err);
@@ -132,34 +124,36 @@ export default function AlumniDirectoryPage() {
           <AlumniFiltersPanel filters={filters} onFilterChange={setFilters} />
         </div>
 
-        {/* RESULT HEADER */}
-        <div className="flex justify-between items-center mb-5">
+        {/* RESULT HEADER WITH TABS */}
+        <div className="flex flex-col items-center gap-4 mb-6">
+          {/* Results count */}
           <p className="font-medium text-navy-800">
             {loading ? "Loading..." : `${alumni.length} alumni found`}
           </p>
 
-          <div className="flex gap-2">
+          {/* View Mode Tabs - Centered & Prominent */}
+          <div className="inline-flex bg-gray-100 rounded-xl p-1.5 shadow-sm">
             <button
               onClick={() => setViewMode("list")}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold transition-all ${
                 viewMode === "list"
-                  ? "bg-navy-800 text-white"
-                  : "bg-white text-navy-700 border border-navy-300 hover:bg-navy-50"
+                  ? "bg-navy-800 text-white shadow-md"
+                  : "bg-white text-gray-600 hover:text-navy-700"
               }`}
             >
               <List className="h-4 w-4" />
-              List
+              List View
             </button>
             <button
               onClick={() => setViewMode("map")}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold transition-all ${
                 viewMode === "map"
-                  ? "bg-navy-800 text-white"
-                  : "bg-white text-navy-700 border border-navy-300 hover:bg-navy-50"
+                  ? "bg-navy-800 text-white shadow-md"
+                  : "bg-white text-gray-600 hover:text-navy-700"
               }`}
             >
               <MapPin className="h-4 w-4" />
-              Map
+              Map View
             </button>
           </div>
         </div>
