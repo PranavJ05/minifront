@@ -106,6 +106,7 @@ export default function Navbar({
       },
       { href: "/faculty", label: "Faculty", icon: GraduationCap },
       { href: "/events", label: "Events", icon: Calendar },
+      {href: "/alumni-sessions",label: "Sessions",icon: Calendar},
       { href: "/opportunities", label: "Opportunities", icon: Briefcase },
     ];
   }, [normalizedRole]);

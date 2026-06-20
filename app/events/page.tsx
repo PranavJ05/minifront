@@ -79,12 +79,12 @@ export default function EventsPage() {
 
   useEffect(() => {
     const role = getUserRole();
-    console.log("EVENT PAGE ROLE:", role);
     setUserRole(role);
   }, []);
 
   // Check if user has admin access (for create button)
   const hasAdminAccess = isAdmin(userRole);
+  console.log("printing..",userRole)
   // Initial load of public events
   useEffect(() => {
     loadEvents();
