@@ -9,12 +9,53 @@ import Footer from "@/components/layout/Footer";
 import { getToken } from "@/lib/auth";
 import { fetchRegistrations } from "@/lib/api/alumniSessions";
 
+type Registration = {
+  id?: number | string;
+  studentId?: number | string;
+  fullName?: string;
+  rollNumber?: string;
+  email?: string;
+  branch?: string;
+  batchYear?: number | string;
+  registeredAt?: string;
+  student?: {
+    studentId?: number | string;
+    id?: number | string;
+    fullName?: string;
+    name?: string;
+    rollNumber?: string;
+    email?: string;
+    branch?: {
+      name?: string;
+    } | string;
+    batchYear?: number | string;
+  };
+};
+
+function valueOrFallback(value: unknown) {
+  return value === null || value === undefined || value === ""
+    ? "Not available"
+    : String(value);
+}
+
+function formatRegisteredAt(value?: string) {
+  if (!value) return "Not available";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString();
+}
+
 export default function RegistrationsPage() {
 
   const params = useParams();
 
   const [registrations, setRegistrations] =
-    useState<any[]>([]);
+    useState<Registration[]>([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -34,7 +75,7 @@ export default function RegistrationsPage() {
             token
           );
 
-        setRegistrations(data);
+        setRegistrations(Array.isArray(data) ? data : []);
 
       } catch (error) {
 
@@ -72,16 +113,34 @@ export default function RegistrationsPage() {
 
         <div className="space-y-4">
 
+          {!loading && registrations.length === 0 && (
+            <div className="bg-white border rounded-xl p-5 text-gray-600">
+              No students have registered for this session yet.
+            </div>
+          )}
+
           {registrations.map(
             (registration) => {
 
               const student =
-                registration.student;
+                registration.student ?? {};
+
+              const branch =
+                typeof student.branch === "string"
+                  ? student.branch
+                  : student.branch?.name;
+
+              const registrationKey =
+                registration.id ??
+                registration.studentId ??
+                student.studentId ??
+                student.id ??
+                `${registration.email ?? student.email}-${registration.registeredAt ?? ""}`;
 
               return (
 
                 <div
-                  key={registration.id}
+                  key={registrationKey}
                   className="
                     bg-white
                     border
@@ -97,7 +156,11 @@ export default function RegistrationsPage() {
                       font-semibold
                     "
                   >
-                    {student.fullName}
+                    {valueOrFallback(
+                      registration.fullName ??
+                      student.fullName ??
+                      student.name
+                    )}
                   </h2>
 
                   <div
@@ -115,7 +178,10 @@ export default function RegistrationsPage() {
                         Roll No:
                       </strong>
                       {" "}
-                      {student.rollNumber}
+                      {valueOrFallback(
+                        registration.rollNumber ??
+                        student.rollNumber
+                      )}
                     </p>
 
                     <p>
@@ -123,7 +189,10 @@ export default function RegistrationsPage() {
                         Email:
                       </strong>
                       {" "}
-                      {student.email}
+                      {valueOrFallback(
+                        registration.email ??
+                        student.email
+                      )}
                     </p>
 
                     <p>
@@ -131,7 +200,10 @@ export default function RegistrationsPage() {
                         Branch:
                       </strong>
                       {" "}
-                      {student.branch?.name}
+                      {valueOrFallback(
+                        registration.branch ??
+                        branch
+                      )}
                     </p>
 
                     <p>
@@ -139,7 +211,10 @@ export default function RegistrationsPage() {
                         Batch:
                       </strong>
                       {" "}
-                      {student.batchYear}
+                      {valueOrFallback(
+                        registration.batchYear ??
+                        student.batchYear
+                      )}
                     </p>
 
                     
@@ -149,9 +224,9 @@ export default function RegistrationsPage() {
                         Registered:
                       </strong>
                       {" "}
-                      {new Date(
+                      {formatRegisteredAt(
                         registration.registeredAt
-                      ).toLocaleString()}
+                      )}
                     </p>
 
                   </div>
