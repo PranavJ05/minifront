@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   GraduationCap,
+  Handshake,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserRole } from "@/types";
@@ -37,6 +38,7 @@ const alumniLinks = [
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/events", label: "Events", icon: Calendar },
   { href: "/profile", label: "My Profile", icon: User },
+  {href: "/alumni-mentorship",label:"Mentorship",icon:Handshake}
 ];
 
 const studentLinks = [
@@ -46,6 +48,8 @@ const studentLinks = [
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/events", label: "Events", icon: Calendar },
   { href: "/profile", label: "My Profile", icon: User },
+  {href: "/alumni-mentorship",label:"Mentorship",icon:Handshake}
+
 ];
 
 export default function DashboardSidebar({
