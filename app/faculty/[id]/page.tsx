@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { FaLinkedin } from "react-icons/fa";
 import {
   ArrowLeft,
   GraduationCap,
@@ -15,7 +16,6 @@ import {
   Loader2,
   AlertCircle,
   ExternalLink,
-  Linkedin,
   Clock,
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
@@ -221,7 +221,7 @@ export default function FacultyProfilePage() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 bg-[#0077b5] hover:bg-[#006097] text-white font-semibold py-2.5 px-5 rounded-lg transition-colors"
                   >
-                    <Linkedin className="h-4 w-4" />
+                    <FaLinkedin className="h-4 w-4" />
                     LinkedIn
                   </a>
                 )}

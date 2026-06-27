@@ -367,7 +367,6 @@ export default function SignupPage() {
         password: formData.password,
         role: formData.role.toUpperCase(),
         batchYear: Number(formData.batchYear),
-        batch: formData.batch,
         department: formData.department,
         branch: formData.branch,
         // Student specific
@@ -649,7 +648,7 @@ export default function SignupPage() {
               )}
 
               <AcademicDetails
-                role={formData.role}
+                role={formData.role as "student" | "alumni"}
                 departments={departments}
                 branches={branchesList}
                 batchYears={batchYears}

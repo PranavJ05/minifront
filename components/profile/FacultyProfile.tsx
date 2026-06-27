@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { FaLinkedin } from "react-icons/fa";
 import {
   ExternalLink,
   GraduationCap,
@@ -12,7 +13,6 @@ import {
   Pencil,
   Save,
   X,
-  Linkedin,
   Award,
   CheckCircle,
   AlertCircle,
@@ -578,7 +578,7 @@ export default function FacultyProfilePage() {
                     </p>
                     {isEditing ? (
                       <div className="relative">
-                        <Linkedin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <FaLinkedin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                           type="url"
                           value={formValues.linkedinUrl}
@@ -598,7 +598,7 @@ export default function FacultyProfilePage() {
                       >
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-white rounded-lg shadow-sm text-[#0077b5]">
-                            <Linkedin className="h-4 w-4" />
+                            <FaLinkedin className="h-4 w-4" />
                           </div>
                           <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700 truncate max-w-[180px]">
                             {profile.linkedinUrl.replace(

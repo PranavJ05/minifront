@@ -5,12 +5,12 @@ import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { FaLinkedin } from "react-icons/fa";
 import {
   ArrowLeft,
   MapPin,
   Briefcase,
   GraduationCap,
-  Linkedin,
   Mail,
   MessageSquare,
   UserPlus,
@@ -243,7 +243,7 @@ export default function AlumniProfilePage({ params }: Props) {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 bg-[#0077b5] hover:bg-[#006097] text-white font-semibold py-2.5 px-5 rounded-lg transition-colors"
                   >
-                    <Linkedin className="h-4 w-4" />
+                    <FaLinkedin className="h-4 w-4" />
                     View LinkedIn Profile
                   </a>
                 )}

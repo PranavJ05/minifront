@@ -2,6 +2,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { getOnboardingStatus } from "@/lib/skillsOnboarding";
+import { Geist, Inter, Figtree } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const figtreeHeading = Figtree({subsets:['latin'],variable:'--font-heading'});
+
+const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: "Alumni Network | University Alumni Relations",
@@ -21,7 +27,7 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="en">
+    <html lang="en" className={cn("font-sans", inter.variable, figtreeHeading.variable)}>
       <body>{children}</body>
     </html>
   );

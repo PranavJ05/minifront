@@ -1,35 +1,28 @@
 "use client";
 
-// app/events/page.tsx
-
 import { useState, useEffect, useCallback } from "react";
-import { Calendar, Plus, Loader2, AlertCircle } from "lucide-react";
+import { Calendar, Plus, AlertCircle } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import EventTabs, { EventTab } from "@/components/events/EventTabs";
 import EventCard from "@/components/events/EventCard";
-import EventCardCompact from "@/components/events/EventCardCompact";
-import EventListItem from "@/components/events/EventListItem";
 import CreateEventModal from "@/components/events/CreateEventModal";
 import { fetchAllEvents } from "@/lib/api/events";
 import { Event } from "@/lib/types/events";
 import { isAnyAdmin } from "@/lib/roleUtils";
-import { formatMonthYear, isUpcoming, isPast } from "@/lib/utils/dateUtils";
+import { isUpcoming, isPast } from "@/lib/utils/dateUtils";
 import { getToken, getUserRole } from "@/lib/auth";
-function groupByMonth(events: Event[]): Map<string, Event[]> {
-  const map = new Map<string, Event[]>();
-  for (const event of events) {
-    const key = formatMonthYear(event.eventDate);
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(event);
-  }
-  return map;
-}
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+
+const TABS = ["Upcoming", "My Events", "Past"] as const;
+export type EventTab = (typeof TABS)[number];
 
 export default function EventsPage() {
-  // State for all public events
   const [allEvents, setAllEvents] = useState<Event[]>([]);
-  // State for user's specific events
   const [myEvents, setMyEvents] = useState<Event[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,9 +30,7 @@ export default function EventsPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<EventTab>("Upcoming");
   const [showCreateModal, setShowCreateModal] = useState(false);
-  // Add after the loadMyEvents useEffect
 
-  // 1. Fetch ALL public events (Upcoming & Past)
   const loadEvents = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -54,20 +45,15 @@ export default function EventsPage() {
     }
   }, []);
 
-  // 2. Fetch ONLY the current user's events
   const loadMyEvents = useCallback(async () => {
     const token = getToken();
-    if (!token) return; // Ignore if user isn't logged in
-
+    if (!token) return;
     setLoadingMyEvents(true);
     try {
-      // NOTE: You might want to move this fetch to @/lib/api/events alongside fetchAllEvents
       const res = await fetch("http://localhost:8080/events/mine", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (!res.ok) throw new Error("Failed to fetch your events");
-
       const data = await res.json();
       setMyEvents(data);
     } catch (err: any) {
@@ -82,22 +68,17 @@ export default function EventsPage() {
     setUserRole(role);
   }, []);
 
-  // Check if user has admin access (for create button)
   const hasAdminAccess = isAnyAdmin(userRole);
-  console.log("printing..",userRole)
-  // Initial load of public events
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
 
-  // Trigger 'My Events' fetch ONLY when the user clicks the tab
   useEffect(() => {
     if (activeTab === "My Events" && myEvents.length === 0) {
       loadMyEvents();
     }
   }, [activeTab, loadMyEvents, myEvents.length]);
 
-  // ---- Filter by tab ----
   const upcomingEvents = allEvents.filter((e) => isUpcoming(e.eventDate));
   const pastEvents = allEvents.filter((e) => isPast(e.eventDate));
 
@@ -108,129 +89,100 @@ export default function EventsPage() {
         ? pastEvents
         : myEvents;
 
-  const grouped = groupByMonth(displayEvents);
+  const isCurrentlyLoading = activeTab === "My Events" ? loadingMyEvents : loading;
 
-  // Determine if we should show a loading spinner based on the active tab
-  const isCurrentlyLoading =
-    activeTab === "My Events" ? loadingMyEvents : loading;
-  console.log("USER ROLE RAW:", userRole);
-  console.log("USER ROLE TYPE:", typeof userRole);
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="bg-navy-950 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="font-serif text-3xl font-bold text-white mb-2">
-              Events & Reunions
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Events
             </h1>
-            <p className="text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Upcoming events for our alumni community
             </p>
           </div>
           {hasAdminAccess && (
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 bg-gold-500 hover:bg-gold-400 text-navy-950 font-bold px-4 py-2 rounded-lg transition-colors"
-            >
+            <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="h-4 w-4" />
               Create Event
-            </button>
+            </Button>
           )}
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <EventTabs active={activeTab} onChange={setActiveTab} />
+        <Separator />
+
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as EventTab)}>
+          <TabsList>
+            {TABS.map((tab) => (
+              <TabsTrigger key={tab} value={tab}>
+                {tab}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
 
         {isCurrentlyLoading && (
-          <div className="flex flex-col items-center justify-center py-24 gap-3">
-            <Loader2 className="h-8 w-8 text-navy-400 animate-spin" />
-            <p className="text-gray-400 text-sm">Loading events…</p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map(() => (
+              <Skeleton key={crypto.randomUUID()} className="h-[320px] rounded-[min(var(--radius-4xl),24px)]" />
+            ))}
           </div>
         )}
 
         {!isCurrentlyLoading && error && (
-          <div className="rounded-2xl bg-red-50 border border-red-200 p-8 text-center">
-            <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-            <p className="text-red-700 font-medium">{error}</p>
-            <button onClick={loadEvents} className="btn-primary mt-4 px-6">
-              Retry
-            </button>
-          </div>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+            <div className="mt-3">
+              <Button onClick={loadEvents} variant="outline" size="sm">
+                Retry
+              </Button>
+            </div>
+          </Alert>
         )}
 
         {!isCurrentlyLoading && !error && displayEvents.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-navy-50 flex items-center justify-center">
-              <Calendar className="h-8 w-8 text-navy-300" />
-            </div>
-            <div>
-              <p className="text-navy-900 font-semibold text-lg">
+          <Card>
+            <CardContent className="flex flex-col items-center py-16">
+              <Calendar className="h-8 w-8 text-muted-foreground mb-4" />
+              <p className="font-semibold text-foreground">
                 No {activeTab.toLowerCase()} events
               </p>
-              <p className="text-gray-400 text-sm mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 {activeTab === "Upcoming"
-                  ? "Check back soon — events will appear here when posted."
+                  ? "Check back soon."
                   : activeTab === "My Events"
                     ? "You haven't created any events yet."
                     : "No past events to show."}
               </p>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
         {!isCurrentlyLoading && !error && displayEvents.length > 0 && (
-          <div className="space-y-10">
-            {Array.from(grouped.entries()).map(
-              ([monthYear, events], groupIdx) => (
-                <section key={monthYear}>
-                  <div className="flex items-center gap-2 mb-5">
-                    <Calendar className="h-4 w-4 text-gold-500" />
-                    <h2 className="font-bold text-navy-900 font-serif">
-                      {monthYear}
-                    </h2>
-                  </div>
-
-                  {groupIdx === 0 && events[0] && (
-                    <EventCard event={events[0]} />
-                  )}
-
-                  {groupIdx === 0 && events.length > 1 && (
-                    <div className="grid md:grid-cols-2 gap-5 mt-5">
-                      {events.slice(1).map((event) => (
-                        <EventCardCompact key={event.id} event={event} />
-                      ))}
-                    </div>
-                  )}
-
-                  {groupIdx > 0 && (
-                    <div className="space-y-3">
-                      {events.map((event) => (
-                        <EventListItem key={event.id} event={event} />
-                      ))}
-                    </div>
-                  )}
-                </section>
-              ),
-            )}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {displayEvents.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
           </div>
         )}
       </div>
 
       <Footer />
 
-      {showCreateModal && (
-        <CreateEventModal
-          onClose={() => setShowCreateModal(false)}
-          onCreated={() => {
-            setShowCreateModal(false);
-            loadEvents();
-            if (activeTab === "My Events") loadMyEvents(); // Refresh my events if that tab is open
-          }}
-        />
-      )}
+      <CreateEventModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        onCreated={() => {
+          setShowCreateModal(false);
+          loadEvents();
+          if (activeTab === "My Events") loadMyEvents();
+        }}
+      />
     </div>
   );
 }

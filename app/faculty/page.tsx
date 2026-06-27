@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { FaLinkedin } from "react-icons/fa";
 import {
   GraduationCap,
   Mail,
@@ -14,7 +15,6 @@ import {
   Loader2,
   AlertCircle,
   ExternalLink,
-  Linkedin,
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -33,13 +33,18 @@ interface FacultyMember {
   departmentName: string;
   officeLocation: string | null;
   qualifications: string; // JSON string
-  subjectsTaught: string; // JSON string
+  subjectsTaught: string;
   linkedinUrl: string | null;
   googleScholarUrl: string | null;
   totalExperienceYears: number;
   joinDate: string;
   bio: string | null;
 }
+
+type ParsedFacultyMember = Omit<FacultyMember, 'qualifications' | 'subjectsTaught'> & {
+  qualifications: any[];
+  subjectsTaught: string[];
+};
 
 export default function FacultyPage() {
   const [faculty, setFaculty] = useState<FacultyMember[]>([]);
@@ -63,9 +68,7 @@ export default function FacultyPage() {
   }, [faculty]);
 
   // Parsed data for display
-  const [parsedFaculty, setParsedFaculty] = useState<
-    Array<FacultyMember & { qualifications: any[]; subjectsTaught: string[] }>
-  >([]);
+  const [parsedFaculty, setParsedFaculty] = useState<ParsedFacultyMember[]>([]);
 
   useEffect(() => {
     loadFaculty();
@@ -117,10 +120,10 @@ export default function FacultyPage() {
     }
 
     // Parse JSON fields for filtered results
-    const parsed = filtered.map((f) => ({
+    const parsed: ParsedFacultyMember[] = filtered.map((f) => ({
       ...f,
       qualifications: f.qualifications ? JSON.parse(f.qualifications) : [],
-      subjectsTaught: f.subjectsTaught ? JSON.parse(f.subjectsTaught) : [],
+      subjectsTaught: f.subjectsTaught ? JSON.parse(f.subjectsTaught as string) as string[] : [],
     }));
 
     setParsedFaculty(parsed);
@@ -226,7 +229,7 @@ export default function FacultyPage() {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {parsedFaculty.map((member) => (
+            {parsedFaculty.map((member: ParsedFacultyMember) => (
               <article
                 key={member.userId}
                 className="card overflow-hidden hover:shadow-lg transition-shadow duration-300"
@@ -338,7 +341,7 @@ export default function FacultyPage() {
                         className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-blue-600 hover:bg-blue-50 transition-colors"
                         title="LinkedIn"
                       >
-                        <Linkedin className="h-4 w-4" />
+                        <FaLinkedin className="h-4 w-4" />
                       </a>
                     )}
                     <a

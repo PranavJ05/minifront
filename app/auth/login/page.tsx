@@ -28,6 +28,8 @@ import {
 type LoginResponse = {
   token?: string;
   id?: number | null;
+  alumniId?: number | null;
+  courseId?: number | null;
   email?: string;
   name?: string;
   roles?: string[];
