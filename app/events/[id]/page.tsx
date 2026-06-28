@@ -10,6 +10,8 @@ import {
   Users,
   ExternalLink,
   AlertCircle,
+  Clock,
+  Tag,
 } from "lucide-react";
 import PhotoGallery from "@/components/events/PhotoGallery";
 import VideoList from "@/components/events/VideoList";
@@ -23,11 +25,9 @@ import {
   isPast,
 } from "@/lib/utils/dateUtils";
 import { getToken } from "@/lib/auth";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -43,7 +43,6 @@ export default function EventDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOrganizer, setIsOrganizer] = useState(false);
-  const [activeTab, setActiveTab] = useState("about");
 
   const loadEvent = useCallback(async () => {
     setLoading(true);
@@ -94,7 +93,7 @@ export default function EventDetailPage() {
         <Skeleton className="h-4 w-24 rounded-md" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
-            <Skeleton className="h-[300px] rounded-xl" />
+            <Skeleton className="h-[300px] rounded-2xl" />
             <Skeleton className="h-48 rounded-xl" />
           </div>
           <div className="space-y-4">
@@ -124,134 +123,170 @@ export default function EventDetailPage() {
   const past = isPast(event.eventDate);
 
   return (
-    <div className="w-full px-6 py-6 md:px-8 space-y-6">
+    <div className="w-full px-4 sm:px-6 py-6 space-y-6">
+      {/* Back link */}
       <Link
         href="/events"
-        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-3 w-3" />
         All Events
       </Link>
 
+      {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Left Column: Cover Card & Tabbed Info */}
+
+        {/* Left: Hero Card + Tabs */}
         <div className="lg:col-span-2 space-y-6">
-          
-          {/* Proper Event Card */}
-          <Card className="overflow-hidden border border-border bg-card">
-            <div className="flex flex-col md:flex-row min-h-[220px]">
-              {/* Cover Image container */}
-              <div className="md:w-2/5 relative min-h-[200px] md:min-h-auto bg-muted overflow-hidden shrink-0">
-                {coverImage ? (
-                  <img
-                    src={coverImage}
-                    alt={event.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
-                    <Calendar className="h-12 w-12" />
-                  </div>
-                )}
-                {/* Sharp clean border next to content */}
-                <div className="absolute inset-y-0 right-0 w-[1px] bg-border hidden md:block" />
-                <div className="absolute inset-x-0 bottom-0 h-[1px] bg-border md:hidden" />
+
+          {/* Landscape Hero Card */}
+          <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm overflow-hidden">
+            <div className="flex flex-col md:flex-row">
+
+              {/* Image - padded with rounded corners */}
+              <div className="md:w-[45%] p-3 shrink-0">
+                <div className="relative w-full h-[220px] md:h-full min-h-[220px] rounded-xl overflow-hidden bg-muted">
+                  {coverImage ? (
+                    <img
+                      src={coverImage}
+                      alt={event.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
+                      <Calendar className="h-12 w-12" />
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Text details area */}
-              <div className="flex-1 p-5 md:p-6 flex flex-col justify-between space-y-4">
-                <div className="space-y-2.5">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {past ? (
-                      <Badge variant="secondary" className="text-[10px] font-semibold">Past Event</Badge>
-                    ) : (
-                      <Badge variant="default" className="text-[10px] font-semibold">Upcoming</Badge>
-                    )}
-                    {event.batchYear && (
-                      <Badge variant="outline" className="text-[10px] font-semibold">
-                        Batch {event.batchYear}
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground leading-tight">
-                    {event.title}
-                  </h1>
-                  
-                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
-                    {event.description || "No description provided."}
-                  </p>
+              {/* Content */}
+              <div className="flex-1 p-5 md:p-6 flex flex-col gap-4">
+                {/* Badges */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {past ? (
+                    <Badge variant="secondary" className="text-[10px] font-semibold">Past Event</Badge>
+                  ) : (
+                    <Badge variant="default" className="text-[10px] font-semibold">Upcoming</Badge>
+                  )}
+                  {event.batchYear && (
+                    <Badge variant="outline" className="text-[10px] font-semibold">
+                      Batch {event.batchYear}
+                    </Badge>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium flex-wrap pt-2 border-t border-border/30">
-                  <span>{formatEventDate(event.eventDate)}</span>
-                  <span className="text-border">&bull;</span>
-                  <span>{event.location}</span>
+                {/* Title */}
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground leading-tight">
+                  {event.title}
+                </h1>
+
+                {/* Description */}
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {event.description || "No description provided."}
+                </p>
+
+                {/* Meta rows */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Calendar className="h-3.5 w-3.5 shrink-0" />
+                    <span>{formatEventDate(event.eventDate)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5 shrink-0" />
+                    <span>{formatMonth(event.eventDate)} {formatDay(event.eventDate)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5 shrink-0" />
+                    <span>{event.location}</span>
+                  </div>
+                  {event.batchYear && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Tag className="h-3.5 w-3.5 shrink-0" />
+                      <span>Batch {event.batchYear}</span>
+                    </div>
+                  )}
+                  {event.createdByName && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Users className="h-3.5 w-3.5 shrink-0" />
+                      <span>Organized by {event.createdByName}</span>
+                      {isOrganizer && (
+                        <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4">You</Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Separator + Register */}
+                <div className="mt-auto pt-3 border-t border-border/50">
+                  {!past && event.registrationRequired && event.registrationLink ? (
+                    <a
+                      href={event.registrationLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button className="w-full cursor-pointer gap-1.5">
+                        Register Now
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Button>
+                    </a>
+                  ) : past ? (
+                    <p className="text-xs text-muted-foreground text-center py-2 font-medium">
+                      This event has ended
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center py-2 font-medium">
+                      No registration required
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
 
-          {/* Tabbed Info */}
-          {/* Tabbed Info */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          {/* Tabs: About / Photos / Videos */}
+          <Tabs defaultValue="about" className="w-full">
             <TabsList className="bg-muted p-0.5 h-8">
               <TabsTrigger value="about" className="h-7 text-xs px-4">About</TabsTrigger>
-              {(event.photos?.length > 0 || isOrganizer) && (
-                <TabsTrigger value="gallery" className="h-7 text-xs px-4">Gallery</TabsTrigger>
+              {(event.photos?.length ?? 0) > 0 && (
+                <TabsTrigger value="photos" className="h-7 text-xs px-4">
+                  Photos ({event.photos?.length})
+                </TabsTrigger>
               )}
-              {(event.videos?.length > 0 || isOrganizer) && (
-                <TabsTrigger value="videos" className="h-7 text-xs px-4">Videos</TabsTrigger>
+              {(event.videos?.length ?? 0) > 0 && (
+                <TabsTrigger value="videos" className="h-7 text-xs px-4">
+                  Videos ({event.videos?.length})
+                </TabsTrigger>
               )}
             </TabsList>
-            
-            <TabsContent value="about" className="mt-4 focus-visible:outline-none space-y-6">
-              <div className="rounded-lg border border-border bg-card p-6 space-y-4">
-                <h3 className="text-sm font-semibold text-foreground">About this Event</h3>
+
+            <TabsContent value="about" className="mt-4 focus-visible:outline-none">
+              <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm p-5 space-y-4">
                 <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">
                   {event.description || "No description provided."}
                 </p>
+                {/* Small photo previews */}
+                {(event.photos?.length ?? 0) > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-foreground mb-2">Photos</p>
+                    <div className="flex gap-2">
+                      {event.photos?.slice(0, 4).map((photo, i) => (
+                        <div key={i} className="w-16 h-16 rounded-lg overflow-hidden bg-muted shrink-0">
+                          <img
+                            src={photo.photoUrl}
+                            alt={`Photo ${i + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-
-              {/* Photos preview block */}
-              {event.photos?.length > 0 && (
-                <div className="relative">
-                  <span
-                    onClick={() => setActiveTab("gallery")}
-                    className="absolute top-6 right-6 z-10 text-[11px] text-primary hover:underline cursor-pointer font-medium"
-                  >
-                    View Gallery
-                  </span>
-                  <PhotoGallery
-                    eventId={event.id}
-                    photos={event.photos}
-                    isOrganizer={isOrganizer}
-                    onPhotosChanged={handleMediaChanged}
-                  />
-                </div>
-              )}
-
-              {/* Videos preview block */}
-              {event.videos?.length > 0 && (
-                <div className="relative">
-                  <span
-                    onClick={() => setActiveTab("videos")}
-                    className="absolute top-6 right-6 z-10 text-[11px] text-primary hover:underline cursor-pointer font-medium"
-                  >
-                    View Videos
-                  </span>
-                  <VideoList
-                    eventId={event.id}
-                    videos={event.videos}
-                    isOrganizer={isOrganizer}
-                    onVideosChanged={handleMediaChanged}
-                  />
-                </div>
-              )}
             </TabsContent>
-            
-            {(event.photos?.length > 0 || isOrganizer) && (
-              <TabsContent value="gallery" className="mt-4 focus-visible:outline-none">
+
+            {(event.photos?.length ?? 0) > 0 && (
+              <TabsContent value="photos" className="mt-4 focus-visible:outline-none">
                 <PhotoGallery
                   eventId={event.id}
                   photos={event.photos ?? []}
@@ -260,8 +295,8 @@ export default function EventDetailPage() {
                 />
               </TabsContent>
             )}
-            
-            {(event.videos?.length > 0 || isOrganizer) && (
+
+            {(event.videos?.length ?? 0) > 0 && (
               <TabsContent value="videos" className="mt-4 focus-visible:outline-none">
                 <VideoList
                   eventId={event.id}
@@ -274,81 +309,15 @@ export default function EventDetailPage() {
           </Tabs>
         </div>
 
-        {/* Right Column: Widgets */}
+        {/* Right Column: Organizer controls only */}
         <div className="space-y-4">
-          {/* Event details widget */}
-          <div className="rounded-lg border border-border bg-card p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">Details</h3>
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 text-primary text-center px-2 py-1.5 rounded w-12 shrink-0 border border-primary/20">
-                <span className="block text-[10px] uppercase leading-none font-semibold">
-                  {formatMonth(event.eventDate)}
-                </span>
-                <span className="block text-base font-bold leading-tight mt-0.5">
-                  {formatDay(event.eventDate)}
-                </span>
-              </div>
-              <div className="space-y-0.5">
-                <p className="text-xs font-semibold text-foreground">
-                  {formatEventDate(event.eventDate)}
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  {event.location}
-                </p>
-              </div>
-            </div>
-
-            <Separator className="bg-border/60" />
-
-            <div className="space-y-2 text-xs">
-              {event.batchYear && (
-                <p className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
-                  Batch {event.batchYear} Restriction
-                </p>
-              )}
-              {event.createdByName && (
-                <p className="flex items-center gap-2 text-muted-foreground">
-                  <Users className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
-                  Organized by {event.createdByName}
-                  {isOrganizer && (
-                    <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4 ml-1">You</Badge>
-                  )}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Registration action widget */}
-          <div className="rounded-lg border border-border bg-card p-5 space-y-3">
-            {!past && event.registrationRequired && event.registrationLink ? (
-              <a
-                href={event.registrationLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-              >
-                <Button className="w-full cursor-pointer flex items-center justify-center gap-1.5" size="sm">
-                  Register Now
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </Button>
-              </a>
-            ) : past ? (
-              <p className="text-xs text-muted-foreground text-center py-2 font-medium">
-                This event has ended
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground text-center py-2 font-medium">
-                No registration required
-              </p>
-            )}
-          </div>
-
-          {/* Organizer panel modal trigger */}
+          {/* Organizer controls */}
           {isOrganizer && (
-            <div className="rounded-lg border border-dashed border-primary/30 p-5 bg-primary/5 space-y-3">
+            <div className="bg-card text-card-foreground rounded-2xl border border-dashed border-primary/30 p-5 bg-primary/5 space-y-3">
               <p className="text-xs font-semibold text-primary uppercase tracking-wider">Organizer Controls</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">You have administrative access to add photos and videos to this event.</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                You have administrative access to add photos and videos to this event.
+              </p>
               <Dialog>
                 <DialogTrigger>
                   <Button className="w-full cursor-pointer" size="sm">Add Media</Button>
