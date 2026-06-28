@@ -10,7 +10,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 
 const figtreeHeading = Figtree({subsets:['latin'],variable:'--font-heading'});
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+const figtree = Figtree({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: "Alumni Network | University Alumni Relations",
@@ -30,7 +30,7 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="en" className={cn("font-sans", inter.variable, figtreeHeading.variable)} suppressHydrationWarning>
+    <html lang="en" className={cn("font-sans", figtree.variable, figtreeHeading.variable)} suppressHydrationWarning>
       <body>
         <ThemeProvider
           attribute="class"

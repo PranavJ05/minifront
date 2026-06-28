@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Calendar, Plus, AlertCircle, LayoutGrid, List, Search, ExternalLink } from "lucide-react";
+import {
+  Calendar,
+  Plus,
+  AlertCircle,
+  LayoutGrid,
+  List,
+  Search,
+  ExternalLink,
+} from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import EventCard from "@/components/events/EventCard";
@@ -116,13 +124,14 @@ export default function EventsPage() {
     );
   });
 
-  const isCurrentlyLoading = activeTab === "My Events" ? loadingMyEvents : loading;
+  const isCurrentlyLoading =
+    activeTab === "My Events" ? loadingMyEvents : loading;
 
   return (
     <div className="flex min-h-screen bg-background w-full">
       {user && (
         <DashboardSidebar
-          role={userRole as any || "alumni"}
+          role={(userRole as any) || "alumni"}
           userName={user.fullName || user.name}
           userEmail={user.email}
         />
@@ -143,7 +152,10 @@ export default function EventsPage() {
                 </p>
               </div>
               {hasAdminAccess && (
-                <Button onClick={() => setShowCreateModal(true)} size="sm" className="cursor-pointer">
+                <Button
+                  onClick={() => setShowCreateModal(true)}
+                  className="cursor-pointer"
+                >
                   <Plus className="h-4 w-4" />
                   Create Event
                 </Button>
@@ -153,10 +165,17 @@ export default function EventsPage() {
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-wrap">
-              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as EventTab)}>
+              <Tabs
+                value={activeTab}
+                onValueChange={(v) => setActiveTab(v as EventTab)}
+              >
                 <TabsList className="h-8 p-0.5 bg-muted">
                   {TABS.map((tab) => (
-                    <TabsTrigger key={tab} value={tab} className="h-7 text-xs px-3">
+                    <TabsTrigger
+                      key={tab}
+                      value={tab}
+                      className="h-7 text-xs px-3"
+                    >
                       {tab}
                     </TabsTrigger>
                   ))}
@@ -200,7 +219,8 @@ export default function EventsPage() {
 
               {!isCurrentlyLoading && !error && (
                 <span className="text-xs font-medium text-muted-foreground shrink-0 hidden sm:inline">
-                  Showing {filteredEvents.length} of {displayEvents.length} events
+                  Showing {filteredEvents.length} of {displayEvents.length}{" "}
+                  events
                 </span>
               )}
             </div>
@@ -209,7 +229,10 @@ export default function EventsPage() {
           {isCurrentlyLoading && (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {Array.from({ length: 8 }).map(() => (
-                <Skeleton key={crypto.randomUUID()} className="h-[380px] rounded-xl" />
+                <Skeleton
+                  key={crypto.randomUUID()}
+                  className="h-[380px] rounded-xl"
+                />
               ))}
             </div>
           )}
@@ -231,10 +254,12 @@ export default function EventsPage() {
               <CardContent className="flex flex-col items-center py-16 text-center">
                 <Calendar className="h-8 w-8 text-muted-foreground/60 mb-3" />
                 <p className="font-semibold text-foreground text-sm">
-                  {searchQuery ? "No matching events found" : `No ${activeTab.toLowerCase()} events`}
+                  {searchQuery
+                    ? "No matching events found"
+                    : `No ${activeTab.toLowerCase()} events`}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                  {searchQuery 
+                  {searchQuery
                     ? "Try adjusting your search keywords or clear the filter."
                     : activeTab === "Upcoming"
                       ? "Check back soon for new announcements."
@@ -243,7 +268,11 @@ export default function EventsPage() {
                         : "No past events are archived."}
                 </p>
                 {searchQuery && (
-                  <Button onClick={() => setSearchQuery("")} variant="outline" size="xs" className="mt-4 cursor-pointer">
+                  <Button
+                    onClick={() => setSearchQuery("")}
+                    variant="outline"
+                    className="mt-4 cursor-pointer"
+                  >
                     Clear Search
                   </Button>
                 )}
@@ -251,8 +280,10 @@ export default function EventsPage() {
             </Card>
           )}
 
-          {!isCurrentlyLoading && !error && filteredEvents.length > 0 && (
-            viewMode === "card" ? (
+          {!isCurrentlyLoading &&
+            !error &&
+            filteredEvents.length > 0 &&
+            (viewMode === "card" ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredEvents.map((event) => (
                   <EventCard key={event.id} event={event} />
@@ -275,29 +306,57 @@ export default function EventsPage() {
                       {filteredEvents.map((event) => {
                         const past = isPast(event.eventDate);
                         return (
-                          <tr key={event.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                            <td className="p-3 pl-4 font-semibold text-foreground">{event.title}</td>
-                            <td className="p-3 text-muted-foreground">{formatEventDate(event.eventDate)}</td>
-                            <td className="p-3 text-muted-foreground">{event.location}</td>
+                          <tr
+                            key={event.id}
+                            className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors"
+                          >
+                            <td className="p-3 pl-4 font-semibold text-foreground">
+                              {event.title}
+                            </td>
+                            <td className="p-3 text-muted-foreground">
+                              {formatEventDate(event.eventDate)}
+                            </td>
+                            <td className="p-3 text-muted-foreground">
+                              {event.location}
+                            </td>
                             <td className="p-3">
                               {event.batchYear ? (
-                                <Badge variant="outline" className="text-[10px] font-semibold">Batch {event.batchYear}</Badge>
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] font-semibold"
+                                >
+                                  Batch {event.batchYear}
+                                </Badge>
                               ) : (
-                                <span className="text-muted-foreground/30">&mdash;</span>
+                                <span className="text-muted-foreground/30">
+                                  &mdash;
+                                </span>
                               )}
                             </td>
                             <td className="p-3 text-right pr-4">
                               <div className="flex items-center justify-end gap-2">
                                 <Link href={`/events/${event.id}`}>
-                                  <Button size="xs" variant="outline" className="cursor-pointer">Details</Button>
+                                  <Button
+                                    variant="outline"
+                                    className="cursor-pointer"
+                                  >
+                                    Details
+                                  </Button>
                                 </Link>
-                                {!past && event.registrationRequired && event.registrationLink && (
-                                  <a href={event.registrationLink} target="_blank" rel="noopener noreferrer">
-                                    <Button size="xs" className="cursor-pointer flex items-center gap-1">
-                                      Register <ExternalLink className="h-3 w-3" />
-                                    </Button>
-                                  </a>
-                                )}
+                                {!past &&
+                                  event.registrationRequired &&
+                                  event.registrationLink && (
+                                    <a
+                                      href={event.registrationLink}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      <Button className="cursor-pointer flex items-center gap-1">
+                                        Register{" "}
+                                        <ExternalLink className="h-3 w-3" />
+                                      </Button>
+                                    </a>
+                                  )}
                               </div>
                             </td>
                           </tr>
@@ -307,8 +366,7 @@ export default function EventsPage() {
                   </table>
                 </div>
               </div>
-            )
-          )}
+            ))}
         </div>
       </SidebarInset>
 
