@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
@@ -9,9 +9,9 @@ import {
   Briefcase,
   Calendar,
   User,
-  LogOut,
   GraduationCap,
   Handshake,
+  Newspaper,
 } from "lucide-react";
 import { getMyClubs } from "@/lib/api/clubs";
 import { cn } from "@/lib/utils";
@@ -19,12 +19,10 @@ import { UserRole } from "@/types";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
@@ -37,7 +35,7 @@ interface SidebarProps {
 const facultyLinks = [
   { href: "/dashboard/faculty", label: "Overview", icon: Home },
   { href: "/alumni", label: "Alumni", icon: GraduationCap },
-  { href: "/faculty", label: "Faculty Directory", icon: Users },
+  { href: "/faculty", label: "Faculty", icon: Users },
   { href: "/events", label: "Events", icon: Calendar },
   { href: "/club-events", label: "Club Events", icon: Calendar },
   { href: "/opportunities", label: "Job Board", icon: Briefcase },
@@ -51,6 +49,7 @@ const alumniLinks = [
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/events", label: "Events", icon: Calendar },
   { href: "/club-events", label: "Club Events", icon: Calendar },
+  { href: "/alumni-sessions", label: "Sessions", icon: Newspaper },
   { href: "/profile", label: "My Profile", icon: User },
   {href: "/alumni-mentorship",label:"Mentorship",icon:Handshake}
 ];
@@ -94,7 +93,7 @@ export default function DashboardSidebar({
     useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  console.log(role)
+  const { state, setOpen } = useSidebar();
   const links =
   role === "faculty"
     ? facultyLinks
@@ -152,26 +151,25 @@ export default function DashboardSidebar({
       : role === "admin"
         ? "Main Administrator"
         : "Student";
-
-  const { state, setOpen } = useSidebar();
-
   return (
     <Sidebar
       collapsible="icon"
-      onClick={() => {
-        if (state === "collapsed") {
-          setOpen(true);
-        }
+      onClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest("a") || target.closest("button[data-sidebar='rail']")) return;
+        setOpen(state === "collapsed");
       }}
       className={cn(state === "collapsed" && "cursor-pointer")}
     >
-      {/* Brand Header */}
-      <SidebarHeader className="p-4 border-b border-sidebar-border flex flex-row items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group truncate">
-          <div className="bg-primary/10 p-1.5 rounded text-primary group-hover:bg-primary/20 transition-colors shrink-0">
-            <GraduationCap className="h-4 w-4" />
+      <SidebarHeader className="p-2 border-b border-sidebar-border group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-3">
+        <Link
+          href="/"
+          className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-sidebar-accent transition-colors group"
+        >
+          <div className="bg-primary/10 p-1.5 rounded-lg text-primary group-hover:bg-primary/20 transition-colors shrink-0 group-data-[collapsible=icon]:p-2">
+            <GraduationCap className="h-5 w-5" />
           </div>
-          <span className="font-sans font-semibold text-xs tracking-wider uppercase text-foreground group-data-[collapsible=icon]:hidden">
+          <span className="font-semibold text-sm tracking-wide text-foreground group-data-[collapsible=icon]:hidden whitespace-nowrap">
             ALUMNI
           </span>
         </Link>
@@ -196,28 +194,33 @@ export default function DashboardSidebar({
         </span>
       </div>
 
-      <SidebarContent className="p-3">
-        <SidebarMenu className="space-y-0.5">
+      <SidebarContent className="p-2">
+        <SidebarMenu>
           {links.map((link) => {
             const Icon = link.icon;
-            const isActive = pathname === link.href;
+            const isActive =
+              pathname === link.href ||
+              (link.href !== "/" && pathname.startsWith(link.href));
+
             return (
-              <SidebarMenuItem key={link.href}>
+              <SidebarMenuItem key={link.href} className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
                 <SidebarMenuButton
-                  asChild
                   isActive={isActive}
                   tooltip={link.label}
                   className={cn(
-                    "w-full flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium transition-colors cursor-pointer",
+                    "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer group-data-[collapsible=icon]:!w-auto",
                     isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
-                      : "text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                      ? "!bg-primary !text-primary-foreground shadow-sm"
+                      : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
                   )}
+                  render={
+                    <Link href={link.href} className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center" />
+                  }
                 >
-                  <Link href={link.href} className="flex items-center gap-2.5 w-full">
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span className="group-data-[collapsible=icon]:hidden">{link.label}</span>
-                  </Link>
+                  <Icon className="h-5 w-5 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">
+                    {link.label}
+                  </span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );
@@ -245,25 +248,6 @@ export default function DashboardSidebar({
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarSeparator className="bg-sidebar-border" />
-
-      {/* Footer Block */}
-      <SidebarFooter className="p-3">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={handleLogout}
-              tooltip="Sign Out"
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium text-sidebar-foreground/75 hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-            >
-              <LogOut className="h-4 w-4 shrink-0" />
-              <span className="group-data-[collapsible=icon]:hidden">Sign Out</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-
-      {/* Sidebar Rail */}
       <SidebarRail />
     </Sidebar>
   );

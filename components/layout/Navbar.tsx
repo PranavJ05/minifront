@@ -1,19 +1,15 @@
 "use client";
-// components/layout/Navbar.tsx
-import { useEffect, useMemo, useState } from "react";
+
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Menu,
-  X,
   GraduationCap,
   Bell,
   LogOut,
+  Sun,
+  Moon,
   User,
-  Briefcase,
-  Calendar,
-  Home,
-  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,10 +21,11 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "next-themes";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Sun, Moon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -39,6 +36,7 @@ interface NavbarProps {
 interface StoredUser {
   email?: string;
   role?: string;
+  roles?: string[];
   fullName?: string;
   name?: string;
 }
@@ -48,13 +46,15 @@ export default function Navbar({
   userRole: userRoleProp,
   userName: userNameProp,
 }: NavbarProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [storedUser, setStoredUser] = useState<StoredUser | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [customEventTitle, setCustomEventTitle] = useState<string | null>(null);
+
+  const [accountOpen, setAccountOpen] = useState(false);
+  const closeTimeout = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -68,7 +68,8 @@ export default function Navbar({
       };
 
       window.addEventListener("current_event_title_changed", handleTitleChange);
-      return () => window.removeEventListener("current_event_title_changed", handleTitleChange);
+      return () =>
+        window.removeEventListener("current_event_title_changed", handleTitleChange);
     }
   }, []);
 
@@ -96,62 +97,40 @@ export default function Navbar({
     return () => window.removeEventListener("storage", syncAuthState);
   }, []);
 
-  const resolvedRole = (userRoleProp || storedUser?.role || "").toLowerCase();
+  const resolvedRole = (userRoleProp || storedUser?.roles?.[0] || storedUser?.role || "").toLowerCase();
   const normalizedRole =
     resolvedRole === "batch_admin" ? "alumni" : resolvedRole;
   const resolvedName =
     userNameProp || storedUser?.fullName || storedUser?.name || "User";
+  const resolvedEmail = storedUser?.email || "";
   const isAuthenticated =
     typeof isAuthenticatedProp === "boolean"
       ? isAuthenticatedProp
       : Boolean(storedUser);
 
-  const getDashboardLink = () => {
-    switch (normalizedRole) {
-      case "faculty":
-        return "/dashboard/faculty";
-      case "student":
-        return "/dashboard/student";
-      case "alumni":
-        return "/dashboard/alumni";
-      default:
-        return "/";
-    }
-  };
+  const roleLabel =
+    normalizedRole === "faculty"
+      ? "Faculty"
+      : normalizedRole === "alumni"
+        ? "Alumni"
+        : normalizedRole === "student"
+          ? "Student"
+          : "User";
 
-  const authLinks = useMemo(() => {
-    if (normalizedRole === "faculty") {
-      return [
-        { href: "/dashboard/faculty", label: "Overview", icon: Home },
-        { href: "/alumni", label: "Alumni", icon: Users },
-        { href: "/faculty", label: "Faculty", icon: GraduationCap },
-        { href: "/events", label: "Events", icon: Calendar },
-        { href: "/opportunities", label: "Jobs", icon: Briefcase },
-      ];
-    }
-
-    return [
-      {
-        href: "/alumni",
-        label: normalizedRole === "student" ? "Find Alumni" : "Network",
-        icon: Users,
-      },
-      { href: "/faculty", label: "Faculty", icon: GraduationCap },
-      { href: "/events", label: "Events", icon: Calendar },
-      {href: "/alumni-sessions",label: "Sessions",icon: Calendar},
-      { href: "/opportunities", label: "Opportunities", icon: Briefcase },
-    ];
-  }, [normalizedRole]);
+  const roleBadgeColor =
+    normalizedRole === "faculty"
+      ? "bg-primary/10 text-primary"
+      : normalizedRole === "alumni"
+        ? "bg-secondary text-secondary-foreground"
+        : "bg-accent text-accent-foreground";
 
   const handleLogout = () => {
-    console.log("[Logout] Clearing all auth data...");
     localStorage.removeItem("alumni_user");
     localStorage.removeItem("token");
     localStorage.removeItem("role");
     localStorage.removeItem("email");
-    console.log("[Logout] localStorage cleared");
     setStoredUser(null);
-    setIsOpen(false);
+    setAccountOpen(false);
     router.push("/");
   };
 
@@ -160,20 +139,22 @@ export default function Navbar({
     if (parts.length === 0) return [{ label: "Home", href: "/" }];
     return parts.map((part, index) => {
       const href = "/" + parts.slice(0, index + 1).join("/");
-      let label = part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, " ");
-      
-      // If we are on the event details page, replace ID with dynamic event title
+      let label =
+        part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, " ");
+
       if (parts[0] === "events" && index === 1 && customEventTitle) {
         label = customEventTitle;
       }
-      
+
       return { label, href };
     });
   }, [pathname, customEventTitle]);
 
+  const userInitial = resolvedName.charAt(0).toUpperCase();
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md text-foreground">
-      <div className="w-full px-6">
+      <div className="w-full px-4 sm:px-6">
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-2 min-w-0">
             {isAuthenticated ? (
@@ -187,7 +168,8 @@ export default function Navbar({
                         href={crumb.href}
                         className={cn(
                           "hover:text-foreground transition-colors truncate max-w-[120px] sm:max-w-none",
-                          idx === breadcrumbs.length - 1 && "text-foreground font-semibold"
+                          idx === breadcrumbs.length - 1 &&
+                            "text-foreground font-semibold"
                         )}
                       >
                         {crumb.label}
@@ -208,28 +190,106 @@ export default function Navbar({
             )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Theme Toggle Button */}
+          <div className="flex items-center gap-1.5 shrink-0">
             {mounted && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
+                className="text-muted-foreground hover:text-foreground cursor-pointer h-8 w-8"
               >
-                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                {theme === "dark" ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
                 <span className="sr-only">Toggle Theme</span>
               </Button>
             )}
 
             {isAuthenticated ? (
-              <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-foreground">
-                <Bell className="h-4 w-4" />
-              </Button>
+              <>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-foreground h-8 w-8 cursor-pointer"
+                >
+                  <Bell className="h-4 w-4" />
+                </Button>
+
+                {/* Account dropdown - hover open */}
+                <div
+                  onMouseEnter={() => {
+                    if (closeTimeout.current) clearTimeout(closeTimeout.current);
+                    setAccountOpen(true);
+                  }}
+                  onMouseLeave={() => {
+                    closeTimeout.current = setTimeout(() => setAccountOpen(false), 200);
+                  }}
+                >
+                  <DropdownMenu open={accountOpen} onOpenChange={setAccountOpen}>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="flex items-center gap-2 h-8 px-2 cursor-pointer hover:bg-accent"
+                      >
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                            {userInitial}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-xs font-medium text-foreground hidden sm:inline max-w-[100px] truncate">
+                          {resolvedName}
+                        </span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel className="font-normal">
+                          <div className="flex flex-col gap-1">
+                            <p className="text-sm font-medium text-foreground">
+                              {resolvedName}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {resolvedEmail}
+                            </p>
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                "w-fit text-[10px] font-semibold mt-0.5",
+                                roleBadgeColor
+                              )}
+                            >
+                              {roleLabel}
+                            </Badge>
+                          </div>
+                        </DropdownMenuLabel>
+                      </DropdownMenuGroup>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link href="/profile" className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          <span>My Profile</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={handleLogout}
+                        className="cursor-pointer text-destructive focus:text-destructive"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>Sign Out</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </>
             ) : (
               <div className="flex items-center gap-2">
                 <Link href="/auth/login">
-                  <Button variant="ghost" size="sm">Login</Button>
+                  <Button variant="ghost" size="sm">
+                    Login
+                  </Button>
                 </Link>
                 <Link href="/auth/signup">
                   <Button size="sm">Join Network</Button>

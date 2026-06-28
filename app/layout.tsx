@@ -1,16 +1,16 @@
-// app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
 import { getOnboardingStatus } from "@/lib/skillsOnboarding";
-import { Geist, Inter, Figtree } from "next/font/google";
+import { Figtree } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import AppLayout from "@/components/layout/AppLayout";
 
-const figtreeHeading = Figtree({subsets:['latin'],variable:'--font-heading'});
+const figtreeHeading = Figtree({ subsets: ["latin"], variable: "--font-heading" });
 
-const figtree = Figtree({subsets:['latin'],variable:'--font-sans'});
+const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Alumni Network | University Alumni Relations",
@@ -24,7 +24,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Expose debugging utilities to window
   if (typeof window !== "undefined") {
     console.log("[App] Skills onboarding status:", getOnboardingStatus());
   }
@@ -39,8 +38,8 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider>
-            <SidebarProvider defaultOpen={true}>
-              {children}
+            <SidebarProvider defaultOpen={false}>
+              <AppLayout>{children}</AppLayout>
             </SidebarProvider>
           </TooltipProvider>
         </ThemeProvider>
