@@ -11,6 +11,7 @@ import {
   Trash2,
   Loader2,
   Plus,
+  Camera,
 } from "lucide-react";
 import { EventPhoto } from "@/lib/types/events";
 import { deletePhoto } from "@/lib/api/events";
@@ -58,9 +59,9 @@ export default function PhotoGallery({
   return (
     <>
       <div className="card p-6">
-        <h2 className="font-serif font-bold text-navy-900 text-lg mb-4 flex items-center gap-2">
-          <span>📷</span> Photos
-          <span className="text-sm font-normal text-gray-400">
+        <h2 className="font-sans font-semibold text-foreground text-sm mb-4 flex items-center gap-2">
+          <Camera className="h-4 w-4 text-muted-foreground" /> Photos
+          <span className="text-xs font-normal text-muted-foreground">
             ({photos.length})
           </span>
         </h2>
@@ -81,7 +82,7 @@ export default function PhotoGallery({
                     src={photo.photoUrl}
                     alt={`Photo ${i + 1}`}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
                 </button>
@@ -91,7 +92,7 @@ export default function PhotoGallery({
                   <button
                     onClick={() => handleDelete(photo)}
                     disabled={deletingId === photo.id}
-                    className="absolute top-1.5 right-1.5 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow-lg disabled:opacity-60"
+                    className="absolute top-1.5 right-1.5 w-7 h-7 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow-lg disabled:opacity-60 cursor-pointer"
                     title="Remove photo"
                   >
                     {deletingId === photo.id ? (

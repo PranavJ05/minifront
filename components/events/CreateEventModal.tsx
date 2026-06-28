@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Loader2, CheckCircle2, CalendarPlus, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle2, CalendarPlus, AlertCircle, Calendar as CalendarIcon } from "lucide-react";
 import { createEvent } from "@/lib/api/events";
 import { getToken } from "@/lib/auth";
 import {
@@ -18,6 +18,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface CreateEventModalProps {
   open: boolean;
@@ -37,23 +40,34 @@ export default function CreateEventModal({
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [eventDate, setEventDate] = useState("");
+  const [dateValue, setDateValue] = useState<Date | undefined>(undefined);
+  const [timeHour, setTimeHour] = useState("10");
+  const [timeMinute, setTimeMinute] = useState("00");
+  const [timePeriod, setTimePeriod] = useState("AM");
   const [location, setLocation] = useState("");
   const [batchYear, setBatchYear] = useState("");
   const [registrationRequired, setRegistrationRequired] = useState(false);
   const [registrationLink, setRegistrationLink] = useState("");
 
-  const minDateTime = useMemo(() => {
-    const now = new Date();
-    const offsetMs = now.getTimezoneOffset() * 60 * 1000;
-    return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
-  }, []);
+  const formatDateString = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !eventDate || !location) return;
+    if (!title || !dateValue || !location) return;
 
-    const selectedDate = new Date(eventDate);
+    const datePart = dateValue.toISOString().split("T")[0];
+    let hours24 = parseInt(timeHour);
+    if (timePeriod === "PM" && hours24 < 12) hours24 += 12;
+    if (timePeriod === "AM" && hours24 === 12) hours24 = 0;
+    const hoursStr = String(hours24).padStart(2, "0");
+
+    const selectedDate = new Date(`${datePart}T${hoursStr}:${timeMinute}:00`);
     const now = new Date();
 
     if (selectedDate.getTime() < now.getTime()) {
@@ -70,7 +84,7 @@ export default function CreateEventModal({
         {
           title,
           description,
-          eventDate: new Date(eventDate).toISOString().slice(0, 19),
+          eventDate: selectedDate.toISOString().slice(0, 19),
           location,
           batchYear: batchYear ? parseInt(batchYear) : 0,
           registrationRequired,
@@ -91,7 +105,10 @@ export default function CreateEventModal({
   const resetForm = () => {
     setTitle("");
     setDescription("");
-    setEventDate("");
+    setDateValue(undefined);
+    setTimeHour("10");
+    setTimeMinute("00");
+    setTimePeriod("AM");
     setLocation("");
     setBatchYear("");
     setRegistrationRequired(false);
@@ -166,34 +183,89 @@ export default function CreateEventModal({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="eventDate">
-                  Date & Time <span className="text-destructive">*</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2 space-y-2">
+                <Label>
+                  Date <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  id="eventDate"
-                  type="datetime-local"
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                  required
-                  min={minDateTime}
-                  disabled={state === "submitting"}
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      type="button"
+                      className={cn(
+                        "w-full justify-start text-left font-normal h-9 text-xs cursor-pointer bg-card border-border",
+                        !dateValue && "text-muted-foreground"
+                      )}
+                      disabled={state === "submitting"}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground/60 shrink-0" />
+                      {dateValue ? formatDateString(dateValue) : "Select event date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-popover" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateValue}
+                      onSelect={setDateValue}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="batchYear">Batch Year</Label>
-                <Input
-                  id="batchYear"
-                  type="number"
-                  value={batchYear}
-                  onChange={(e) => setBatchYear(e.target.value)}
-                  placeholder="2019"
-                  min="1980"
-                  max="2030"
-                  disabled={state === "submitting"}
-                />
+                <Label>
+                  Time <span className="text-destructive">*</span>
+                </Label>
+                <div className="flex items-center gap-1 h-9">
+                  <select
+                    value={timeHour}
+                    onChange={(e) => setTimeHour(e.target.value)}
+                    disabled={state === "submitting"}
+                    className="flex-1 h-full rounded border border-border bg-card px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                  >
+                    {["12", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"].map((h) => (
+                      <option key={h} value={h}>{h}</option>
+                    ))}
+                  </select>
+                  <span className="text-muted-foreground font-semibold text-xs px-0.5">:</span>
+                  <select
+                    value={timeMinute}
+                    onChange={(e) => setTimeMinute(e.target.value)}
+                    disabled={state === "submitting"}
+                    className="flex-1 h-full rounded border border-border bg-card px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                  >
+                    {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={timePeriod}
+                    onChange={(e) => setTimePeriod(e.target.value)}
+                    disabled={state === "submitting"}
+                    className="w-16 h-full rounded border border-border bg-card px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="batchYear">Batch Year Restriction</Label>
+              <Input
+                id="batchYear"
+                type="number"
+                value={batchYear}
+                onChange={(e) => setBatchYear(e.target.value)}
+                placeholder="e.g. 2019 (Leave empty for no restriction)"
+                min="1980"
+                max="2030"
+                disabled={state === "submitting"}
+                className="h-9 text-xs"
+              />
             </div>
 
             <div className="space-y-2">

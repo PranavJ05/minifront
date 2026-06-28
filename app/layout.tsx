@@ -4,6 +4,9 @@ import "./globals.css";
 import { getOnboardingStatus } from "@/lib/skillsOnboarding";
 import { Geist, Inter, Figtree } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/components/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 const figtreeHeading = Figtree({subsets:['latin'],variable:'--font-heading'});
 
@@ -27,8 +30,21 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="en" className={cn("font-sans", inter.variable, figtreeHeading.variable)}>
-      <body>{children}</body>
+    <html lang="en" className={cn("font-sans", inter.variable, figtreeHeading.variable)} suppressHydrationWarning>
+      <body>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <TooltipProvider>
+            <SidebarProvider defaultOpen={true}>
+              {children}
+            </SidebarProvider>
+          </TooltipProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
