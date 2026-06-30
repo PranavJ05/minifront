@@ -38,30 +38,61 @@ export function hasRole(
 /**
  * Check if user has admin access (admin OR batch_admin)
  */
-export function isAdmin(userRoles: string | string[] | null | undefined): boolean {
-  return hasRole(userRoles, ['admin', 'batch_admin']);
+/**
+ * Main Admin only
+ */
+export function isMainAdmin(
+  userRoles: string | string[] | null | undefined
+): boolean {
+
+  return hasRole(userRoles, "admin");
+
 }
 
 /**
- * Check if user has alumni access (alumni OR batch_admin)
- * Note: batch_admin is considered a type of alumni
+ * Batch Admin only
  */
-export function isAlumni(userRoles: string | string[] | null | undefined): boolean {
-  return hasRole(userRoles, ['alumni', 'batch_admin']);
+export function isBatchAdmin(
+  userRoles: string | string[] | null | undefined
+): boolean {
+
+  return hasRole(userRoles, "batch_admin");
+
 }
 
 /**
- * Check if user has student access
+ * Any administrative role
  */
-export function isStudent(userRoles: string | string[] | null | undefined): boolean {
-  return hasRole(userRoles, 'student');
+export function isAnyAdmin(
+  userRoles: string | string[] | null | undefined
+): boolean {
+
+  return hasRole(userRoles, ["admin", "batch_admin"]);
+
 }
 
-/**
- * Check if user has faculty access
- */
-export function isFaculty(userRoles: string | string[] | null | undefined): boolean {
-  return hasRole(userRoles, 'faculty');
+export function isAlumni(
+  userRoles: string | string[] | null | undefined
+): boolean {
+
+  return hasRole(userRoles, "alumni");
+
+}
+
+export function isStudent(
+  userRoles: string | string[] | null | undefined
+): boolean {
+
+  return hasRole(userRoles, "student");
+
+}
+
+export function isFaculty(
+  userRoles: string | string[] | null | undefined
+): boolean {
+
+  return hasRole(userRoles, "faculty");
+
 }
 
 /**

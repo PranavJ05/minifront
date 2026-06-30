@@ -17,7 +17,8 @@ import AuthInput from "@/components/auth/AuthInput";
 import { BACKEND_URL } from "@/lib/config";
 import { UserRole } from "@/types";
 import {
-  isAdmin,
+  isMainAdmin,
+  isBatchAdmin,
   isAlumni,
   isStudent,
   isFaculty,
@@ -190,14 +191,24 @@ export default function LoginPage() {
 
       // Determine dashboard based on roles using utility functions
       let dashboardPath = "/";
+      
+      if (isMainAdmin(allRoles)) {
 
-      if (isAdmin(allRoles) || isAlumni(allRoles)) {
-        dashboardPath = "/dashboard/alumni";
-      } else if (isFaculty(allRoles)) {
-        dashboardPath = "/dashboard/faculty";
-      } else if (isStudent(allRoles)) {
-        dashboardPath = "/dashboard/student";
-      }
+  dashboardPath = "/dashboard/mainadmin";
+
+} else if (isAlumni(allRoles)) {
+
+  dashboardPath = "/dashboard/alumni";
+
+} else if (isFaculty(allRoles)) {
+
+  dashboardPath = "/dashboard/faculty";
+
+} else if (isStudent(allRoles)) {
+
+  dashboardPath = "/dashboard/student";
+
+}
 
       const primaryRole = getPrimaryRole(allRoles);
       console.log(

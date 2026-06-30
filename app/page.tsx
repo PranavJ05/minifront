@@ -20,7 +20,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { mockAlumni, stats } from "@/lib/mockData";
 // ✅ Import your robust role utilities
-import { isAdmin, isAlumni, isFaculty, isStudent } from "@/lib/roleUtils";
+import { isAnyAdmin, isAlumni, isFaculty, isStudent } from "@/lib/roleUtils";
 
 /**
  * LandingPage component
@@ -50,7 +50,7 @@ export default function LandingPage() {
       let dashboardPath = "/";
 
       // ✅ Use roleUtils to determine the correct dashboard routing
-      if (isAdmin(userRoles) || isAlumni(userRoles)) {
+      if (isAnyAdmin(userRoles) || isAlumni(userRoles)) {
         dashboardPath = "/dashboard/alumni";
       } else if (isFaculty(userRoles)) {
         dashboardPath = "/dashboard/faculty";

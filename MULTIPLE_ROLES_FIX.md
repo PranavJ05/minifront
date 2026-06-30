@@ -32,7 +32,7 @@ INSERT INTO user_roles (user_id, role_id) VALUES (2, 5);   -- BATCH_ADMIN
 hasRole(userRoles, requiredRoles)
 
 // Specific role checkers
-isAdmin(userRoles)      // admin OR batch_admin
+isAnyAdmin(userRoles)      // admin OR batch_admin
 isAlumni(userRoles)     // alumni OR batch_admin  
 isStudent(userRoles)    // student
 isFaculty(userRoles)    // faculty
@@ -61,13 +61,13 @@ localStorage.setItem("alumni_user", JSON.stringify(storedUser));
 
 **Before:**
 ```typescript
-const isAdmin = role === "admin" || role === "batch_admin";
+const isAnyAdmin = role === "admin" || role === "batch_admin";
 ```
 
 **After:**
 ```typescript
-import { isAdmin } from "@/lib/roleUtils";
-const isAdmin = isAdmin(user.roles);  // Checks ALL roles
+import { isAnyAdmin } from "@/lib/roleUtils";
+const isAnyAdmin = isAnyAdmin(user.roles);  // Checks ALL roles
 ```
 
 ---
@@ -77,10 +77,10 @@ const isAdmin = isAdmin(user.roles);  // Checks ALL roles
 ### Core Files
 - ✅ `lib/roleUtils.ts` - NEW utility functions
 - ✅ `app/auth/login/page.tsx` - Store all roles, redirect based on any role
-- ✅ `app/admin/skills/page.tsx` - Use `isAdmin()` check
+- ✅ `app/admin/skills/page.tsx` - Use `isAnyAdmin()` check
 - ✅ `app/dashboard/alumni/page.tsx` - Use `hasRole()` for access control
 - ✅ `app/profile/page.tsx` - Use `hasRole()` for role display
-- ✅ `app/events/page.tsx` - Use `isAdmin()` for create button
+- ✅ `app/events/page.tsx` - Use `isAnyAdmin()` for create button
 
 ### Key Changes
 
@@ -99,10 +99,10 @@ if (hasAdmin || hasAlumni) router.push("/dashboard/alumni");
 
 #### Admin Skills Page (`app/admin/skills/page.tsx`)
 ```typescript
-import { isAdmin } from "@/lib/roleUtils";
+import { isAnyAdmin } from "@/lib/roleUtils";
 
 // Check if user has ANY admin role
-const adminCheck = isAdmin(user.roles);  // ✅ Works with multiple roles
+const adminCheck = isAnyAdmin(user.roles);  // ✅ Works with multiple roles
 ```
 
 #### Alumni Dashboard (`app/dashboard/alumni/page.tsx`)
@@ -136,9 +136,9 @@ hasRole(userRoles, ["admin", "batch_admin"]);  // true if has ANY
 
 ### Specific Checkers
 ```typescript
-import { isAdmin, isAlumni, isStudent } from "@/lib/roleUtils";
+import { isAnyAdmin, isAlumni, isStudent } from "@/lib/roleUtils";
 
-isAdmin(userRoles);      // true for ADMIN or BATCH_ADMIN
+isAnyAdmin(userRoles);      // true for ADMIN or BATCH_ADMIN
 isAlumni(userRoles);     // true for ALUMNI or BATCH_ADMIN
 isStudent(userRoles);    // true for STUDENT only
 ```
@@ -156,7 +156,7 @@ roles: ["ALUMNI", "ADMIN"]
 - ✅ Can access `/admin/skills`
 - ✅ Can access `/dashboard/alumni`
 - ✅ Can see "Create Event" button
-- ✅ `isAdmin(roles)` → true
+- ✅ `isAnyAdmin(roles)` → true
 - ✅ `isAlumni(roles)` → true
 
 ### Test Case 2: Batch Admin + Alumni
@@ -168,7 +168,7 @@ roles: ["ALUMNI", "BATCH_ADMIN"]
 - ✅ Can access `/admin/skills`
 - ✅ Can access `/dashboard/alumni`
 - ✅ Can see "Create Event" button
-- ✅ `isAdmin(roles)` → true
+- ✅ `isAnyAdmin(roles)` → true
 - ✅ `isAlumni(roles)` → true
 
 ### Test Case 3: Alumni Only
@@ -180,7 +180,7 @@ roles: ["ALUMNI"]
 - ❌ Cannot access `/admin/skills` (403 error)
 - ✅ Can access `/dashboard/alumni`
 - ❌ Cannot see "Create Event" button
-- ✅ `isAdmin(roles)` → false
+- ✅ `isAnyAdmin(roles)` → false
 - ✅ `isAlumni(roles)` → true
 
 ---
@@ -207,8 +207,8 @@ const userRoles = parsedUser?.roles || parsedUser?.role || "";
 Always use the utility functions:
 ```typescript
 // ✅ GOOD
-import { isAdmin } from "@/lib/roleUtils";
-if (isAdmin(user.roles)) { ... }
+import { isAnyAdmin } from "@/lib/roleUtils";
+if (isAnyAdmin(user.roles)) { ... }
 
 // ❌ BAD
 if (user.role === "admin") { ... }

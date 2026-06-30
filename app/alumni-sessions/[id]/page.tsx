@@ -21,7 +21,7 @@ import {
 } from "@/lib/auth";
 
 import {
-  isAdmin,
+  isAnyAdmin,
   isAlumni,
   isStudent,
 } from "@/lib/roleUtils";
@@ -184,7 +184,7 @@ export default function SessionDetailsPage() {
 );
 
 const isCreator =session.createdBy?.email === currentUser.email;
-  const canDelete =isAdmin(userRole)||isCreator;
+  const canDelete =isAnyAdmin(userRole)||isCreator;
 
 
   return (

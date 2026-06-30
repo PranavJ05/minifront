@@ -1,6 +1,7 @@
 "use client";
 // components/layout/DashboardSidebar.tsx
 import Link from "next/link";
+import { useState,useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
@@ -13,6 +14,7 @@ import {
   GraduationCap,
   Handshake,
 } from "lucide-react";
+import { getMyClubs } from "@/lib/api/clubs";
 import { cn } from "@/lib/utils";
 import { UserRole } from "@/types";
 
@@ -21,12 +23,12 @@ interface SidebarProps {
   userName: string | null;
   userEmail: string;
 }
-
 const facultyLinks = [
   { href: "/dashboard/faculty", label: "Overview", icon: Home },
   { href: "/alumni", label: "Alumni", icon: GraduationCap },
   { href: "/faculty", label: "Faculty Directory", icon: Users },
   { href: "/events", label: "Events", icon: Calendar },
+  { href: "/club-events", label: "Club Events", icon: Calendar },
   { href: "/opportunities", label: "Job Board", icon: Briefcase },
   { href: "/profile", label: "My Profile", icon: User },
 ];
@@ -37,6 +39,7 @@ const alumniLinks = [
   { href: "/faculty", label: "Faculty", icon: GraduationCap },
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/events", label: "Events", icon: Calendar },
+  { href: "/club-events", label: "Club Events", icon: Calendar },
   { href: "/profile", label: "My Profile", icon: User },
   {href: "/alumni-mentorship",label:"Mentorship",icon:Handshake}
 ];
@@ -47,25 +50,69 @@ const studentLinks = [
   { href: "/faculty", label: "Faculty", icon: GraduationCap },
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/events", label: "Events", icon: Calendar },
+  { href: "/club-events", label: "Club Events", icon: Calendar },
   { href: "/profile", label: "My Profile", icon: User },
   {href: "/alumni-mentorship",label:"Mentorship",icon:Handshake}
 
 ];
+
+const adminLinks = [
+
+  { href: "/dashboard/mainadmin", label: "Dashboard", icon: Home },
+
+  { href: "/main-admin/users", label: "User Management", icon: Users },
+
+  { href: "/club-events", label: "Club Events", icon: Calendar },
+
+  { href: "/events", label: "Events", icon: Calendar },
+
+  { href: "/opportunities", label: "Job Board", icon: Briefcase },
+
+  { href: "/profile", label: "My Profile", icon: User },
+
+];
+const token = localStorage.getItem("token");
+
 
 export default function DashboardSidebar({
   role,
   userName,
   userEmail,
 }: SidebarProps) {
+  const [isClubManager, setIsClubManager] =
+    useState(false);
   const pathname = usePathname();
   const router = useRouter();
-
+  console.log(role)
   const links =
-    role === "faculty"
-      ? facultyLinks
-      : role === "alumni"
-        ? alumniLinks
-        : studentLinks;
+  role === "faculty"
+    ? facultyLinks
+    : role === "alumni"
+    ? alumniLinks
+    : role === "admin"
+    ? adminLinks
+    : studentLinks;
+
+  useEffect(() => {
+
+    const token =
+        localStorage.getItem("token");
+
+    if (!token) return;
+
+    getMyClubs(token)
+
+        .then(clubs => {
+
+            setIsClubManager(
+                clubs.length > 0
+            );
+
+        })
+
+        .catch(() => {});
+
+}, []);
 
   const handleLogout = () => {
     console.log("[Logout] Clearing all auth data from DashboardSidebar...");
@@ -87,10 +134,12 @@ export default function DashboardSidebar({
         : "bg-green-100 text-green-700";
 
   const roleLabel =
-    role === "faculty"
-      ? "Faculty Member"
-      : role === "alumni"
-        ? "Alumni Member"
+  role === "faculty"
+    ? "Faculty Member"
+    : role === "alumni"
+      ? "Alumni Member"
+      : role === "admin"
+        ? "Main Administrator"
         : "Student";
 
   return (
@@ -144,6 +193,23 @@ export default function DashboardSidebar({
             </Link>
           );
         })}
+        
+        {isClubManager && (
+
+    <Link
+        href="/club-events/mine"
+        className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
+            pathname === "/club-events/mine"
+                ? "bg-gold-500 text-navy-950"
+                : "text-gray-400 hover:text-white hover:bg-navy-800",
+        )}
+    >
+        <Calendar className="h-4 w-4" />
+        My Club Events
+    </Link>
+
+)}
       </nav>
 
       <div className="p-4 border-t border-navy-800 space-y-1">

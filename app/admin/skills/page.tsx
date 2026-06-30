@@ -35,7 +35,7 @@ import {
   deleteSkillAdmin,
 } from "@/lib/api";
 import { Skill } from "@/types";
-import { isAdmin } from "@/lib/roleUtils"; // ✅ IMPORTED PROPER UTILITY
+import { isAnyAdmin } from "@/lib/roleUtils"; // ✅ IMPORTED PROPER UTILITY
 
 type Tab = "pending" | "all";
 
@@ -74,7 +74,7 @@ export default function AdminSkillsPage() {
       const user = JSON.parse(storedUser);
 
       // ✅ PROPER ROLE CHECK: Using the utility function to check the roles array
-      const hasAdminRights = isAdmin(user?.roles);
+      const hasAdminRights = isAnyAdmin(user?.roles);
 
       console.log(
         "[AdminSkills] User roles:",

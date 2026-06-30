@@ -13,7 +13,7 @@ import EventListItem from "@/components/events/EventListItem";
 import CreateEventModal from "@/components/events/CreateEventModal";
 import { fetchAllEvents } from "@/lib/api/events";
 import { Event } from "@/lib/types/events";
-import { isAdmin } from "@/lib/roleUtils";
+import { isAnyAdmin } from "@/lib/roleUtils";
 import { formatMonthYear, isUpcoming, isPast } from "@/lib/utils/dateUtils";
 import { getToken, getUserRole } from "@/lib/auth";
 function groupByMonth(events: Event[]): Map<string, Event[]> {
@@ -83,7 +83,7 @@ export default function EventsPage() {
   }, []);
 
   // Check if user has admin access (for create button)
-  const hasAdminAccess = isAdmin(userRole);
+  const hasAdminAccess = isAnyAdmin(userRole);
   console.log("printing..",userRole)
   // Initial load of public events
   useEffect(() => {
