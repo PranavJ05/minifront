@@ -19,7 +19,7 @@ import {
 import { ApplicationStatusResponse, Mentorship } from "@/lib/types/mentorship";
 
 import { getToken, getUserRole } from "@/lib/auth";
-import { isAdmin, isAlumni, isStudent } from "@/lib/roleUtils";
+import { isAnyAdmin, isAlumni, isStudent } from "@/lib/roleUtils";
 
 export default function MentorshipDetailsPage() {
   const params = useParams();
@@ -213,7 +213,7 @@ export default function MentorshipDetailsPage() {
             </button>
           )}
 
-          {isAdmin(role) && (
+          {isAnyAdmin(role) && (
             <Link href={`/alumni-mentorship/${mentorship.id}/applications`}>
               <button className="bg-yellow-500 px-5 py-2 rounded font-semibold">
                 View Applications
