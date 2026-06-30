@@ -50,17 +50,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (isAuthRoute) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <main className="flex-1">{children}</main>
+      <div className="min-h-screen flex flex-col bg-background w-full">
+        <main className="flex-1 w-full">{children}</main>
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="min-h-screen flex flex-col bg-background w-full">
         <Navbar />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 w-full">{children}</main>
         <Footer />
       </div>
     );
@@ -78,7 +78,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       />
       <SidebarInset>
         <Navbar />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 w-full">{children}</main>
       </SidebarInset>
     </div>
   );

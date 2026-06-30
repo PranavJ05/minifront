@@ -159,18 +159,18 @@ export default function EventsPage() {
           <div className="flex items-center border border-border rounded p-0.5 h-8 bg-muted/40">
             <Button
               variant={viewMode === "card" ? "secondary" : "ghost"}
-              size="icon-xs"
+              size="icon"
               onClick={() => setViewMode("card")}
-              className="size-7 p-0 cursor-pointer"
+                  className="size-8 p-0 cursor-pointer"
               title="Grid View"
             >
               <LayoutGrid className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant={viewMode === "table" ? "secondary" : "ghost"}
-              size="icon-xs"
+              size="icon"
               onClick={() => setViewMode("table")}
-              className="size-7 p-0 cursor-pointer"
+                  className="size-8 p-0 cursor-pointer"
               title="Table View"
             >
               <List className="h-3.5 w-3.5" />

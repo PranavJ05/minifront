@@ -1,14 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { Send, FileText, MessageSquare, Loader2, CheckCircle2 } from "lucide-react";
 import {
-  X,
-  Send,
-  FileText,
-  MessageSquare,
-  Loader2,
-  CheckCircle2,
-} from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 interface Opportunity {
   id: number;
@@ -40,7 +45,6 @@ export default function ReferralRequestModal({
     setModalState("submitting");
     setErrorMsg("");
 
-    // Read JWT from localStorage (key: 'token'). Adjust key if your app uses a different one.
     let tokenFromStorage: string | null = null;
     try {
       tokenFromStorage = localStorage.getItem("token");
@@ -49,9 +53,7 @@ export default function ReferralRequestModal({
     }
 
     if (!tokenFromStorage) {
-      setErrorMsg(
-        "Authentication required. Please sign in to submit a referral request.",
-      );
+      setErrorMsg("Authentication required. Please sign in to submit a referral request.");
       setModalState("error");
       return;
     }
@@ -83,172 +85,139 @@ export default function ReferralRequestModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+  const handleClose = () => {
+    if (modalState === "submitting") return;
+    onClose();
+  };
 
-      {/* Modal */}
-      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden animate-modal-in">
+  return (
+    <Dialog open onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden">
         {/* Header */}
-        <div className="bg-navy-950 px-6 py-5 flex items-start justify-between">
-          <div>
-            <p className="text-navy-300 text-xs font-medium uppercase tracking-widest mb-1">
-              Referral Request
-            </p>
-            <h2 className="text-white font-serif text-xl font-bold leading-tight">
-              {opportunity.title}
-            </h2>
-            <p className="text-navy-400 text-sm mt-0.5">
-              {opportunity.company}
-            </p>
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+          <div className="flex items-start justify-between">
+            <div>
+              <Badge variant="secondary" className="text-[10px] font-semibold uppercase tracking-wider mb-2">
+                Referral Request
+              </Badge>
+              <DialogTitle className="text-lg font-bold text-foreground leading-tight">
+                {opportunity.title}
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground mt-0.5">
+                {opportunity.company}
+              </DialogDescription>
+            </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-navy-400 hover:text-white transition-colors mt-0.5 ml-4 shrink-0"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+        </DialogHeader>
 
         {/* Body */}
         <div className="p-6">
           {modalState === "success" ? (
             <div className="flex flex-col items-center text-center py-6 gap-4">
-              <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center">
-                <CheckCircle2 className="h-8 w-8 text-green-500" />
+              <div className="w-14 h-14 rounded-full bg-green-500/10 flex items-center justify-center">
+                <CheckCircle2 className="h-7 w-7 text-green-500" />
               </div>
               <div>
-                <h3 className="text-navy-900 font-bold text-lg">
-                  Request Sent!
-                </h3>
-                <p className="text-gray-500 text-sm mt-1 max-w-xs">
-                  Your referral request has been submitted. You'll be notified
-                  once the referrer responds.
+                <h3 className="font-bold text-foreground text-base">Request Sent!</h3>
+                <p className="text-muted-foreground text-sm mt-1 max-w-xs">
+                  Your referral request has been submitted. You'll be notified once the referrer responds.
                 </p>
               </div>
-              <button onClick={onClose} className="btn-primary mt-2 px-8">
+              <Button onClick={onClose} className="mt-2 cursor-pointer">
                 Done
-              </button>
+              </Button>
             </div>
           ) : modalState === "error" ? (
             <div className="flex flex-col items-center text-center py-6 gap-4">
-              <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
-                <X className="h-8 w-8 text-red-400" />
+              <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center">
+                <span className="text-destructive text-2xl font-bold">!</span>
               </div>
               <div>
-                <h3 className="text-navy-900 font-bold text-lg">
-                  Submission Failed
-                </h3>
-                <p className="text-red-500 text-sm mt-1">{errorMsg}</p>
+                <h3 className="font-bold text-foreground text-base">Submission Failed</h3>
+                <p className="text-destructive text-sm mt-1">{errorMsg}</p>
               </div>
               <div className="flex gap-3">
-                <button
-                  onClick={() => setModalState("form")}
-                  className="btn-primary px-6"
-                >
+                <Button onClick={() => setModalState("form")} className="cursor-pointer">
                   Try Again
-                </button>
-                <button
-                  onClick={onClose}
-                  className="px-6 py-2 border border-gray-200 rounded-lg text-gray-600 text-sm hover:bg-gray-50 transition-colors"
-                >
+                </Button>
+                <Button variant="outline" onClick={onClose} className="cursor-pointer">
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
-              <p className="text-gray-500 text-sm">
-                Write a compelling message to the referrer. Be clear about why
-                you're a strong candidate.
+              <p className="text-muted-foreground text-sm">
+                Write a compelling message to the referrer. Be clear about why you're a strong candidate.
               </p>
 
-              {/* Message */}
-              <div>
-                <label className="block text-sm font-semibold text-navy-800 mb-1.5 flex items-center gap-1.5">
-                  <MessageSquare className="h-3.5 w-3.5" />
+              {/* Cover Message */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                  <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
                   Cover Message
-                  <span className="text-gray-400 font-normal">(optional)</span>
-                </label>
-                <textarea
+                  <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+                </Label>
+                <Textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   rows={4}
                   placeholder="I am very interested in this role because..."
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent resize-none transition-all"
+                  className="resize-none text-sm"
                   disabled={modalState === "submitting"}
                 />
               </div>
 
               {/* Resume Link */}
-              <div>
-                <label className="block text-sm font-semibold text-navy-800 mb-1.5 flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5" />
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                   Resume Link
-                  <span className="text-gray-400 font-normal">(optional)</span>
-                </label>
-                <input
+                  <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+                </Label>
+                <Input
                   type="url"
                   value={resumeLink}
                   onChange={(e) => setResumeLink(e.target.value)}
                   placeholder="https://drive.google.com/your-resume"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent transition-all"
+                  className="text-sm"
                   disabled={modalState === "submitting"}
                 />
               </div>
 
               {/* Actions */}
               <div className="flex gap-3 pt-1">
-                <button
+                <Button
                   type="submit"
                   disabled={modalState === "submitting"}
-                  className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex-1 cursor-pointer"
                 >
                   {modalState === "submitting" ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Submitting…
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Submitting...
                     </>
                   ) : (
                     <>
-                      <Send className="h-4 w-4" />
+                      <Send className="h-4 w-4 mr-2" />
                       Send Request
                     </>
                   )}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={onClose}
                   disabled={modalState === "submitting"}
-                  className="px-5 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="cursor-pointer"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </form>
           )}
         </div>
-      </div>
-
-      <style jsx>{`
-        @keyframes modal-in {
-          from {
-            opacity: 0;
-            transform: translateY(16px) scale(0.97);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        .animate-modal-in {
-          animation: modal-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-      `}</style>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

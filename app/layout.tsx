@@ -8,7 +8,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import AppLayout from "@/components/layout/AppLayout";
 
-const figtreeHeading = Figtree({ subsets: ["latin"], variable: "--font-heading" });
+const figtreeHeading = Figtree({
+  subsets: ["latin"],
+  variable: "--font-heading",
+});
 
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -29,11 +32,15 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="en" className={cn("font-sans", figtree.variable, figtreeHeading.variable)} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={cn("font-sans", figtree.variable, figtreeHeading.variable)}
+      suppressHydrationWarning
+    >
       <body>
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="light"
           enableSystem={false}
           disableTransitionOnChange
         >

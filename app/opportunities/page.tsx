@@ -8,13 +8,21 @@ import {
   MapPin,
   Plus,
   Users,
+  Briefcase,
+  Search,
 } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import ReferralRequestModal from "@/components/referrals/ReferralRequestModal";
 import { hasRole, isAlumni } from "@/lib/roleUtils";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
 interface Opportunity {
   id: number;
   title: string;
@@ -26,29 +34,22 @@ interface Opportunity {
   allowReferrals: boolean;
   postedByName: string;
   postedAt: string;
-  referrerUserId?: number; // ID of the alumni who posted (used for referral requests)
+  referrerUserId?: number;
 }
-
-// Replace with actual auth logic — e.g. from context/localStorage/cookie
-// Token will be read from localStorage at runtime (key: 'token').
 
 export default function OpportunitiesPage() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
-  const [filteredOpportunities, setFilteredOpportunities] = useState<
-    Opportunity[]
-  >([]);
+  const [filteredOpportunities, setFilteredOpportunities] = useState<Opportunity[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("All");
-  const [referralTarget, setReferralTarget] = useState<Opportunity | null>(
-    null,
-  );
-  // Friendly fetch error state (used when token is missing or auth fails)
+  const [referralTarget, setReferralTarget] = useState<Opportunity | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // User role check - determine what actions user can perform
   const [userPermissions, setUserPermissions] = useState({
-    canPostOpportunity: false, // Only alumni
-    canViewReceivedReferrals: false, // Only alumni who post opportunities
-    canRequestReferral: true, // Students AND alumni can request referrals
+    canPostOpportunity: false,
+    canViewReceivedReferrals: false,
+    canRequestReferral: true,
   });
 
   useEffect(() => {
@@ -57,12 +58,11 @@ export default function OpportunitiesPage() {
       try {
         const user = JSON.parse(stored);
         const userRole = user?.roles || user?.role || "";
-        // Only alumni (including batch_admin) can post opportunities and view received referrals
         const isAlumniUser = isAlumni(userRole);
         setUserPermissions({
           canPostOpportunity: isAlumniUser,
           canViewReceivedReferrals: isAlumniUser,
-          canRequestReferral: true, // Everyone can request referrals
+          canRequestReferral: true,
         });
       } catch {
         setUserPermissions({
@@ -76,17 +76,17 @@ export default function OpportunitiesPage() {
 
   useEffect(() => {
     const fetchOpportunities = async () => {
+      setLoading(true);
       setFetchError(null);
       try {
         const res = await fetch("http://localhost:8080/opportunities/all", {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         });
 
         if (!res.ok) {
           setFetchError(`Failed to fetch opportunities: Error ${res.status}`);
+          setLoading(false);
           return;
         }
 
@@ -95,180 +95,206 @@ export default function OpportunitiesPage() {
       } catch (error) {
         console.error("Failed to fetch opportunities:", error);
         setFetchError("Unable to load opportunities. Please try again later.");
+      } finally {
+        setLoading(false);
       }
     };
     fetchOpportunities();
   }, []);
 
   useEffect(() => {
-    if (activeCategory === "All") {
-      setFilteredOpportunities(opportunities);
-    } else {
-      setFilteredOpportunities(
-        opportunities.filter((opp) => opp.type === activeCategory),
+    let filtered = activeCategory === "All"
+      ? opportunities
+      : opportunities.filter((opp) => opp.type === activeCategory);
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (opp) =>
+          opp.title.toLowerCase().includes(q) ||
+          opp.company.toLowerCase().includes(q) ||
+          opp.location.toLowerCase().includes(q)
       );
     }
-  }, [opportunities, activeCategory]);
+
+    setFilteredOpportunities(filtered);
+  }, [opportunities, activeCategory, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
-      <div className="bg-navy-950 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="font-serif text-3xl font-bold text-white mb-2">
-            Opportunities
-          </h1>
-          <p className="text-gray-400">
-            Stay updated on latest postings from our alumni community
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {fetchError ? (
-          <div className="max-w-3xl mx-auto mb-6">
-            <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-red-700 text-sm">
-              {fetchError}
-            </div>
+    <div className="w-full px-4 sm:px-6 pb-6 space-y-6">
+      {/* Header */}
+      <div className="sticky top-14 z-30 bg-background/95 backdrop-blur-md py-4 border-b border-border/40 -mx-4 sm:-mx-6 px-4 sm:px-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">
+              Opportunities
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Stay updated on latest postings from our alumni community
+            </p>
           </div>
-        ) : null}
-        <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
-          {/* Category Filter */}
-          <div className="flex flex-wrap gap-2">
-            {["All", "JOB", "INTERNSHIP"].map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  activeCategory === cat
-                    ? "bg-navy-800 text-white"
-                    : "bg-white border border-gray-200 text-gray-600 hover:border-navy-300"
-                }`}
-              >
-                {cat === "JOB"
-                  ? "Jobs"
-                  : cat === "INTERNSHIP"
-                    ? "Internships"
-                    : cat}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex gap-3">
-            {/* My Referrals - visible to everyone (students can track their requests, alumni can see theirs) */}
+          <div className="flex items-center gap-2">
             <Link href="/referrals/mine">
-              <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-navy-200 text-navy-700 text-sm font-medium hover:bg-navy-50 transition-colors">
-                <Users className="h-4 w-4" />
+              <Button variant="outline" size="sm" className="cursor-pointer">
+                <Users className="h-4 w-4 mr-1.5" />
                 My Referrals
-              </button>
+              </Button>
             </Link>
-
-            {/* Referral Requests & Post Opportunity - alumni only */}
             {userPermissions.canPostOpportunity && (
               <>
                 <Link href="/referrals/received">
-                  <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-navy-200 text-navy-700 text-sm font-medium hover:bg-navy-50 transition-colors">
-                    <Users className="h-4 w-4" />
+                  <Button variant="outline" size="sm" className="cursor-pointer">
+                    <Users className="h-4 w-4 mr-1.5" />
                     Referral Requests
-                  </button>
+                  </Button>
                 </Link>
                 <Link href="/opportunities/new">
-                  <button className="btn-primary flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
+                  <Button size="sm" className="cursor-pointer">
+                    <Plus className="h-4 w-4 mr-1.5" />
                     Post Opportunity
-                  </button>
+                  </Button>
                 </Link>
               </>
             )}
           </div>
         </div>
+      </div>
 
-        {/* Opportunities Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredOpportunities.length === 0 ? (
-            <p className="col-span-full text-center text-gray-600 py-16">
-              No opportunities found for this category.
-            </p>
-          ) : (
-            filteredOpportunities.map((opportunity) => (
-              <article
-                key={opportunity.id}
-                className="card overflow-hidden flex flex-col group hover:-translate-y-1 transition-all duration-300"
-              >
-                <div className="p-5 flex flex-col flex-grow">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="badge bg-navy-50 text-navy-700 flex items-center gap-1">
-                      <Tag className="h-3 w-3" />
-                      {opportunity.type === "JOB" ? "Job" : "Internship"}
-                    </span>
-                    <span className="badge bg-gray-100 text-gray-700 flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {new Date(opportunity.postedAt).toLocaleDateString()}
-                    </span>
-                  </div>
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <Tabs value={activeCategory} onValueChange={setActiveCategory}>
+          <TabsList className="h-8 p-0.5 bg-muted">
+            <TabsTrigger value="All" className="h-7 text-xs px-3">All</TabsTrigger>
+            <TabsTrigger value="JOB" className="h-7 text-xs px-3">Jobs</TabsTrigger>
+            <TabsTrigger value="INTERNSHIP" className="h-7 text-xs px-3">Internships</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-                  <h3 className="font-bold text-navy-900 mb-2 group-hover:text-navy-700 transition-colors">
-                    {opportunity.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm mb-1">
-                    <span className="font-medium text-navy-800">Company:</span>{" "}
-                    {opportunity.company}
-                  </p>
-                  <p className="text-gray-600 text-sm mb-3 flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5 text-gray-500" />
-                    <span className="font-medium text-navy-800">
-                      Location:
-                    </span>{" "}
-                    {opportunity.location}
-                  </p>
-                  <p className="text-gray-500 text-sm mb-4 line-clamp-3 flex-grow">
-                    {opportunity.description}
-                  </p>
-
-                  <div className="flex items-center justify-between text-xs text-gray-400 mb-4">
-                    <span className="flex items-center gap-1.5">
-                      <User className="h-3 w-3" />
-                      Posted by: {opportunity.postedByName}
-                    </span>
-                    {opportunity.allowReferrals && (
-                      <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-                        Referrals Open
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 mt-auto">
-                    <a
-                      href={opportunity.applyLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-primary flex-1 flex items-center justify-center gap-2"
-                    >
-                      Apply Now <ArrowRight className="h-4 w-4" />
-                    </a>
-                    {opportunity.allowReferrals &&
-                      userPermissions.canRequestReferral && (
-                        <button
-                          onClick={() => setReferralTarget(opportunity)}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-navy-200 text-navy-700 text-sm font-medium hover:bg-navy-50 transition-colors shrink-0"
-                          title="Request a Referral"
-                        >
-                          <Users className="h-4 w-4" />
-                          Refer Me
-                        </button>
-                      )}
-                  </div>
-                </div>
-              </article>
-            ))
-          )}
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
+          <Input
+            placeholder="Search opportunities..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-8 pl-8 text-xs bg-muted/30 border-border w-[200px] md:w-[240px] focus-visible:ring-1"
+          />
         </div>
       </div>
 
-      <Footer />
+      {/* Error */}
+      {fetchError && (
+        <Alert variant="destructive">
+          <AlertDescription>{fetchError}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Loading */}
+      {loading && (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-[280px] rounded-xl" />
+          ))}
+        </div>
+      )}
+
+      {/* Empty */}
+      {!loading && !fetchError && filteredOpportunities.length === 0 && (
+        <Card className="rounded-xl border border-border bg-card">
+          <CardContent className="flex flex-col items-center py-16 text-center">
+            <Briefcase className="h-8 w-8 text-muted-foreground/60 mb-3" />
+            <p className="font-semibold text-foreground text-sm">
+              {searchQuery ? "No matching opportunities" : "No opportunities found"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {searchQuery ? "Try adjusting your search keywords." : "Check back soon for new postings."}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Opportunities Grid */}
+      {!loading && filteredOpportunities.length > 0 && (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredOpportunities.map((opportunity) => (
+            <div
+              key={opportunity.id}
+              className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col p-4 gap-3"
+            >
+              {/* Header */}
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-[10px] font-semibold gap-1">
+                  <Tag className="h-3 w-3" />
+                  {opportunity.type === "JOB" ? "Job" : "Internship"}
+                </Badge>
+                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {new Date(opportunity.postedAt).toLocaleDateString()}
+                </span>
+              </div>
+
+              {/* Title + Company */}
+              <div>
+                <h3 className="font-semibold text-sm leading-snug text-foreground line-clamp-1">
+                  {opportunity.title}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {opportunity.company}
+                </p>
+              </div>
+
+              {/* Meta */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  <span>{opportunity.location}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <User className="h-3.5 w-3.5 shrink-0" />
+                  <span>Posted by {opportunity.postedByName}</span>
+                </div>
+              </div>
+
+              {/* Description */}
+              <p className="text-xs text-muted-foreground line-clamp-3 flex-grow">
+                {opportunity.description}
+              </p>
+
+              {/* Referrals badge */}
+              {opportunity.allowReferrals && (
+                <div className="flex items-center gap-1.5 text-[10px] text-green-600 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  Referrals Open
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 pt-3 border-t border-border mt-auto">
+                <a
+                  href={opportunity.applyLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1"
+                >
+                  <Button className="w-full cursor-pointer gap-1.5" size="sm">
+                    Apply Now
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </a>
+                {opportunity.allowReferrals && userPermissions.canRequestReferral && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="cursor-pointer shrink-0"
+                    onClick={() => setReferralTarget(opportunity)}
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Referral Modal */}
       {referralTarget && (

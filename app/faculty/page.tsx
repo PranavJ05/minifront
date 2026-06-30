@@ -12,12 +12,23 @@ import {
   BookOpen,
   Building,
   Search,
-  Loader2,
   AlertCircle,
-  ExternalLink,
+  Calendar,
+  Briefcase,
 } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getInitials } from "@/lib/utils";
 
 const API_BASE = "http://localhost:8080";
@@ -32,7 +43,7 @@ interface FacultyMember {
   departmentCode: string;
   departmentName: string;
   officeLocation: string | null;
-  qualifications: string; // JSON string
+  qualifications: string;
   subjectsTaught: string;
   linkedinUrl: string | null;
   googleScholarUrl: string | null;
@@ -41,7 +52,7 @@ interface FacultyMember {
   bio: string | null;
 }
 
-type ParsedFacultyMember = Omit<FacultyMember, 'qualifications' | 'subjectsTaught'> & {
+type ParsedFacultyMember = Omit<FacultyMember, "qualifications" | "subjectsTaught"> & {
   qualifications: any[];
   subjectsTaught: string[];
 };
@@ -50,10 +61,9 @@ export default function FacultyPage() {
   const [faculty, setFaculty] = useState<FacultyMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Extract unique departments from faculty list
   const departments = useMemo(() => {
     const deptMap = new Map<string, string>();
     faculty.forEach((f) => {
@@ -67,7 +77,6 @@ export default function FacultyPage() {
     }));
   }, [faculty]);
 
-  // Parsed data for display
   const [parsedFaculty, setParsedFaculty] = useState<ParsedFacultyMember[]>([]);
 
   useEffect(() => {
@@ -84,11 +93,7 @@ export default function FacultyPage() {
 
     try {
       const res = await fetch(`${API_BASE}/api/faculty/all`);
-
-      if (!res.ok) {
-        throw new Error(`Failed to fetch faculty: ${res.status}`);
-      }
-
+      if (!res.ok) throw new Error(`Failed to fetch faculty: ${res.status}`);
       const data: FacultyMember[] = await res.json();
       setFaculty(data);
     } catch (err: any) {
@@ -101,29 +106,24 @@ export default function FacultyPage() {
   function filterFaculty() {
     let filtered = faculty;
 
-    // Filter by department
-    if (selectedDepartment) {
-      filtered = filtered.filter(
-        (f) => f.departmentCode === selectedDepartment,
-      );
+    if (selectedDepartment && selectedDepartment !== "all") {
+      filtered = filtered.filter((f) => f.departmentCode === selectedDepartment);
     }
 
-    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (f) =>
           f.fullName.toLowerCase().includes(query) ||
           f.designation.toLowerCase().includes(query) ||
-          f.departmentName.toLowerCase().includes(query),
+          f.departmentName.toLowerCase().includes(query)
       );
     }
 
-    // Parse JSON fields for filtered results
     const parsed: ParsedFacultyMember[] = filtered.map((f) => ({
       ...f,
       qualifications: f.qualifications ? JSON.parse(f.qualifications) : [],
-      subjectsTaught: f.subjectsTaught ? JSON.parse(f.subjectsTaught as string) as string[] : [],
+      subjectsTaught: f.subjectsTaught ? (JSON.parse(f.subjectsTaught as string) as string[]) : [],
     }));
 
     setParsedFaculty(parsed);
@@ -131,235 +131,196 @@ export default function FacultyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-navy-800 mx-auto mb-4" />
-            <p className="text-gray-600">Loading faculty...</p>
+      <div className="w-full px-4 sm:px-6 pb-6 space-y-6">
+        <div className="sticky top-14 z-30 bg-background/95 backdrop-blur-md py-4 border-b border-border/40 -mx-4 sm:-mx-6 px-4 sm:px-6">
+          <div className="space-y-1">
+            <Skeleton className="h-5 w-32 rounded-md" />
+            <Skeleton className="h-3 w-48 rounded-md" />
           </div>
         </div>
-        <Footer />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-[320px] rounded-xl" />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3 mb-4">
-            <GraduationCap className="h-8 w-8 text-gold-400" />
-            <h1 className="font-serif text-3xl font-bold">Our Faculty</h1>
+    <div className="w-full px-4 sm:px-6 pb-6 space-y-6">
+      {/* Header */}
+      <div className="sticky top-14 z-30 bg-background/95 backdrop-blur-md py-4 border-b border-border/40 -mx-4 sm:-mx-6 px-4 sm:px-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">
+              Our Faculty
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Meet our distinguished faculty members
+            </p>
           </div>
-          <p className="text-gray-300 text-lg max-w-3xl">
-            Meet our distinguished faculty members - experienced educators and
-            researchers dedicated to excellence in teaching and innovation.
-          </p>
+          <span className="text-xs text-muted-foreground">
+            {parsedFaculty.length} of {faculty.length} members
+          </span>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name, designation, or department..."
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
+            <Input
+              placeholder="Search faculty..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-500"
+              className="h-8 pl-8 text-xs bg-muted/30 border-border focus-visible:ring-1"
             />
           </div>
 
-          {/* Department Filter */}
-          <select
-            value={selectedDepartment}
-            onChange={(e) => setSelectedDepartment(e.target.value)}
-            className="px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-500 bg-white cursor-pointer min-w-[200px]"
-          >
-            <option value="">All Departments</option>
-            {departments.map((dept) => (
-              <option key={dept.code} value={dept.code}>
-                {dept.name}
-              </option>
-            ))}
-          </select>
+          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+            <SelectTrigger className="h-8 w-[180px] text-xs bg-muted/30 border-border">
+              <SelectValue placeholder="All Departments" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Departments</SelectItem>
+              {departments.map((dept) => (
+                <SelectItem key={dept.code} value={dept.code}>
+                  {dept.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+      </div>
 
-        {/* Results count */}
-        <div className="mb-6">
-          <p className="text-sm text-gray-600">
-            Showing {parsedFaculty.length} of {faculty.length} faculty members
-            {selectedDepartment && (
-              <span>
-                {" "}
-                in{" "}
-                {departments.find((d) => d.code === selectedDepartment)?.name}
-              </span>
-            )}
-          </p>
-        </div>
+      {/* Error */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            {error}
-          </div>
-        )}
-
-        {/* Faculty Grid */}
-        {parsedFaculty.length === 0 ? (
-          <div className="text-center py-16">
-            <GraduationCap className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700">
-              No faculty found
-            </h3>
-            <p className="text-gray-500 mt-1">
-              {searchQuery || selectedDepartment
+      {/* Empty */}
+      {!loading && !error && parsedFaculty.length === 0 && (
+        <Card className="rounded-xl border border-border bg-card">
+          <CardContent className="flex flex-col items-center py-16 text-center">
+            <GraduationCap className="h-8 w-8 text-muted-foreground/60 mb-3" />
+            <p className="font-semibold text-foreground text-sm">No faculty found</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {searchQuery || (selectedDepartment && selectedDepartment !== "all")
                 ? "Try adjusting your search or filters"
                 : "No faculty members available"}
             </p>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {parsedFaculty.map((member: ParsedFacultyMember) => (
-              <article
-                key={member.userId}
-                className="card overflow-hidden hover:shadow-lg transition-shadow duration-300"
-              >
-                {/* Card Header */}
-                <div className="bg-gradient-to-r from-navy-950 to-navy-800 h-20 relative" />
+          </CardContent>
+        </Card>
+      )}
 
-                <div className="px-5 pb-5 -mt-10">
-                  {/* Profile Image */}
-                  <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-md bg-navy-100 mb-4">
-                    {member.profileImageUrl ? (
-                      <Image
-                        src={member.profileImageUrl}
-                        alt={member.fullName}
-                        width={80}
-                        height={80}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-navy-600 font-bold text-xl">
-                        {getInitials(member.fullName)}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Name & Designation */}
-                  <h3 className="font-bold text-navy-900 text-lg">
+      {/* Faculty Grid */}
+      {!loading && parsedFaculty.length > 0 && (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {parsedFaculty.map((member: ParsedFacultyMember) => (
+            <div
+              key={member.userId}
+              className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col p-4 gap-3"
+            >
+              {/* Profile + Info */}
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-muted shrink-0 border border-border">
+                  {member.profileImageUrl ? (
+                    <Image
+                      src={member.profileImageUrl}
+                      alt={member.fullName}
+                      width={48}
+                      height={48}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-primary font-bold text-sm">
+                      {getInitials(member.fullName)}
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-sm leading-snug text-foreground line-clamp-1">
                     {member.fullName}
                   </h3>
-                  <p className="text-gold-600 font-medium text-sm">
-                    {member.designation}
-                  </p>
-
-                  {/* Department */}
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-2">
-                    <Building className="h-3.5 w-3.5" />
-                    <span>{member.departmentName}</span>
-                  </div>
-
-                  {/* Experience */}
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
-                    <Award className="h-3.5 w-3.5" />
-                    <span>{member.totalExperienceYears} years experience</span>
-                  </div>
-
-                  {/* Office Location */}
-                  {member.officeLocation && (
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
-                      <MapPin className="h-3.5 w-3.5" />
-                      <span>{member.officeLocation}</span>
-                    </div>
-                  )}
-
-                  {/* Subjects Taught (preview) */}
-                  {member.subjectsTaught.length > 0 && (
-                    <div className="mt-3">
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
-                        <BookOpen className="h-3.5 w-3.5" />
-                        <span>Subjects</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {member.subjectsTaught.slice(0, 3).map((subject, i) => (
-                          <span
-                            key={i}
-                            className="text-xs px-2 py-1 bg-navy-50 text-navy-700 rounded"
-                          >
-                            {subject}
-                          </span>
-                        ))}
-                        {member.subjectsTaught.length > 3 && (
-                          <span className="text-xs text-gray-400">
-                            +{member.subjectsTaught.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Qualifications (preview) */}
-                  {member.qualifications.length > 0 && (
-                    <div className="mt-3">
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
-                        <GraduationCap className="h-3.5 w-3.5" />
-                        <span>Qualifications</span>
-                      </div>
-                      <p className="text-xs text-gray-600">
-                        {member.qualifications[0].degree} in{" "}
-                        {member.qualifications[0].field}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {member.qualifications[0].institution}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
-                    <Link
-                      href={`/faculty/${member.userId}`}
-                      className="flex-1 text-center px-3 py-2 bg-navy-800 text-white text-sm font-medium rounded-lg hover:bg-navy-700 transition-colors"
-                    >
-                      View Profile
-                    </Link>
-                    {member.linkedinUrl && (
-                      <a
-                        href={member.linkedinUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-blue-600 hover:bg-blue-50 transition-colors"
-                        title="LinkedIn"
-                      >
-                        <FaLinkedin className="h-4 w-4" />
-                      </a>
-                    )}
-                    <a
-                      href={`mailto:${member.email}`}
-                      className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-navy-600 hover:bg-navy-50 transition-colors"
-                      title="Email"
-                    >
-                      <Mail className="h-4 w-4" />
-                    </a>
-                  </div>
+                  <p className="text-xs text-primary mt-0.5">{member.designation}</p>
                 </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </div>
+              </div>
 
-      <Footer />
+              {/* Meta */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Building className="h-3.5 w-3.5 shrink-0" />
+                  <span>{member.departmentName}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Award className="h-3.5 w-3.5 shrink-0" />
+                  <span>{member.totalExperienceYears} years experience</span>
+                </div>
+                {member.officeLocation && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5 shrink-0" />
+                    <span>{member.officeLocation}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Subjects */}
+              {member.subjectsTaught.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {member.subjectsTaught.slice(0, 3).map((subject, i) => (
+                    <Badge key={i} variant="secondary" className="text-[10px] font-medium">
+                      {subject}
+                    </Badge>
+                  ))}
+                  {member.subjectsTaught.length > 3 && (
+                    <span className="text-[10px] text-muted-foreground">
+                      +{member.subjectsTaught.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Qualifications */}
+              {member.qualifications.length > 0 && (
+                <div className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">
+                    {member.qualifications[0].degree}
+                  </span>{" "}
+                  in {member.qualifications[0].field}
+                  <br />
+                  {member.qualifications[0].institution}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 pt-3 border-t border-border mt-auto">
+                <Link href={`/faculty/${member.userId}`} className="flex-1">
+                  <Button className="w-full cursor-pointer" size="sm">
+                    View Profile
+                  </Button>
+                </Link>
+                {member.linkedinUrl && (
+                  <a href={member.linkedinUrl} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="icon" className="h-8 w-8 cursor-pointer">
+                      <FaLinkedin className="h-3.5 w-3.5" />
+                    </Button>
+                  </a>
+                )}
+                <a href={`mailto:${member.email}`}>
+                  <Button variant="outline" size="icon" className="h-8 w-8 cursor-pointer">
+                    <Mail className="h-3.5 w-3.5" />
+                  </Button>
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
