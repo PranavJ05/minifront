@@ -212,7 +212,7 @@ export default function StudentSignupForm({
           label="LinkedIn URL"
           type="url"
           placeholder="https://linkedin.com/in/johndoe"
-          icon={FaLinkedin as any}
+          icon={FaLinkedin}
           value={formData.linkedinUrl}
           onChange={(e) => onChange("linkedinUrl", e.target.value)}
           error={errors.linkedinUrl}
@@ -222,7 +222,7 @@ export default function StudentSignupForm({
           label="GitHub URL"
           type="url"
           placeholder="https://github.com/johndoe"
-          icon={FaGithub as any}
+          icon={FaGithub}
           value={formData.githubUrl}
           onChange={(e) => onChange("githubUrl", e.target.value)}
           error={errors.githubUrl}

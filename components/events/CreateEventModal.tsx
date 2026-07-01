@@ -96,8 +96,8 @@ export default function CreateEventModal({
       if (!res.success) throw new Error(res.message);
       setState("success");
       onCreated();
-    } catch (err: any) {
-      setError(err.message || "Failed to create event.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create event.");
       setState("error");
     }
   };

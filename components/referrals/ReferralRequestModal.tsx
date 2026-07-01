@@ -79,8 +79,8 @@ export default function ReferralRequestModal({
       }
 
       setModalState("success");
-    } catch (err: any) {
-      setErrorMsg(err.message || "Something went wrong. Please try again.");
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Something went wrong. Please try again.");
       setModalState("error");
     }
   };

@@ -165,8 +165,8 @@ export default function FacultyProfilePage() {
 
       const data: FacultyProfile = await res.json();
       setProfile(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load profile");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load profile");
     } finally {
       setLoading(false);
     }
@@ -227,8 +227,8 @@ export default function FacultyProfilePage() {
 
       // Auto-hide success message
       setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (err: any) {
-      setError(err.message || "Failed to save profile");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to save profile");
     } finally {
       setIsSaving(false);
     }
@@ -252,7 +252,7 @@ export default function FacultyProfilePage() {
   if (error && !profile) {
     return (
       <div className="min-h-screen bg-[#f8f9fa] flex">
-        <DashboardSidebar role="faculty" userName="" userEmail="" />
+        <DashboardSidebar role="faculty" />
         <main className="flex-1 overflow-auto p-12">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <AlertCircle className="h-14 w-14 text-red-500 mx-auto mb-4" />
@@ -279,11 +279,7 @@ export default function FacultyProfilePage() {
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex">
       {sidebarUser && (
-        <DashboardSidebar
-          role="faculty"
-          userName={sidebarUser.name}
-          userEmail={sidebarUser.email}
-        />
+        <DashboardSidebar role="faculty" />
       )}
 
       <main className="flex-1 overflow-auto p-12">

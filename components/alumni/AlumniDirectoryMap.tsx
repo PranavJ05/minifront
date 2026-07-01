@@ -20,6 +20,7 @@ import {
   Users,
   ChevronRight,
 } from "lucide-react";
+import type * as L from "leaflet";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,8 +52,8 @@ const ERR = (...a: unknown[]) => console.error("[AlumniDirectoryMap]", ...a);
 
 export default function AlumniDirectoryMap() {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<any>(null); // L.Map
-  const clusterGroup = useRef<any>(null); // L.MarkerClusterGroup
+  const mapInstance = useRef<L.Map | null>(null);
+  const clusterGroup = useRef<L.MarkerClusterGroup | null>(null);
 
   const [pins, setPins] = useState<AlumniMapPin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,9 +79,9 @@ export default function AlumniDirectoryMap() {
       const data: AlumniMapPin[] = await res.json();
       LOG(`Loaded ${data.length} pins`);
       setPins(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       ERR("fetchPins error:", err);
-      setError(err.message || "Failed to load alumni locations");
+      setError(err instanceof Error ? err.message : "Failed to load alumni locations");
     } finally {
       setLoading(false);
     }
@@ -96,13 +97,13 @@ export default function AlumniDirectoryMap() {
 
     // Dynamic import keeps Leaflet out of the SSR bundle
     import("leaflet")
-      .then((L) => {
+      .then((leaflet) => {
         if (cancelled) return;
 
-        (window as any).L = L;
+        (window as unknown as { leaflet?: typeof leaflet }).leaflet = leaflet;
 
-        delete (L.Icon.Default.prototype as any)._getIconUrl;
-        L.Icon.Default.mergeOptions({
+        delete (leaflet.Icon.Default.prototype as unknown as { _getIconUrl?: string })._getIconUrl;
+        leaflet.Icon.Default.mergeOptions({
           iconRetinaUrl:
             "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
           iconUrl:
@@ -118,21 +119,21 @@ export default function AlumniDirectoryMap() {
 
         LOG("Leaflet loaded, initialising map");
 
-        const L = (window as any).L;
+        const leaflet = (window as unknown as { leaflet?: typeof import("leaflet") }).leaflet!;
 
-        const map = L.map(mapContainer.current!, {
+        const map = leaflet.map(mapContainer.current!, {
           center: MAP_CENTER,
           zoom: MAP_ZOOM,
           zoomControl: true,
         });
 
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        leaflet.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution:
             '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
           maxZoom: 18,
         }).addTo(map);
 
-        const cluster = L.markerClusterGroup({
+        const cluster = leaflet.markerClusterGroup({
           chunkedLoading: true,
           maxClusterRadius: 60,
           spiderfyOnMaxZoom: true,
@@ -194,18 +195,16 @@ export default function AlumniDirectoryMap() {
   useEffect(() => {
     if (!mapReady || !clusterGroup.current || pins.length === 0) return;
 
-    const L = (window as any).L;
+    const leaflet = (window as unknown as { leaflet?: typeof import("leaflet") }).leaflet!;
     const cluster = clusterGroup.current;
     cluster.clearLayers();
 
     LOG(`Adding ${pins.length} markers to cluster`);
 
     pins.forEach((pin) => {
-      const marker = L.marker([pin.latitude, pin.longitude]);
+      const marker = leaflet.marker([pin.latitude, pin.longitude]);
 
-      // 🌟 MAGIC SAUCE: Attach the raw data to the Leaflet marker object
-      // This allows the cluster group to read it back out on hover!
-      (marker as any).alumniData = pin;
+      (marker as unknown as { alumniData: AlumniMapPin }).alumniData = pin;
 
       marker.bindTooltip(
         `<strong>${pin.name}</strong><br>${pin.displayLocation ?? ""}`,

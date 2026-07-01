@@ -29,8 +29,6 @@ import {
 
 interface SidebarProps {
   role: UserRole;
-  userName: string | null;
-  userEmail: string;
 }
 const facultyLinks = [
   { href: "/dashboard/faculty", label: "Overview", icon: Home },
@@ -82,11 +80,7 @@ const adminLinks = [
 
 ];
 
-export default function DashboardSidebar({
-  role,
-  userName,
-  userEmail,
-}: SidebarProps) {
+export default function DashboardSidebar({ role }: SidebarProps) {
   const [isClubManager, setIsClubManager] =
     useState(false);
   const pathname = usePathname();
@@ -134,21 +128,6 @@ export default function DashboardSidebar({
     router.push("/");
   };
 
-  const roleBadgeColor =
-    role === "faculty"
-      ? "bg-primary/10 text-primary border border-primary/20"
-      : role === "alumni"
-        ? "bg-muted text-muted-foreground border border-border"
-        : "bg-accent text-accent-foreground border border-border";
-
-  const roleLabel =
-  role === "faculty"
-    ? "Faculty"
-    : role === "alumni"
-      ? "Alumni"
-      : role === "admin"
-        ? "Main Administrator"
-        : "Student";
   return (
     <Sidebar
       collapsible="icon"
@@ -173,24 +152,7 @@ export default function DashboardSidebar({
         </Link>
       </SidebarHeader>
 
-      {/* User Info Block */}
-      <div className="p-4 border-b border-sidebar-border space-y-3 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:items-center">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0 border border-primary/20">
-            {userName ? userName.charAt(0).toUpperCase() : "U"}
-          </div>
-          <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-            <p className="font-medium text-xs text-foreground truncate">
-              {userName || "User"}
-            </p>
-            <p className="text-[10px] text-muted-foreground truncate">{userEmail}</p>
-          </div>
-        </div>
-        <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold tracking-wide uppercase group-data-[collapsible=icon]:hidden", roleBadgeColor)}>
-          {role === "faculty" && <GraduationCap className="h-3 w-3 mr-1" />}
-          {roleLabel}
-        </span>
-      </div>
+
 
       <SidebarContent className="p-2">
         <SidebarMenu>

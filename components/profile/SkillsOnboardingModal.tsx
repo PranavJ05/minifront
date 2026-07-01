@@ -77,10 +77,10 @@ export default function SkillsOnboardingModal({
           setStep("skills");
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[Onboarding] Failed to load courses:", err);
       setError(
-        err.message || "Failed to load courses. Make sure backend is running.",
+        err instanceof Error ? err.message : "Failed to load courses. Make sure backend is running.",
       );
     } finally {
       setLoading(false);
@@ -106,9 +106,9 @@ export default function SkillsOnboardingModal({
         starters.map((s) => s.id).slice(0, 5),
       );
       setSelectedSkillIds(preselected);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[Onboarding] Failed to load skills:", err);
-      setError(err.message || "Failed to load skills");
+      setError(err instanceof Error ? err.message : "Failed to load skills");
     } finally {
       setLoading(false);
     }
@@ -150,8 +150,8 @@ export default function SkillsOnboardingModal({
       localStorage.setItem("skills_onboarding_completed", "true");
 
       setStep("complete");
-    } catch (err: any) {
-      setError(err.message || "Failed to save skills");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to save skills");
     } finally {
       setSaving(false);
     }

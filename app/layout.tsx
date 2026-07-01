@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { getOnboardingStatus } from "@/lib/skillsOnboarding";
 import { Figtree } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import AppLayout from "@/components/layout/AppLayout";
+import { QueryClientProvider } from "@/components/QueryClientProvider";
+import { AuthProvider } from "@/contexts/auth-context";
 
 const figtreeHeading = Figtree({
   subsets: ["latin"],
@@ -27,17 +27,13 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  if (typeof window !== "undefined") {
-    console.log("[App] Skills onboarding status:", getOnboardingStatus());
-  }
-
   return (
     <html
       lang="en"
       className={cn("font-sans", figtree.variable, figtreeHeading.variable)}
       suppressHydrationWarning
     >
-      <body>
+      <body suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -46,7 +42,9 @@ export default function RootLayout({
         >
           <TooltipProvider>
             <SidebarProvider defaultOpen={false}>
-              <AppLayout>{children}</AppLayout>
+              <QueryClientProvider>
+                <AuthProvider>{children}</AuthProvider>
+              </QueryClientProvider>
             </SidebarProvider>
           </TooltipProvider>
         </ThemeProvider>

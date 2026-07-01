@@ -142,8 +142,8 @@ export default function StudentProfilePage() {
 
       const data: StudentProfile = await res.json();
       setProfile(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load profile");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load profile");
     } finally {
       setLoading(false);
     }
@@ -207,8 +207,8 @@ export default function StudentProfilePage() {
 
       // Auto-hide success message after 3 seconds
       setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (err: any) {
-      setError(err.message || "Failed to save profile");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to save profile");
     } finally {
       setIsSaving(false);
     }
@@ -232,7 +232,7 @@ export default function StudentProfilePage() {
   if (error && !profile) {
     return (
       <div className="min-h-screen bg-gray-50 flex">
-        <DashboardSidebar role="student" userName="" userEmail="" />
+        <DashboardSidebar role="student" />
         <main className="flex-1 flex items-center justify-center p-6">
           <div className="text-center max-w-md bg-white p-8 rounded-2xl shadow-sm border border-red-100">
             <AlertCircle className="h-14 w-14 text-red-500 mx-auto mb-4" />
@@ -259,11 +259,7 @@ export default function StudentProfilePage() {
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex">
       {sidebarUser && (
-        <DashboardSidebar
-          role="student"
-          userName={sidebarUser.name}
-          userEmail={sidebarUser.email}
-        />
+        <DashboardSidebar role="student" />
       )}
 
       <main className="flex-1 overflow-auto p-12">

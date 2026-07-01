@@ -58,8 +58,8 @@ export default function OrganizerPanel({
       setSelectedPhoto(null);
       onMediaAdded();
       setTimeout(() => setStatus("idle"), 2500);
-    } catch (err: any) {
-      setErrorMsg(err.message || "Failed to add media.");
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Failed to add media.");
       setStatus("error");
     }
   };

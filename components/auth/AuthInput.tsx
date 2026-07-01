@@ -1,11 +1,10 @@
 // components/auth/AuthInput.tsx
 import { forwardRef } from 'react';
-import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AuthInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
-  icon?: LucideIcon;
+  icon?: React.ElementType;
   error?: string;
   rightElement?: React.ReactNode;
 }

@@ -180,7 +180,7 @@ export default function AlumniSignupForm({
           label="LinkedIn URL"
           type="url"
           placeholder="https://linkedin.com/in/johndoe"
-          icon={FaLinkedin as any}
+          icon={FaLinkedin}
           value={formData.linkedinUrl}
           onChange={(e) => onChange("linkedinUrl", e.target.value)}
           error={errors.linkedinUrl}
