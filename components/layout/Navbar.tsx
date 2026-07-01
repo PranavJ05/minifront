@@ -228,21 +228,23 @@ export default function Navbar({
                   }}
                 >
                   <DropdownMenu open={accountOpen} onOpenChange={setAccountOpen}>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="flex items-center gap-2 h-8 px-2 cursor-pointer hover:bg-accent"
-                      >
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                            {userInitial}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-xs font-medium text-foreground hidden sm:inline max-w-[100px] truncate">
-                          {resolvedName}
-                        </span>
-                      </Button>
-                    </DropdownMenuTrigger>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button
+                          variant="ghost"
+                          className="flex items-center gap-2 h-8 px-2 cursor-pointer hover:bg-accent"
+                        >
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                              {userInitial}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-xs font-medium text-foreground hidden sm:inline max-w-[100px] truncate">
+                            {resolvedName}
+                          </span>
+                        </Button>
+                      }
+                    />
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuGroup>
                         <DropdownMenuLabel className="font-normal">
@@ -266,12 +268,15 @@ export default function Navbar({
                         </DropdownMenuLabel>
                       </DropdownMenuGroup>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild className="cursor-pointer">
-                        <Link href="/profile" className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          <span>My Profile</span>
-                        </Link>
-                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        render={
+                          <Link href="/profile" className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            <span>My Profile</span>
+                          </Link>
+                        }
+                      />
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={handleLogout}

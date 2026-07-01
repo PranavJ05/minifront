@@ -179,7 +179,7 @@ export default function FacultyPage() {
             />
           </div>
 
-          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+          <Select value={selectedDepartment} onValueChange={(value) => setSelectedDepartment(value ?? "")}>
             <SelectTrigger className="h-8 w-[180px] text-xs bg-muted/30 border-border">
               <SelectValue placeholder="All Departments" />
             </SelectTrigger>

@@ -189,7 +189,8 @@ export default function CreateEventModal({
                   Date <span className="text-destructive">*</span>
                 </Label>
                 <Popover>
-                  <PopoverTrigger asChild>
+                  <PopoverTrigger
+                  render={
                     <Button
                       variant="outline"
                       type="button"
@@ -202,7 +203,8 @@ export default function CreateEventModal({
                       <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground/60 shrink-0" />
                       {dateValue ? formatDateString(dateValue) : "Select event date"}
                     </Button>
-                  </PopoverTrigger>
+                  }
+                />
                   <PopoverContent className="w-auto p-0 bg-popover" align="start">
                     <Calendar
                       mode="single"

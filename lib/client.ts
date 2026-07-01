@@ -4,7 +4,7 @@ const apiClient = async <T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> => {
-  const token = localStorage.getItem("auth_token");
+  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
   const response = await fetch(`${BACKEND_URL}${endpoint}`, {
     ...options,
     headers: {

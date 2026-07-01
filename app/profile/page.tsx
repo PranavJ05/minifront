@@ -930,7 +930,7 @@ function AlumniProfileContent() {
                   <SkillsSection
                     alumniId={profile.alumniId}
                     resolvedCourseId={resolvedCourseId}
-                    skillsData={skillsData || undefined}
+                    skillsData={skillsData}
                     isLoading={skillsLoading}
                     isResolving={courseResolving}
                     error={skillsError}

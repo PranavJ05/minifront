@@ -81,8 +81,6 @@ const adminLinks = [
   { href: "/profile", label: "My Profile", icon: User },
 
 ];
-const token = localStorage.getItem("token");
-
 
 export default function DashboardSidebar({
   role,
@@ -228,7 +226,6 @@ export default function DashboardSidebar({
           {isClubManager && (
             <SidebarMenuItem>
               <SidebarMenuButton
-                asChild
                 isActive={pathname === "/club-events/mine"}
                 tooltip="My Club Events"
                 className={cn(
@@ -237,12 +234,13 @@ export default function DashboardSidebar({
                     ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
                     : "text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
                 )}
-              >
-                <Link href="/club-events/mine" className="flex items-center gap-2.5 w-full">
-                  <Calendar className="h-4 w-4 shrink-0" />
-                  <span className="group-data-[collapsible=icon]:hidden">My Club Events</span>
-                </Link>
-              </SidebarMenuButton>
+                render={
+                  <Link href="/club-events/mine" className="flex items-center gap-2.5 w-full">
+                    <Calendar className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">My Club Events</span>
+                  </Link>
+                }
+              />
             </SidebarMenuItem>
           )}
         </SidebarMenu>

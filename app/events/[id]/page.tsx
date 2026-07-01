@@ -161,12 +161,14 @@ export default function EventDetailPage() {
 
         {isOrganizer && (
           <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs cursor-pointer">
-                <Plus className="h-3.5 w-3.5" />
-                Manage Media
-              </Button>
-            </DialogTrigger>
+            <DialogTrigger
+              render={
+                <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs cursor-pointer">
+                  <Plus className="h-3.5 w-3.5" />
+                  Manage Media
+                </Button>
+              }
+            />
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Add Event Media</DialogTitle>
