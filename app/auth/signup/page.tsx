@@ -362,10 +362,7 @@ export default function SignupPage() {
         .join(", ");
 
       const payload = {
-        name:
-          formData.role === "student"
-            ? formData.rollNumber.trim()
-            : formData.fullName.trim(),
+        name: formData.fullName.trim(),
         email: formData.email.trim(),
         password: formData.password,
         role: formData.role.toUpperCase(),
@@ -451,7 +448,13 @@ export default function SignupPage() {
         );
       }
 
-      router.push("/auth/pending");
+      if (formData.role === "student") {
+        router.push(
+          `/auth/verify-otp?email=${encodeURIComponent(formData.email)}`
+        );
+      } else {
+        router.push("/auth/pending");
+      }
     } catch (err: any) {
       setErrors({
         submit: err?.message || "Signup failed. Please try again.",

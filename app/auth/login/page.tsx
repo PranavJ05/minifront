@@ -33,6 +33,8 @@ type LoginResponse = {
   roles?: string[];
   status?: string;
   message?: string;
+  emailVerificationRequired?: boolean;  
+  approvalPending?: boolean;
 };
 
 export default function LoginPage() {
@@ -84,7 +86,16 @@ export default function LoginPage() {
       });
 
       const data: LoginResponse = await res.json().catch(() => ({}));
-
+      if (data.emailVerificationRequired) {
+        router.push(
+          `/auth/verify-otp?email=${encodeURIComponent(data.email!)}`
+        );
+        return;
+      }
+      if (data.approvalPending) {
+          router.push("/auth/pending");
+          return;
+      }
       console.log("[Login] === RAW BACKEND RESPONSE ===");
       console.log("[Login] Full response:", data);
       console.log("[Login] data.roles:", data.roles);
