@@ -12,9 +12,10 @@ import {
   AlertCircle,
   Clock,
   Tag,
+  Plus,
+  Camera,
 } from "lucide-react";
-import PhotoGallery from "@/components/events/PhotoGallery";
-import VideoList from "@/components/events/VideoList";
+import EventMediaCarousel from "@/components/events/EventMediaCarousel";
 import OrganizerPanel from "@/components/events/OrganizerPanel";
 import { fetchEventById } from "@/lib/api/events";
 import type { Event } from "@/lib/types/events";
@@ -28,7 +29,6 @@ import { getToken } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -89,17 +89,40 @@ export default function EventDetailPage() {
 
   if (loading) {
     return (
-      <div className="w-full px-6 py-6 space-y-4">
-        <Skeleton className="h-4 w-24 rounded-md" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-4">
-            <Skeleton className="h-[300px] rounded-2xl" />
-            <Skeleton className="h-48 rounded-xl" />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Back Link Skeleton */}
+        <Skeleton className="h-4 w-28 rounded-md" />
+        
+        {/* Split Card Skeleton */}
+        <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm flex flex-col md:flex-row p-3 gap-4">
+          {/* Left Column Poster Skeleton */}
+          <Skeleton className="aspect-square md:aspect-[4/5] w-full md:w-[35%] rounded-xl shrink-0" />
+          
+          {/* Right Column Details Skeleton */}
+          <div className="flex-1 space-y-6 py-2 flex flex-col justify-between">
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-24 rounded" />
+              <Skeleton className="h-8 w-5/6 rounded-lg" />
+              <Skeleton className="h-4 w-1/3 rounded" />
+            </div>
+            
+            <Skeleton className="h-px w-full" />
+            
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-2/3 rounded" />
+              <Skeleton className="h-4 w-1/2 rounded" />
+            </div>
+            
+            <Skeleton className="h-px w-full" />
+            
+            <Skeleton className="h-8 w-28 rounded-lg" />
           </div>
-          <div className="space-y-4">
-            <Skeleton className="h-64 rounded-xl" />
-            <Skeleton className="h-10 rounded-xl" />
-          </div>
+        </div>
+
+        {/* Tabs Card Skeleton */}
+        <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm p-5 space-y-4">
+          <Skeleton className="h-8 w-64 rounded-lg" />
+          <Skeleton className="h-32 w-full rounded-lg" />
         </div>
       </div>
     );
@@ -107,7 +130,7 @@ export default function EventDetailPage() {
 
   if (error || !event) {
     return (
-      <div className="w-full px-6 py-24 text-center space-y-4 flex flex-col items-center justify-center">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center space-y-4 flex flex-col items-center justify-center">
         <AlertCircle className="h-8 w-8 text-destructive mx-auto" />
         <h2 className="font-semibold text-foreground text-base">
           {error ?? "Event not found"}
@@ -121,222 +144,206 @@ export default function EventDetailPage() {
 
   const coverImage = event.photoUrls?.[0] ?? null;
   const past = isPast(event.eventDate);
+  const eventMonth = formatMonth(event.eventDate);
+  const eventDay = formatDay(event.eventDate);
 
   return (
-    <div className="w-full px-4 sm:px-6 py-6 space-y-6">
-      {/* Back link */}
-      <Link
-        href="/events"
-        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="h-3 w-3" />
-        All Events
-      </Link>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      {/* Top Bar: Back Link & Admin Trigger */}
+      <div className="flex items-center justify-between">
+        <Link
+          href="/events"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Events
+        </Link>
 
-      {/* Main content grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {isOrganizer && (
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs cursor-pointer">
+                <Plus className="h-3.5 w-3.5" />
+                Manage Media
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add Event Media</DialogTitle>
+              </DialogHeader>
+              <div className="pt-2">
+                <OrganizerPanel
+                  eventId={event.id}
+                  onMediaAdded={handleMediaChanged}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
 
-        {/* Left: Hero Card + Tabs */}
-        <div className="lg:col-span-2 space-y-6">
+      {/* Main Split Flyer Card */}
+      <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm flex flex-col md:flex-row p-3 gap-4">
+        {/* Left Column: Instagram Portrait Flyer/Poster */}
+        <div className="relative aspect-square md:aspect-[4/5] w-full md:w-[35%] rounded-xl overflow-hidden bg-muted shrink-0 border border-border">
+          {coverImage ? (
+            <img
+              src={coverImage}
+              alt={event.title}
+              className="w-full h-full object-cover select-none"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5 flex flex-col justify-between p-5 text-foreground select-none">
+              <div className="flex items-center justify-between border-b border-border/40 pb-3">
+                <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">Alumni Event</span>
+                <Calendar className="h-4 w-4 text-muted-foreground/50" />
+              </div>
+              <div className="my-auto space-y-1">
+                <div className="text-5xl font-extrabold text-foreground leading-none">
+                  {eventDay}
+                </div>
+                <div className="text-lg font-bold tracking-widest text-muted-foreground uppercase leading-none">
+                  {eventMonth}
+                </div>
+              </div>
+              <div className="border-t border-border/40 pt-3">
+                <p className="text-[10px] text-muted-foreground/60 truncate font-semibold uppercase tracking-wider">{event.location}</p>
+              </div>
+            </div>
+          )}
+        </div>
 
-          {/* Landscape Hero Card */}
-          <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm overflow-hidden">
-            <div className="flex flex-col md:flex-row">
+        {/* Right Column: Editorial Typography & Details */}
+        <div className="flex-1 flex flex-col justify-between gap-5 min-w-0 py-1.5 px-1">
+          {/* Header section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {past ? (
+                <Badge variant="destructive" className="h-5 text-[10px] px-1.5 font-semibold rounded shrink-0">Past Event</Badge>
+              ) : (
+                <Badge variant="default" className="h-5 text-[10px] px-1.5 font-semibold rounded shrink-0">Upcoming</Badge>
+              )}
+              {event.batchYear && (
+                <Badge variant="outline" className="h-5 text-[10px] px-1.5 font-semibold rounded shrink-0">Batch {event.batchYear}</Badge>
+              )}
+            </div>
 
-              {/* Image - padded with rounded corners */}
-              <div className="md:w-[45%] p-3 shrink-0">
-                <div className="relative w-full h-[220px] md:h-full min-h-[220px] rounded-xl overflow-hidden bg-muted">
-                  {coverImage ? (
-                    <img
-                      src={coverImage}
-                      alt={event.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
-                      <Calendar className="h-12 w-12" />
-                    </div>
+            <div className="space-y-1">
+              <h1 className="text-2xl font-bold text-foreground leading-tight">
+                {event.title}
+              </h1>
+              
+              {event.createdByName && (
+                <p className="text-xs text-muted-foreground">
+                  Hosted by <span className="font-semibold text-foreground">{event.createdByName}</span>
+                  {isOrganizer && (
+                    <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded bg-primary/5 text-primary border border-primary/10 text-[9px] font-bold uppercase">You</span>
                   )}
+                </p>
+              )}
+            </div>
+            
+            <hr className="border-border" />
+            
+            {/* Standard details block */}
+            <div className="flex flex-col gap-3.5 py-1">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-muted rounded-xl text-foreground shrink-0">
+                  <Calendar className="h-4 w-4" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75 leading-none mb-1">Date & Time</span>
+                  <span className="text-sm font-medium text-foreground">{formatEventDate(event.eventDate)}</span>
                 </div>
               </div>
 
-              {/* Content */}
-              <div className="flex-1 p-5 md:p-6 flex flex-col gap-4">
-                {/* Badges */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {past ? (
-                    <Badge variant="secondary" className="text-[10px] font-semibold">Past Event</Badge>
-                  ) : (
-                    <Badge variant="default" className="text-[10px] font-semibold">Upcoming</Badge>
-                  )}
-                  {event.batchYear && (
-                    <Badge variant="outline" className="text-[10px] font-semibold">
-                      Batch {event.batchYear}
-                    </Badge>
-                  )}
+              {event.location && (
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-muted rounded-xl text-foreground shrink-0">
+                    <MapPin className="h-4 w-4" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75 leading-none mb-1">Location</span>
+                    <span className="text-sm font-medium text-foreground truncate" title={event.location}>{event.location}</span>
+                  </div>
                 </div>
+              )}
 
-                {/* Title */}
-                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground leading-tight">
-                  {event.title}
-                </h1>
-
-                {/* Description */}
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {event.description || "No description provided."}
-                </p>
-
-                {/* Meta rows */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Calendar className="h-3.5 w-3.5 shrink-0" />
-                    <span>{formatEventDate(event.eventDate)}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Clock className="h-3.5 w-3.5 shrink-0" />
-                    <span>{formatMonth(event.eventDate)} {formatDay(event.eventDate)}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <MapPin className="h-3.5 w-3.5 shrink-0" />
-                    <span>{event.location}</span>
-                  </div>
-                  {event.batchYear && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Tag className="h-3.5 w-3.5 shrink-0" />
-                      <span>Batch {event.batchYear}</span>
-                    </div>
-                  )}
-                  {event.createdByName && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Users className="h-3.5 w-3.5 shrink-0" />
-                      <span>Organized by {event.createdByName}</span>
-                      {isOrganizer && (
-                        <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4">You</Badge>
-                      )}
-                    </div>
-                  )}
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-muted rounded-xl text-foreground shrink-0">
+                  <Users className="h-4 w-4" />
                 </div>
-
-                {/* Separator + Register */}
-                <div className="mt-auto pt-3 border-t border-border/50">
-                  {!past && event.registrationRequired && event.registrationLink ? (
-                    <a
-                      href={event.registrationLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Button className="w-full cursor-pointer gap-1.5">
-                        Register Now
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </Button>
-                    </a>
-                  ) : past ? (
-                    <p className="text-xs text-muted-foreground text-center py-2 font-medium">
-                      This event has ended
-                    </p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground text-center py-2 font-medium">
-                      No registration required
-                    </p>
-                  )}
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75 leading-none mb-1">Access</span>
+                  <span className="text-sm font-medium text-foreground">
+                    {event.registrationRequired ? "Registration Required" : "Open Access (No Registration)"}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Tabs: About / Photos / Videos */}
-          <Tabs defaultValue="about" className="w-full">
-            <TabsList className="bg-muted p-0.5 h-8">
-              <TabsTrigger value="about" className="h-7 text-xs px-4">About</TabsTrigger>
-              {(event.photos?.length ?? 0) > 0 && (
-                <TabsTrigger value="photos" className="h-7 text-xs px-4">
-                  Photos ({event.photos?.length})
-                </TabsTrigger>
-              )}
-              {(event.videos?.length ?? 0) > 0 && (
-                <TabsTrigger value="videos" className="h-7 text-xs px-4">
-                  Videos ({event.videos?.length})
-                </TabsTrigger>
-              )}
-            </TabsList>
-
-            <TabsContent value="about" className="mt-4 focus-visible:outline-none">
-              <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm p-5 space-y-4">
-                <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">
-                  {event.description || "No description provided."}
+          {/* Footer CTA Actions */}
+          <div className="flex items-center gap-2 pt-3 border-t border-border mt-auto">
+            {!past ? (
+              event.registrationRequired && event.registrationLink ? (
+                <a
+                  href={event.registrationLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto"
+                >
+                  <Button className="w-full sm:w-auto cursor-pointer gap-1.5 text-xs h-8 px-4" size="sm">
+                    Register for Event
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Button>
+                </a>
+              ) : (
+                <p className="text-xs text-muted-foreground font-medium py-1">
+                  ✨ No registration required. Open admission.
                 </p>
-                {/* Small photo previews */}
-                {(event.photos?.length ?? 0) > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-foreground mb-2">Photos</p>
-                    <div className="flex gap-2">
-                      {event.photos?.slice(0, 4).map((photo, i) => (
-                        <div key={i} className="w-16 h-16 rounded-lg overflow-hidden bg-muted shrink-0">
-                          <img
-                            src={photo.photoUrl}
-                            alt={`Photo ${i + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            {(event.photos?.length ?? 0) > 0 && (
-              <TabsContent value="photos" className="mt-4 focus-visible:outline-none">
-                <PhotoGallery
-                  eventId={event.id}
-                  photos={event.photos ?? []}
-                  isOrganizer={isOrganizer}
-                  onPhotosChanged={handleMediaChanged}
-                />
-              </TabsContent>
+              )
+            ) : (
+              <p className="text-xs text-muted-foreground font-medium py-1">This event has ended</p>
             )}
+          </div>
+        </div>
+      </div>
 
-            {(event.videos?.length ?? 0) > 0 && (
-              <TabsContent value="videos" className="mt-4 focus-visible:outline-none">
-                <VideoList
-                  eventId={event.id}
-                  videos={event.videos ?? []}
-                  isOrganizer={isOrganizer}
-                  onVideosChanged={handleMediaChanged}
-                />
-              </TabsContent>
-            )}
-          </Tabs>
+      {/* Single Card containing Description & Media Carousel */}
+      <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm p-5 space-y-6">
+        {/* Top: Description */}
+        <div className="space-y-2">
+          <h3 className="font-semibold text-foreground flex items-center gap-2 text-sm">
+            <Tag className="h-4 w-4 text-muted-foreground" />
+            About the Event
+          </h3>
+          <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
+            {event.description || "No description provided."}
+          </p>
         </div>
 
-        {/* Right Column: Organizer controls only */}
-        <div className="space-y-4">
-          {/* Organizer controls */}
-          {isOrganizer && (
-            <div className="bg-card text-card-foreground rounded-2xl border border-dashed border-primary/30 p-5 bg-primary/5 space-y-3">
-              <p className="text-xs font-semibold text-primary uppercase tracking-wider">Organizer Controls</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                You have administrative access to add photos and videos to this event.
-              </p>
-              <Dialog>
-                <DialogTrigger>
-                  <Button className="w-full cursor-pointer" size="sm">Add Media</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Add Event Media</DialogTitle>
-                  </DialogHeader>
-                  <div className="pt-2">
-                    <OrganizerPanel
-                      eventId={event.id}
-                      onMediaAdded={handleMediaChanged}
-                    />
-                  </div>
-                </DialogContent>
-              </Dialog>
+        {/* Bottom: Custom Parallax Media Carousel */}
+        {((event.photos?.length ?? 0) > 0 || (event.videos?.length ?? 0) > 0 || isOrganizer) && (
+          <>
+            <hr className="border-border" />
+            <div className="space-y-4">
+              <h3 className="font-semibold text-foreground flex items-center gap-2 text-sm">
+                <Camera className="h-4 w-4 text-muted-foreground" />
+                Event Gallery & Videos
+              </h3>
+              
+              <EventMediaCarousel
+                eventId={event.id}
+                photos={event.photos || []}
+                videos={event.videos || []}
+                isOrganizer={isOrganizer}
+                onPhotosChanged={handleMediaChanged}
+                onVideosChanged={handleMediaChanged}
+              />
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

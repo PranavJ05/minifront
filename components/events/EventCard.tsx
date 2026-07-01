@@ -16,7 +16,7 @@ export default function EventCard({ event }: EventCardProps) {
     <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col p-3 gap-3">
 
       {/* Image — padded, own rounded corners */}
-      <div className="relative w-full h-[180px] rounded-xl overflow-hidden bg-muted shrink-0">
+      <div className="relative w-full aspect-[4/5] rounded-xl overflow-hidden bg-muted shrink-0">
         {coverImage ? (
           <img
             src={coverImage}
