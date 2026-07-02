@@ -1,113 +1,249 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Leaflet CSS */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 @import "leaflet/dist/leaflet.css";
 @import "leaflet.markercluster/dist/MarkerCluster.css";
 @import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-sans);
+
+  --color-navy-50: #f0f4f8;
+  --color-navy-100: #d9e2ec;
+  --color-navy-200: #bcccdc;
+  --color-navy-300: #9fb3c8;
+  --color-navy-400: #829ab1;
+  --color-navy-500: #627d98;
+  --color-navy-600: #486581;
+  --color-navy-700: #334e68;
+  --color-navy-800: #243b53;
+  --color-navy-900: #1b2d3e;
+  --color-navy-950: #0d1f2d;
+
+  --color-gold-50: #fffbeb;
+  --color-gold-100: #fef3c7;
+  --color-gold-200: #fde68a;
+  --color-gold-300: #fcd34d;
+  --color-gold-400: #fbbf24;
+  --color-gold-500: #d4a017;
+  --color-gold-600: #b8860b;
+  --color-gold-700: #92690a;
+  --color-gold-800: #6b4f08;
+  --color-gold-900: #4a3606;
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+
+  --animate-fade-in: fade-in 0.5s ease-in-out;
+  --animate-slide-up: slide-up 0.4s ease-out;
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 :root {
-    --navy-950: #0d1f2d;
-    --navy-900: #1b2d3e;
-    --navy-800: #243b53;
-    --navy-700: #334e68;
-    --gold-500: #d4a017;
-    --gold-400: #fbbf24;
+  /* Light Mode: Clean pristine white & jet matte black buttons */
+  --background: oklch(0.99 0 0); /* Pure paper white */
+  --foreground: oklch(0.12 0 0); /* Deep neutral matte black */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.12 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.12 0 0);
+
+  /* Buttons: Matte Black */
+  --primary: oklch(0.12 0 0); /* Sharp matte black button */
+  --primary-foreground: oklch(0.99 0 0); /* White text */
+
+  --secondary: oklch(0.95 0 0); /* Clean light gray */
+  --secondary-foreground: oklch(0.12 0 0);
+  --muted: oklch(0.95 0 0);
+  --muted-foreground: oklch(0.55 0 0); /* Balanced neutral gray text */
+  --accent: oklch(0.93 0 0);
+  --accent-foreground: oklch(0.12 0 0);
+  --destructive: oklch(0.55 0.18 15); /* Vercel error red */
+
+  --border: oklch(0.9 0 0); /* Subtle, crisp border */
+  --input: oklch(0.9 0 0);
+  --ring: oklch(0.12 0 0);
+
+  /* Monochrome Charts */
+  --chart-1: oklch(0.12 0 0);
+  --chart-2: oklch(0.35 0 0);
+  --chart-3: oklch(0.55 0 0);
+  --chart-4: oklch(0.75 0 0);
+  --chart-5: oklch(0.9 0 0);
+
+  --radius: 0.625rem;
+
+  /* Sidebar - Light Mode */
+  --sidebar: oklch(0.98 0 0);
+  --sidebar-foreground: oklch(0.12 0 0);
+  --sidebar-primary: oklch(0.12 0 0);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.93 0 0);
+  --sidebar-accent-foreground: oklch(0.12 0 0);
+  --sidebar-border: oklch(0.9 0 0);
+  --sidebar-ring: oklch(0.12 0 0);
 }
 
-* {
-    box-sizing: border-box;
-    padding: 0;
-    margin: 0;
+.dark {
+  /* Dark Mode: True Vercel Matte Midnight (Zero Warmth) */
+  --background: oklch(0.13 0 0); /* Equivalent to Vercel's sleek #0a0a0a */
+  --foreground: oklch(0.95 0 0); /* Crisp, pure off-white text */
+  --card: oklch(0.17 0 0); /* Perfectly neutral elevated surface (#171717) */
+  --card-foreground: oklch(0.95 0 0);
+  --popover: oklch(0.17 0 0);
+  --popover-foreground: oklch(0.95 0 0);
+
+  /* Buttons: Matte White */
+  --primary: oklch(0.95 0 0); /* Crisp matte white button */
+  --primary-foreground: oklch(0.13 0 0); /* Deep black text */
+
+  --secondary: oklch(0.22 0 0); /* Solid neutral gray tier */
+  --secondary-foreground: oklch(0.95 0 0);
+  --muted: oklch(0.22 0 0);
+  --muted-foreground: oklch(0.55 0 0); /* Clean mid-gray text */
+  --accent: oklch(0.25 0 0); /* Hover state neutral gray */
+  --accent-foreground: oklch(0.95 0 0);
+  --destructive: oklch(0.5 0.18 15); /* Sharp Vercel dark mode red */
+
+  /* Borders and Inputs using clean translucent cuts */
+  --border: oklch(1 0 0 / 12%); /* Razor-sharp neutral borders */
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.95 0 0);
+
+  /* Monochrome Charts */
+  --chart-1: oklch(0.95 0 0);
+  --chart-2: oklch(0.75 0 0);
+  --chart-3: oklch(0.55 0 0);
+  --chart-4: oklch(0.35 0 0);
+  --chart-5: oklch(0.17 0 0);
+
+  /* Sidebar - Dark Mode */
+  --sidebar: oklch(
+    0.11 0 0
+  ); /* Slightly deeper backdrop for sidebar hierarchy */
+  --sidebar-foreground: oklch(0.95 0 0);
+  --sidebar-primary: oklch(0.95 0 0);
+  --sidebar-primary-foreground: oklch(0.13 0 0);
+  --sidebar-accent: oklch(0.17 0 0);
+  --sidebar-accent-foreground: oklch(0.95 0 0);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.95 0 0);
 }
 
-html {
-    scroll-behavior: smooth;
-}
-
-body {
-    background: #f8f9fa;
-    color: #1b2d3e;
-    font-family: "Georgia", serif;
-    -webkit-font-smoothing: antialiased;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }
 
 @layer components {
-    .btn-primary {
-        @apply bg-navy-800 hover:bg-navy-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0;
-    }
+  .btn-primary {
+    @apply bg-navy-800 hover:bg-navy-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0;
+  }
 
-    .btn-gold {
-        @apply bg-gold-500 hover:bg-gold-600 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0;
-    }
+  .btn-gold {
+    @apply bg-gold-500 hover:bg-gold-600 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0;
+  }
 
-    .btn-outline {
-        @apply border-2 border-navy-800 text-navy-800 hover:bg-navy-800 hover:text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200;
-    }
+  .btn-outline {
+    @apply border-2 border-navy-800 text-navy-800 hover:bg-navy-800 hover:text-white font-semibold px-6 py-3 rounded-lg transition-all duration-200;
+  }
 
-    .card {
-        @apply bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200;
-    }
+  .card {
+    @apply bg-card rounded-lg shadow-sm border border-border hover:shadow-md transition-shadow duration-200;
+  }
 
-    .input-field {
-        @apply w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-all duration-200 bg-white text-navy-900 placeholder-gray-400 font-sans;
-    }
+  .input-field {
+    @apply w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-transparent transition-all duration-200 bg-white text-navy-900 placeholder-gray-400;
+  }
 
-    .section-title {
-        @apply text-3xl font-bold text-navy-900 font-serif;
-    }
+  .section-title {
+    @apply text-3xl font-bold text-navy-900;
+  }
 
-    .badge {
-        @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
-    }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
-    width: 6px;
+  width: 6px;
 }
+
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+  background: #f1f1f1;
 }
+
 ::-webkit-scrollbar-thumb {
-    background: #334e68;
-    border-radius: 3px;
+  background: #334e68;
+  border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-    background: #1b2d3e;
-}
-
-/* Smooth page transitions */
-.page-enter {
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Hero gradient overlay */
-.hero-overlay {
-    background: linear-gradient(
-        135deg,
-        rgba(13, 31, 45, 0.85) 0%,
-        rgba(27, 45, 62, 0.7) 50%,
-        rgba(212, 160, 23, 0.3) 100%
-    );
-}
-
-/* Gradient text */
-.gradient-text {
-    background: linear-gradient(135deg, #d4a017, #fbbf24);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  background: #1b2d3e;
 }

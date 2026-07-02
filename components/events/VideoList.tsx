@@ -3,7 +3,7 @@
 // components/events/VideoList.tsx
 
 import { useState } from "react";
-import { ExternalLink, Trash2, Loader2, Play } from "lucide-react";
+import { ExternalLink, Trash2, Loader2, Play, Video } from "lucide-react";
 import { EventVideo } from "@/lib/types/events";
 import { deleteVideo } from "@/lib/api/events";
 import { getToken } from "@/lib/auth";
@@ -53,9 +53,9 @@ export default function VideoList({
 
   return (
     <div className="card p-6">
-      <h2 className="font-serif font-bold text-navy-900 text-lg mb-4 flex items-center gap-2">
-        <span>🎬</span> Videos
-        <span className="text-sm font-normal text-gray-400">
+      <h2 className="font-sans font-semibold text-foreground text-sm mb-4 flex items-center gap-2">
+        <Video className="h-4 w-4 text-muted-foreground" /> Videos
+        <span className="text-xs font-normal text-muted-foreground">
           ({videos.length})
         </span>
       </h2>
@@ -109,7 +109,7 @@ export default function VideoList({
                       href={video.videoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 text-gray-400 hover:text-navy-700 transition-colors"
+                      className="p-1.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                       title="Open in new tab"
                     >
                       <ExternalLink className="h-4 w-4" />
@@ -118,7 +118,7 @@ export default function VideoList({
                       <button
                         onClick={() => handleDelete(video)}
                         disabled={deletingId === video.id}
-                        className="p-1.5 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                        className="p-1.5 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 cursor-pointer"
                         title="Remove video"
                       >
                         {deletingId === video.id ? (

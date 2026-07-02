@@ -9,6 +9,8 @@ export interface AlumniSession {
   endTime: string;
   maxParticipants: number;
   registrationCount: number;
+  status: string;
+  mediaAvailable: boolean;
 
   createdBy?: {
     id: number;

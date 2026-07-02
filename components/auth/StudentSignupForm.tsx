@@ -1,6 +1,7 @@
 "use client";
 
-import { Eye, EyeOff, Github, Globe, GraduationCap, Linkedin, User } from "lucide-react";
+import { Eye, EyeOff, Globe, GraduationCap, User } from "lucide-react";
+import { FaLinkedin, FaGithub } from "react-icons/fa";
 import AuthInput from "./AuthInput";
 
 interface StudentFormData {
@@ -211,7 +212,7 @@ export default function StudentSignupForm({
           label="LinkedIn URL"
           type="url"
           placeholder="https://linkedin.com/in/johndoe"
-          icon={Linkedin}
+          icon={FaLinkedin}
           value={formData.linkedinUrl}
           onChange={(e) => onChange("linkedinUrl", e.target.value)}
           error={errors.linkedinUrl}
@@ -221,7 +222,7 @@ export default function StudentSignupForm({
           label="GitHub URL"
           type="url"
           placeholder="https://github.com/johndoe"
-          icon={Github}
+          icon={FaGithub}
           value={formData.githubUrl}
           onChange={(e) => onChange("githubUrl", e.target.value)}
           error={errors.githubUrl}

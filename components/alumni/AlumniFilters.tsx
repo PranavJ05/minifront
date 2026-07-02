@@ -2,19 +2,26 @@
 
 import { Search, X } from "lucide-react";
 import { AlumniFilters } from "@/types";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
-// Department codes from backend
 const departments = [
-  "CS", // Computer Science
-  "CSBS", // Computer Science & Business Systems
-  "EB", // Electronics & Biomedical
-  "EC", // Electronics & Communication
-  "EEE", // Electrical & Electronics
-  "EV", // Electric Vehicles
-  "ME", // Mechanical
+  "CS",
+  "CSBS",
+  "EB",
+  "EC",
+  "EEE",
+  "EV",
+  "ME",
 ];
 
-// Graduation years
 const currentYear = new Date().getFullYear();
 const graduationYears = Array.from({ length: 50 }, (_, i) => currentYear - i);
 
@@ -32,11 +39,7 @@ export default function AlumniFiltersPanel({
   };
 
   const clearAll = () => {
-    onFilterChange({
-      search: "",
-      batch: "",
-      department: "",
-    });
+    onFilterChange({ search: "", batch: "", department: "" });
   };
 
   const hasActiveFilters =
@@ -44,75 +47,79 @@ export default function AlumniFiltersPanel({
 
   return (
     <div className="space-y-4">
-      {/* SEARCH */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <input
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
           type="text"
           placeholder="Search by name or department..."
           value={filters.search}
           onChange={(e) => update("search", e.target.value)}
-          className="input-field pl-10"
+          className="pl-10"
         />
         {filters.search && (
           <button
             onClick={() => update("search", "")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
         )}
       </div>
 
-      {/* FILTERS ROW */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {/* BATCH YEAR */}
         <div className="flex-1">
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">
             Batch Year
           </label>
-          <select
+          <Select
             value={filters.batch}
-            onChange={(e) => update("batch", e.target.value)}
-            className="input-field cursor-pointer"
+            onValueChange={(v) => update("batch", v ?? "")}
           >
-            <option value="">All Batch Years</option>
-            {graduationYears.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="All Batch Years" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Batch Years</SelectItem>
+              {graduationYears.map((year) => (
+                <SelectItem key={year} value={String(year)}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* DEPARTMENT */}
         <div className="flex-1">
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">
             Department
           </label>
-          <select
+          <Select
             value={filters.department}
-            onChange={(e) => update("department", e.target.value)}
-            className="input-field cursor-pointer"
+            onValueChange={(v) => update("department", v ?? "")}
           >
-            <option value="">All Departments</option>
-            {departments.map((dept) => (
-              <option key={dept} value={dept}>
-                {dept}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="All Departments" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Departments</SelectItem>
+              {departments.map((dept) => (
+                <SelectItem key={dept} value={dept}>
+                  {dept}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* CLEAR BUTTON */}
         {hasActiveFilters && (
           <div className="flex items-end">
-            <button
+            <Button
               onClick={clearAll}
-              className="px-4 py-2.5 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors font-medium text-sm whitespace-nowrap"
+              variant="outline"
+              size="sm"
             >
               Clear Filters
-            </button>
+            </Button>
           </div>
         )}
       </div>

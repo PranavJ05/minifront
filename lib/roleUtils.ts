@@ -121,7 +121,10 @@ export function getPrimaryRole(userRoles: string | string[] | null | undefined):
 /**
  * Normalize role for display (batch_admin -> alumni for UI purposes)
  */
-export function normalizeRoleForDisplay(role: string): string {
+export function normalizeRoleForDisplay(role: string): "faculty" | "student" | "alumni" | "admin" {
   const normalized = role.toLowerCase();
-  return normalized === 'batch_admin' ? 'alumni' : normalized;
+  if (normalized === "faculty") return "faculty";
+  if (normalized === "student") return "student";
+  if (normalized === "admin" || normalized === "batch_admin") return "admin";
+  return "alumni";
 }

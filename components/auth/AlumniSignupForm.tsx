@@ -1,6 +1,7 @@
 "use client";
 
-import { Eye, EyeOff, Briefcase, Building2, GraduationCap, Linkedin, User } from "lucide-react";
+import { Eye, EyeOff, Briefcase, Building2, GraduationCap, User } from "lucide-react";
+import { FaLinkedin } from "react-icons/fa";
 import AuthInput from "./AuthInput";
 
 interface AlumniFormData {
@@ -179,7 +180,7 @@ export default function AlumniSignupForm({
           label="LinkedIn URL"
           type="url"
           placeholder="https://linkedin.com/in/johndoe"
-          icon={Linkedin}
+          icon={FaLinkedin}
           value={formData.linkedinUrl}
           onChange={(e) => onChange("linkedinUrl", e.target.value)}
           error={errors.linkedinUrl}

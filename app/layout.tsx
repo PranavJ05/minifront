@@ -1,7 +1,19 @@
-// app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
-import { getOnboardingStatus } from "@/lib/skillsOnboarding";
+import { Figtree } from "next/font/google";
+import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/components/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { QueryClientProvider } from "@/components/QueryClientProvider";
+import { AuthProvider } from "@/contexts/auth-context";
+
+const figtreeHeading = Figtree({
+  subsets: ["latin"],
+  variable: "--font-heading",
+});
+
+const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Alumni Network | University Alumni Relations",
@@ -15,14 +27,28 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Expose debugging utilities to window
-  if (typeof window !== "undefined") {
-    console.log("[App] Skills onboarding status:", getOnboardingStatus());
-  }
-
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html
+      lang="en"
+      className={cn("font-sans", figtree.variable, figtreeHeading.variable)}
+      suppressHydrationWarning
+    >
+      <body suppressHydrationWarning>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <TooltipProvider>
+            <SidebarProvider defaultOpen={false}>
+              <QueryClientProvider>
+                <AuthProvider>{children}</AuthProvider>
+              </QueryClientProvider>
+            </SidebarProvider>
+          </TooltipProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

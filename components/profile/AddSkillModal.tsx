@@ -174,9 +174,9 @@ export default function AddSkillModal({
 
       setAllSkills(data);
       setShownSkills(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       ERR("loadApprovedSkills error:", err);
-      setLoadError(err.message || "Failed to load skills");
+      setLoadError(err instanceof Error ? err.message : "Failed to load skills");
     } finally {
       setLoadingSkills(false);
     }
@@ -201,9 +201,9 @@ export default function AddSkillModal({
       });
 
       setShownSkills(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       ERR("handleSearch error:", err);
-      setLoadError(err.message || "Search failed");
+      setLoadError(err instanceof Error ? err.message : "Search failed");
     } finally {
       setLoadingSkills(false);
     }
@@ -245,9 +245,9 @@ export default function AddSkillModal({
         onSkillAdded?.();
         onClose();
       }, 1200);
-    } catch (err: any) {
+    } catch (err: unknown) {
       ERR("handleAddSkill error:", err);
-      setSaveError(err.message || "Failed to add skill");
+      setSaveError(err instanceof Error ? err.message : "Failed to add skill");
     } finally {
       setSaving(false);
     }
@@ -288,9 +288,9 @@ export default function AddSkillModal({
         // Reload approved list so the new skill appears if auto-approved
         loadApprovedSkills(courseId);
       }, 2500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       ERR("handleProposeSkill error:", err);
-      setSaveError(err.message || "Failed to submit skill proposal");
+      setSaveError(err instanceof Error ? err.message : "Failed to submit skill proposal");
     } finally {
       setSaving(false);
     }

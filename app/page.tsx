@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -19,8 +19,8 @@ import {
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { mockAlumni, stats } from "@/lib/mockData";
-// ✅ Import your robust role utilities
 import { isAnyAdmin, isAlumni, isFaculty, isStudent } from "@/lib/roleUtils";
+import { useAuth } from "@/contexts/auth-context";
 
 /**
  * LandingPage component
@@ -31,49 +31,30 @@ import { isAnyAdmin, isAlumni, isFaculty, isStudent } from "@/lib/roleUtils";
  */
 export default function LandingPage() {
   const router = useRouter();
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("alumni_user");
+    if (isLoading) return;
 
-    if (!token || !storedUser) {
-      setIsCheckingAuth(false);
-      return;
+    if (!isAuthenticated || !user) return;
+
+    const userRoles = user.roles;
+    let dashboardPath = "/";
+
+    if (isAnyAdmin(userRoles) || isAlumni(userRoles)) {
+      dashboardPath = "/dashboard/alumni";
+    } else if (isFaculty(userRoles)) {
+      dashboardPath = "/dashboard/faculty";
+    } else if (isStudent(userRoles)) {
+      dashboardPath = "/dashboard/student";
     }
 
-    try {
-      const user = JSON.parse(storedUser);
-      // Support both new array format (roles) and fallback old string format (role)
-      const userRoles = user?.roles || user?.role;
-
-      let dashboardPath = "/";
-
-      // ✅ Use roleUtils to determine the correct dashboard routing
-      if (isAnyAdmin(userRoles) || isAlumni(userRoles)) {
-        dashboardPath = "/dashboard/alumni";
-      } else if (isFaculty(userRoles)) {
-        dashboardPath = "/dashboard/faculty";
-      } else if (isStudent(userRoles)) {
-        dashboardPath = "/dashboard/student";
-      }
-
-      // If a valid dashboard path is found, redirect immediately
-      if (dashboardPath !== "/") {
-        router.replace(dashboardPath);
-        return; // Return early so we don't flash the landing page UI
-      }
-    } catch (error) {
-      console.error("Failed to parse stored user:", error);
-      // Clean up corrupted storage
-      localStorage.removeItem("alumni_user");
-      localStorage.removeItem("token");
+    if (dashboardPath !== "/") {
+      router.replace(dashboardPath);
     }
+  }, [isLoading, isAuthenticated, user, router]);
 
-    setIsCheckingAuth(false);
-  }, [router]);
-
-  if (isCheckingAuth) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="w-8 h-8 border-2 border-navy-800 border-t-transparent rounded-full animate-spin" />

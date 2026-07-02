@@ -6,26 +6,24 @@ import {
   Mail,
   Phone,
   MapPin,
-  Linkedin,
-  Facebook,
-  Youtube,
   X,
 } from "lucide-react";
+import { FaLinkedin, FaFacebook, FaYoutube } from "react-icons/fa";
 
 export default function Footer() {
   const router = useRouter();
 
   const socialLinks = [
     {
-      Icon: Linkedin,
+      Icon: FaLinkedin,
       href: "https://www.linkedin.com/school/model-engineering-college/posts/?feedView=all",
     },
     { Icon: X, href: "https://x.com/MECKochi" },
     {
-      Icon: Facebook,
+      Icon: FaFacebook,
       href: "https://www.facebook.com/modelengineeringcollege",
     },
-    { Icon: Youtube, href: "https://www.youtube.com/@ModelEngineeringCollege" },
+    { Icon: FaYoutube, href: "https://www.youtube.com/@ModelEngineeringCollege" },
   ];
 
   // Map the labels to their specific local routes

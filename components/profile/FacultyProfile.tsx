@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { FaLinkedin } from "react-icons/fa";
 import {
   ExternalLink,
   GraduationCap,
@@ -12,7 +13,6 @@ import {
   Pencil,
   Save,
   X,
-  Linkedin,
   Award,
   CheckCircle,
   AlertCircle,
@@ -165,8 +165,8 @@ export default function FacultyProfilePage() {
 
       const data: FacultyProfile = await res.json();
       setProfile(data);
-    } catch (err: any) {
-      setError(err.message || "Failed to load profile");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load profile");
     } finally {
       setLoading(false);
     }
@@ -227,8 +227,8 @@ export default function FacultyProfilePage() {
 
       // Auto-hide success message
       setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (err: any) {
-      setError(err.message || "Failed to save profile");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to save profile");
     } finally {
       setIsSaving(false);
     }
@@ -252,7 +252,7 @@ export default function FacultyProfilePage() {
   if (error && !profile) {
     return (
       <div className="min-h-screen bg-[#f8f9fa] flex">
-        <DashboardSidebar role="faculty" userName="" userEmail="" />
+        <DashboardSidebar role="faculty" />
         <main className="flex-1 overflow-auto p-12">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <AlertCircle className="h-14 w-14 text-red-500 mx-auto mb-4" />
@@ -279,11 +279,7 @@ export default function FacultyProfilePage() {
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex">
       {sidebarUser && (
-        <DashboardSidebar
-          role="faculty"
-          userName={sidebarUser.name}
-          userEmail={sidebarUser.email}
-        />
+        <DashboardSidebar role="faculty" />
       )}
 
       <main className="flex-1 overflow-auto p-12">
@@ -578,7 +574,7 @@ export default function FacultyProfilePage() {
                     </p>
                     {isEditing ? (
                       <div className="relative">
-                        <Linkedin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <FaLinkedin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                           type="url"
                           value={formValues.linkedinUrl}
@@ -598,7 +594,7 @@ export default function FacultyProfilePage() {
                       >
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-white rounded-lg shadow-sm text-[#0077b5]">
-                            <Linkedin className="h-4 w-4" />
+                            <FaLinkedin className="h-4 w-4" />
                           </div>
                           <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700 truncate max-w-[180px]">
                             {profile.linkedinUrl.replace(

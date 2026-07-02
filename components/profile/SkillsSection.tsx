@@ -81,9 +81,9 @@ export default function SkillsSection({
       await removeSkillFromAlumni(alumniId, skillId);
       LOG(`Skill removed: id=${skillId}`);
       onSkillRemoved();
-    } catch (err: any) {
+    } catch (err: unknown) {
       ERR(`Failed to remove skill id=${skillId}:`, err);
-      setRemoveError(`Failed to remove "${skillName}": ${err.message}`);
+      setRemoveError(`Failed to remove "${skillName}": ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setRemovingSkillId(null);
     }

@@ -1,7 +1,7 @@
 "use client";
-// components/layout/DashboardSidebar.tsx
+
 import Link from "next/link";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
@@ -9,24 +9,31 @@ import {
   Briefcase,
   Calendar,
   User,
-  Settings,
-  LogOut,
   GraduationCap,
   Handshake,
+  Newspaper,
 } from "lucide-react";
 import { getMyClubs } from "@/lib/api/clubs";
 import { cn } from "@/lib/utils";
 import { UserRole } from "@/types";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  useSidebar,
+} from "@/components/ui/sidebar";
 
 interface SidebarProps {
   role: UserRole;
-  userName: string | null;
-  userEmail: string;
 }
 const facultyLinks = [
   { href: "/dashboard/faculty", label: "Overview", icon: Home },
   { href: "/alumni", label: "Alumni", icon: GraduationCap },
-  { href: "/faculty", label: "Faculty Directory", icon: Users },
+  { href: "/faculty", label: "Faculty", icon: Users },
   { href: "/events", label: "Events", icon: Calendar },
   { href: "/club-events", label: "Club Events", icon: Calendar },
   { href: "/opportunities", label: "Job Board", icon: Briefcase },
@@ -40,6 +47,7 @@ const alumniLinks = [
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/events", label: "Events", icon: Calendar },
   { href: "/club-events", label: "Club Events", icon: Calendar },
+  { href: "/alumni-sessions", label: "Sessions", icon: Newspaper },
   { href: "/profile", label: "My Profile", icon: User },
   {href: "/alumni-mentorship",label:"Mentorship",icon:Handshake}
 ];
@@ -71,19 +79,13 @@ const adminLinks = [
   { href: "/profile", label: "My Profile", icon: User },
 
 ];
-const token = localStorage.getItem("token");
 
-
-export default function DashboardSidebar({
-  role,
-  userName,
-  userEmail,
-}: SidebarProps) {
+export default function DashboardSidebar({ role }: SidebarProps) {
   const [isClubManager, setIsClubManager] =
     useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  console.log(role)
+  const { state, setOpen } = useSidebar();
   const links =
   role === "faculty"
     ? facultyLinks
@@ -126,101 +128,87 @@ export default function DashboardSidebar({
     router.push("/");
   };
 
-  const roleBadgeColor =
-    role === "faculty"
-      ? "bg-blue-100 text-blue-700"
-      : role === "alumni"
-        ? "bg-gold-100 text-gold-700"
-        : "bg-green-100 text-green-700";
-
-  const roleLabel =
-  role === "faculty"
-    ? "Faculty Member"
-    : role === "alumni"
-      ? "Alumni Member"
-      : role === "admin"
-        ? "Main Administrator"
-        : "Student";
-
   return (
-    <aside className="sticky top-0 self-start h-screen w-64 bg-navy-950 flex flex-col">
-      <div className="p-6 border-b border-navy-800">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="bg-gold-500 p-1.5 rounded-lg">
-            <GraduationCap className="h-5 w-5 text-navy-950" />
+    <Sidebar
+      collapsible="icon"
+      onClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest("a") || target.closest("button[data-sidebar='rail']")) return;
+        setOpen(state === "collapsed");
+      }}
+      className={cn(state === "collapsed" && "cursor-pointer")}
+    >
+      <SidebarHeader className="p-2 border-b border-sidebar-border group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-3">
+        <Link
+          href="/"
+          className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-sidebar-accent transition-colors group"
+        >
+          <div className="bg-primary/10 p-1.5 rounded-lg text-primary group-hover:bg-primary/20 transition-colors shrink-0 group-data-[collapsible=icon]:p-2">
+            <GraduationCap className="h-5 w-5" />
           </div>
-          <span className="font-serif font-bold text-white text-lg">
+          <span className="font-semibold text-sm tracking-wide text-foreground group-data-[collapsible=icon]:hidden whitespace-nowrap">
             ALUMNI
           </span>
         </Link>
-      </div>
+      </SidebarHeader>
 
-      <div className="p-5 border-b border-navy-800">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gold-500 rounded-full flex items-center justify-center font-bold text-navy-950 text-sm flex-shrink-0">
-            {userName ? userName.charAt(0).toUpperCase() : "U"}
-          </div>
-          <div className="overflow-hidden">
-            <p className="text-white font-semibold text-sm truncate">
-              {userName || "User"}
-            </p>
-            <p className="text-gray-400 text-xs truncate">{userEmail}</p>
-          </div>
-        </div>
-        <span className={cn("badge mt-3", roleBadgeColor)}>
-          {role === "faculty" && <GraduationCap className="h-3 w-3 mr-1" />}
-          {roleLabel}
-        </span>
-      </div>
 
-      <nav className="flex-1 overflow-y-auto p-4">
-        {links.map((link) => {
-          const Icon = link.icon;
-          const isActive = pathname === link.href;
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
-                isActive
-                  ? "bg-gold-500 text-navy-950"
-                  : "text-gray-400 hover:text-white hover:bg-navy-800",
-              )}
-            >
-              <Icon className="h-4 w-4 flex-shrink-0" />
-              {link.label}
-            </Link>
-          );
-        })}
-        
-        {isClubManager && (
 
-    <Link
-        href="/club-events/mine"
-        className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
-            pathname === "/club-events/mine"
-                ? "bg-gold-500 text-navy-950"
-                : "text-gray-400 hover:text-white hover:bg-navy-800",
-        )}
-    >
-        <Calendar className="h-4 w-4" />
-        My Club Events
-    </Link>
+      <SidebarContent className="p-2">
+        <SidebarMenu>
+          {links.map((link) => {
+            const Icon = link.icon;
+            const isActive =
+              pathname === link.href ||
+              (link.href !== "/" && pathname.startsWith(link.href));
 
-)}
-      </nav>
+            return (
+              <SidebarMenuItem key={link.href} className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
+                <SidebarMenuButton
+                  isActive={isActive}
+                  tooltip={link.label}
+                  className={cn(
+                    "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer group-data-[collapsible=icon]:!w-auto",
+                    isActive
+                      ? "!bg-primary !text-primary-foreground shadow-sm"
+                      : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                  )}
+                  render={
+                    <Link href={link.href} className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center" />
+                  }
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">
+                    {link.label}
+                  </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
+          {isClubManager && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={pathname === "/club-events/mine"}
+                tooltip="My Club Events"
+                className={cn(
+                  "w-full flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium transition-colors cursor-pointer",
+                  pathname === "/club-events/mine"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                    : "text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                )}
+                render={
+                  <Link href="/club-events/mine" className="flex items-center gap-2.5 w-full">
+                    <Calendar className="h-4 w-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">My Club Events</span>
+                  </Link>
+                }
+              />
+            </SidebarMenuItem>
+          )}
+        </SidebarMenu>
+      </SidebarContent>
 
-      <div className="p-4 border-t border-navy-800 space-y-1">
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400 hover:bg-red-950/20 transition-colors"
-        >
-          <LogOut className="h-4 w-4" />
-          Sign Out
-        </button>
-      </div>
-    </aside>
+      <SidebarRail />
+    </Sidebar>
   );
 }

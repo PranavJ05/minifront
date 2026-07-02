@@ -1,11 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
+import { FaLinkedin } from "react-icons/fa";
 import {
   UserCheck,
   X,
   Check,
   Loader2,
-  Linkedin,
   Briefcase,
   GraduationCap,
 } from "lucide-react";
@@ -251,7 +251,7 @@ export default function PendingModal() {
                               rel="noreferrer"
                               className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
                             >
-                              <Linkedin className="h-3 w-3" />
+                              <FaLinkedin className="h-3 w-3" />
                               View LinkedIn
                             </a>
                           </div>
