@@ -67,13 +67,13 @@ export default function NewOpportunityPage() {
         router.push("/opportunities");
       }, 2000);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
+      setError(
+        err instanceof Error ? err.message : "An unexpected error occurred.",
+      );
     }
   };
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar />
-
       <div className="bg-navy-950 py-12">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="font-serif text-3xl font-bold text-white mb-2">

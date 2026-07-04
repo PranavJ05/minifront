@@ -7,107 +7,80 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 import { getClubEvents } from "@/lib/api/clubEvents";
+import { getMyClubs } from "@/lib/api/clubs";
 import { ClubEvent } from "@/lib/types/clubEvent";
 import { getStatus } from "@/lib/utils/clubEvent";
-import { getToken } from "@/lib/auth";
+import { getToken, getUserRole } from "@/lib/auth";
+import { isStudent } from "@/lib/roleUtils";
 
 export default function ClubEventsPage() {
+  const [events, setEvents] = useState<ClubEvent[]>([]);
 
-    const [events, setEvents] =
-        useState<ClubEvent[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    const [loading, setLoading] =
-        useState(true);
+  const [search, setSearch] = useState("");
 
-    const [search, setSearch] =
-        useState("");
+  const token = getToken() ?? "";
+  const role = getUserRole();
+  const [canViewMyClubEvents, setCanViewMyClubEvents] = useState(false);
 
-    const token =
-        getToken() ?? "";
+  useEffect(() => {
+    loadEvents();
+  }, []);
 
-    useEffect(() => {
+  async function loadEvents() {
+    try {
+      const data = await getClubEvents(token);
+      setEvents(data);
 
-        loadEvents();
-
-    }, []);
-
-    async function loadEvents() {
-
-        try {
-
-            const data =
-                await getClubEvents(token);
-
-            setEvents(data);
-
-        }
-
-        catch (err) {
-
-            console.error(err);
-
-        }
-
-        finally {
-
-            setLoading(false);
-
-        }
-
+      if (isStudent(role)) {
+        const myClubs = await getMyClubs(token);
+        setCanViewMyClubEvents(Array.isArray(myClubs) && myClubs.length > 0);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    const filteredEvents =
-        useMemo(() => {
+  const filteredEvents = useMemo(() => {
+    return events.filter(
+      (event) =>
+        event.title.toLowerCase().includes(search.toLowerCase()) ||
+        event.clubName.toLowerCase().includes(search.toLowerCase()),
+    );
+  }, [events, search]);
 
-            return events.filter(event =>
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
-                event.title
-                    .toLowerCase()
-                    .includes(search.toLowerCase())
+  return (
+    <>
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <h1 className="text-4xl font-bold">Club Events</h1>
 
-                ||
+          {canViewMyClubEvents && (
+            <Link href="/club-events/mine">
+              <button className="bg-blue-600 text-white px-4 py-2 rounded font-semibold">
+                My Club Events
+              </button>
+            </Link>
+          )}
+        </div>
 
-                event.clubName
-                    .toLowerCase()
-                    .includes(search.toLowerCase())
+        <input
+          type="text"
 
-            );
+          placeholder="Search by title or club..."
 
-        }, [events, search]);
+          value={search}
 
-    if (loading) {
+          onChange={(e) => setSearch(e.target.value)}
 
-        return <div>Loading...</div>;
-
-    }
-
-    return (
-
-        <>
-
-            <Navbar />
-
-            <div className="max-w-7xl mx-auto px-6 py-8">
-
-                <h1 className="text-4xl font-bold mb-6">
-
-                    Club Events
-
-                </h1>
-
-                <input
-
-                    type="text"
-
-                    placeholder="Search by title or club..."
-
-                    value={search}
-
-                    onChange={(e) =>
-                        setSearch(e.target.value)
-                    }
-
-                    className="
+          className="
                     border
                     rounded
                     px-4
@@ -115,222 +88,142 @@ export default function ClubEventsPage() {
                     w-full
                     mb-8
                     "
+        />
 
-                />
-
-                <div
-                    className="
+        <div
+          className="
                     grid
                     md:grid-cols-2
                     lg:grid-cols-3
                     gap-6
                     "
-                >
+        >
+          {filteredEvents.map((event) => (
+            <div
+              key={event.id}
 
-                    {
-
-                        filteredEvents.map(event => (
-
-                            <div
-
-                                key={event.id}
-
-                                className="
+              className="
                                 border
                                 rounded-xl
                                 overflow-hidden
                                 shadow-sm
                                 "
+            >
+              <img
+                src={event.coverImageUrl || "/placeholder-event.jpg"}
 
-                            >
+                alt={event.title}
 
-                                <img
-
-                                    src={
-                                        event.coverImageUrl ||
-
-                                        "/placeholder-event.jpg"
-                                    }
-
-                                    alt={event.title}
-
-                                    className="
+                className="
                                     h-48
                                     w-full
                                     object-cover
                                     "
+              />
 
-                                />
-
-                                <div className="p-5">
-
-                                    <div
-                                        className="
+              <div className="p-5">
+                <div
+                  className="
                                         text-blue-700
                                         font-semibold
                                         "
-                                    >
+                >
+                  {event.clubName}
+                </div>
 
-                                        {event.clubName}
-
-                                    </div>
-
-                                    <h2
-                                        className="
+                <h2
+                  className="
                                         text-xl
                                         font-bold
                                         mt-2
                                         "
-                                    >
+                >
+                  {event.title}
+                </h2>
 
-                                        {event.title}
-
-                                    </h2>
-
-                                    <p
-                                        className="
+                <p
+                  className="
                                         text-gray-600
                                         mt-3
                                         line-clamp-3
                                         "
-                                    >
+                >
+                  {event.description}
+                </p>
 
-                                        {event.description}
+                <div className="mt-4 space-y-1">
+                  <p>📍 {event.venue}</p>
 
-                                    </p>
+                  <p>🖥 {event.mode}</p>
 
-                                    <div className="mt-4 space-y-1">
+                  <p>📅 {new Date(event.startTime).toLocaleString()}</p>
 
-                                        <p>
+                  <span
+                    className={`px-2 py-1 rounded-full text-sm ${
+                      getStatus(event) === "Upcoming"
+                        ? "bg-green-100 text-green-700"
+                        : getStatus(event) === "Ongoing"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-gray-200 text-gray-700"
+                    }`}
+                  >
+                    {getStatus(event)}
+                  </span>
+                </div>
 
-                                            📍 {event.venue}
-
-                                        </p>
-
-                                        <p>
-
-                                            🖥 {event.mode}
-
-                                        </p>
-
-                                        <p>
-
-                                            📅 {
-
-                                                new Date(
-
-                                                    event.startTime
-
-                                                ).toLocaleString()
-
-                                            }
-
-                                        </p>
-
-                                       <span
-                                        className={`px-2 py-1 rounded-full text-sm ${
-                                            getStatus(event) === "Upcoming"
-                                            ? "bg-green-100 text-green-700"
-                                            : getStatus(event) === "Ongoing"
-                                            ? "bg-yellow-100 text-yellow-700"
-                                            : "bg-gray-200 text-gray-700"
-                                        }`}
-                                        >
-                                        {getStatus(event)}
-                                        </span>
-                                    </div>
-
-                                    <div
-                                         className="
+                <div
+                  className="
                                         mt-6
                                         flex
                                         justify-between
                                         items-center
                                         "
-                                    >
+                >
+                  <Link
+                    href={`/club-events/${event.id}`}
 
-                                        <Link
-
-                                            href={`/club-events/${event.id}`}
-
-                                            className="
+                    className="
                                             text-blue-600
                                             font-semibold
                                             "
+                  >
+                    View Details
+                  </Link>
 
-                                        >
+                  {event.registrationLink ? (
+                    <a
+                      href={event.registrationLink}
 
-                                            View Details
+                      target="_blank"
 
-                                        </Link>
-
-                                        {
-
-                                            event.registrationLink ?
-
-                                                (
-
-                                                    <a
-
-                                                        href={
-                                                            event.registrationLink
-                                                        }
-
-                                                        target="_blank"
-
-                                                        className="
+                      className="
                                                         bg-blue-600
                                                         text-white
                                                         px-3
                                                         py-2
                                                         rounded
                                                         "
-
-                                                    >
-
-                                                        Register
-
-                                                    </a>
-
-                                                )
-
-                                                :
-
-                                                (
-
-                                                    <span
-                                                        className="
+                    >
+                      Register
+                    </a>
+                  ) : (
+                    <span
+                      className="
                                                         text-gray-500
                                                         text-sm
                                                         "
-                                                    >
-
-                                                        Registration Not Required
-
-                                                    </span>
-
-                                                )
-
-                                        }
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        ))
-
-                    }
-
+                    >
+                      Registration Not Required
+                    </span>
+                  )}
                 </div>
-
+              </div>
             </div>
+          ))}
+        </div>
+      </div>
 
-            <Footer />
-
-        </>
-
-    );
-
+      <Footer />
+    </>
+  );
 }

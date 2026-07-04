@@ -6,20 +6,13 @@ import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-import {
-  getMentorship,
-  updateMentorship,
-} from "@/lib/api/mentorship";
+import { getMentorship, updateMentorship } from "@/lib/api/mentorship";
 
-import {
-  CreateMentorshipRequest,
-  Mentorship,
-} from "@/lib/types/mentorship";
+import { CreateMentorshipRequest, Mentorship } from "@/lib/types/mentorship";
 
 import { getToken } from "@/lib/auth";
 
 export default function EditMentorshipPage() {
-
   const params = useParams();
 
   const router = useRouter();
@@ -30,43 +23,35 @@ export default function EditMentorshipPage() {
 
   const [saving, setSaving] = useState(false);
 
-  const [form, setForm] =
-    useState<CreateMentorshipRequest>({
+  const [form, setForm] = useState<CreateMentorshipRequest>({
+    title: "",
 
-      title: "",
+    description: "",
 
-      description: "",
+    domain: "",
 
-      domain: "",
+    mode: "ONLINE",
 
-      mode: "ONLINE",
+    duration: "",
 
-      duration: "",
+    yearsOfExperience: 0,
 
-      yearsOfExperience: 0,
+    industry: "",
 
-      industry: "",
+    expertise: "",
 
-      expertise: "",
-
-      applicationDeadline: "",
-
-    });
+    applicationDeadline: "",
+  });
 
   useEffect(() => {
-
     async function load() {
-
       try {
-
-        const mentorship: Mentorship =
-          await getMentorship(
-            Number(params.id),
-            token
-          );
+        const mentorship: Mentorship = await getMentorship(
+          Number(params.id),
+          token,
+        );
 
         setForm({
-
           title: mentorship.title,
 
           description: mentorship.description,
@@ -77,147 +62,79 @@ export default function EditMentorshipPage() {
 
           duration: mentorship.duration,
 
-          yearsOfExperience:
-            mentorship.yearsOfExperience,
+          yearsOfExperience: mentorship.yearsOfExperience,
 
           industry: mentorship.industry,
 
           expertise: mentorship.expertise,
 
-          applicationDeadline:
-            mentorship.applicationDeadline.substring(0,16),
-
+          applicationDeadline: mentorship.applicationDeadline.substring(0, 16),
         });
-
       } finally {
-
         setLoading(false);
-
       }
-
     }
 
     load();
-
   }, [params.id, token]);
 
   function handleChange(
-
     e: React.ChangeEvent<
-
-      HTMLInputElement |
-
-      HTMLTextAreaElement |
-
-      HTMLSelectElement
-
-    >
-
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) {
-
     setForm({
-
       ...form,
 
-      [e.target.name]:
-        e.target.value,
-
+      [e.target.name]: e.target.value,
     });
-
   }
 
-  async function handleSubmit(
-
-    e: React.FormEvent
-
-  ) {
-
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     try {
-
       setSaving(true);
 
       await updateMentorship(
-
         Number(params.id),
 
         form,
 
-        token
-
+        token,
       );
 
-      alert(
-        "Mentorship Updated Successfully"
-      );
+      alert("Mentorship Updated Successfully");
 
-      router.push(
-
-        `/alumni-mentorship/${params.id}`
-
-      );
-
+      router.push(`/alumni-mentorship/${params.id}`);
     } catch {
-
-      alert(
-        "Failed to update mentorship."
-      );
-
+      alert("Failed to update mentorship.");
     } finally {
-
       setSaving(false);
-
     }
-
   }
 
   if (loading) {
-
     return (
-
       <>
-
-        <Navbar />
-
-        <div className="max-w-3xl mx-auto py-10">
-
-          Loading...
-
-        </div>
+        <div className="max-w-3xl mx-auto py-10">Loading...</div>
 
         <Footer />
-
       </>
-
     );
-
   }
 
   return (
-
     <>
-
-      <Navbar />
-
       <div className="max-w-3xl mx-auto py-10 px-6">
-
-        <h1 className="text-4xl font-bold mb-8">
-
-          Edit Mentorship
-
-        </h1>
+        <h1 className="text-4xl font-bold mb-8">Edit Mentorship</h1>
 
         <form
-
           onSubmit={handleSubmit}
 
           className="space-y-5"
-
         >
-
           <input
-
             name="title"
 
             value={form.title}
@@ -227,11 +144,9 @@ export default function EditMentorshipPage() {
             className="w-full border rounded p-3"
 
             required
-
           />
 
           <textarea
-
             name="description"
 
             value={form.description}
@@ -243,11 +158,9 @@ export default function EditMentorshipPage() {
             className="w-full border rounded p-3"
 
             required
-
           />
 
           <input
-
             name="domain"
 
             value={form.domain}
@@ -257,11 +170,9 @@ export default function EditMentorshipPage() {
             className="w-full border rounded p-3"
 
             required
-
           />
 
           <select
-
             name="mode"
 
             value={form.mode}
@@ -269,31 +180,15 @@ export default function EditMentorshipPage() {
             onChange={handleChange}
 
             className="w-full border rounded p-3"
-
           >
+            <option value="ONLINE">ONLINE</option>
 
-            <option value="ONLINE">
+            <option value="OFFLINE">OFFLINE</option>
 
-              ONLINE
-
-            </option>
-
-            <option value="OFFLINE">
-
-              OFFLINE
-
-            </option>
-
-            <option value="HYBRID">
-
-              HYBRID
-
-            </option>
-
+            <option value="HYBRID">HYBRID</option>
           </select>
 
           <input
-
             name="duration"
 
             value={form.duration}
@@ -303,11 +198,9 @@ export default function EditMentorshipPage() {
             className="w-full border rounded p-3"
 
             required
-
           />
 
           <input
-
             type="number"
 
             name="yearsOfExperience"
@@ -319,11 +212,9 @@ export default function EditMentorshipPage() {
             className="w-full border rounded p-3"
 
             required
-
           />
 
           <input
-
             name="industry"
 
             value={form.industry}
@@ -333,11 +224,9 @@ export default function EditMentorshipPage() {
             className="w-full border rounded p-3"
 
             required
-
           />
 
           <input
-
             name="expertise"
 
             value={form.expertise}
@@ -347,17 +236,11 @@ export default function EditMentorshipPage() {
             className="w-full border rounded p-3"
 
             required
-
           />
 
-          <label className="font-semibold">
-
-            Application Deadline
-
-          </label>
+          <label className="font-semibold">Application Deadline</label>
 
           <input
-
             type="datetime-local"
 
             name="applicationDeadline"
@@ -369,41 +252,19 @@ export default function EditMentorshipPage() {
             className="w-full border rounded p-3"
 
             required
-
           />
 
           <button
-
             disabled={saving}
 
             className="w-full bg-blue-600 text-white py-3 rounded-lg"
-
           >
-
-            {
-
-              saving
-
-              ?
-
-              "Updating..."
-
-              :
-
-              "Update Mentorship"
-
-            }
-
+            {saving ? "Updating..." : "Update Mentorship"}
           </button>
-
         </form>
-
       </div>
 
       <Footer />
-
     </>
-
   );
-
 }

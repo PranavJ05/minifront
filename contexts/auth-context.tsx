@@ -32,7 +32,9 @@ interface LoginResponse {
   courseId?: number | null;
   email?: string;
   name?: string;
-  roles?: string[];
+  role?: string;
+  roles?: string[] | string;
+  authorities?: Array<string | { authority?: string }>;
   status?: string;
   message?: string;
   emailVerificationRequired?: boolean;
@@ -66,6 +68,42 @@ function getStoredToken(): string | null {
   return localStorage.getItem("token");
 }
 
+function extractRoles(data: LoginResponse, fallbackRole: string): string[] {
+  const extracted: string[] = [];
+
+  if (Array.isArray(data.roles)) {
+    extracted.push(
+      ...data.roles.filter((role): role is string => typeof role === "string"),
+    );
+  } else if (typeof data.roles === "string") {
+    extracted.push(data.roles);
+  }
+
+  if (typeof data.role === "string") {
+    extracted.push(data.role);
+  }
+
+  if (Array.isArray(data.authorities)) {
+    data.authorities.forEach((entry) => {
+      if (typeof entry === "string") {
+        extracted.push(entry);
+        return;
+      }
+
+      if (entry && typeof entry.authority === "string") {
+        extracted.push(entry.authority);
+      }
+    });
+  }
+
+  if (extracted.length === 0) {
+    extracted.push(fallbackRole);
+  }
+
+  const deduped = Array.from(new Set(extracted));
+  return deduped;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<StoredUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -85,61 +123,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  const login = useCallback(async (params: LoginParams): Promise<LoginResponse> => {
-    const loginUrl =
-      params.role === "faculty"
-        ? `${BACKEND_URL}/auth/faculty/login`
-        : `${BACKEND_URL}/auth/login`;
+  const login = useCallback(
+    async (params: LoginParams): Promise<LoginResponse> => {
+      const loginUrl =
+        params.role === "faculty"
+          ? `${BACKEND_URL}/auth/faculty/login`
+          : `${BACKEND_URL}/auth/login`;
 
-    const res = await fetch(loginUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: params.email.trim(),
-        password: params.password,
-      }),
-    });
+      const res = await fetch(loginUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: params.email.trim(),
+          password: params.password,
+        }),
+      });
 
-    const data: LoginResponse = await res.json().catch(() => ({}));
+      const data: LoginResponse = await res.json().catch(() => ({}));
 
-    if (!res.ok) {
-      throw new Error(data.message || "Login failed");
-    }
+      if (!res.ok) {
+        throw new Error(data.message || "Login failed");
+      }
 
-    let allRoles: string[] = [];
-    if (Array.isArray(data.roles)) {
-      allRoles = data.roles;
-    } else if (typeof data.roles === "string") {
-      allRoles = [data.roles];
-    } else if (data.status) {
-      allRoles = [data.status];
-    }
+      const allRoles = extractRoles(
+        data,
+        params.role?.toUpperCase() || "ALUMNI",
+      );
 
-    if (allRoles.length === 0) {
-      allRoles = [params.role?.toUpperCase() || "ALUMNI"];
-    }
+      if (data.token && allRoles.length > 0) {
+        const storedUser: StoredUser = {
+          id: data.id ?? null,
+          alumniId: data.alumniId ?? null,
+          courseId: data.courseId ?? null,
+          email: data.email || params.email,
+          roles: allRoles,
+          fullName: data.name?.trim() || params.email,
+        };
 
-    if (data.token && allRoles.length > 0) {
-      const storedUser: StoredUser = {
-        id: data.id ?? null,
-        alumniId: data.alumniId ?? null,
-        courseId: data.courseId ?? null,
-        email: data.email || params.email,
-        roles: allRoles,
-        fullName: data.name?.trim() || params.email,
-      };
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("email", storedUser.email);
+        localStorage.setItem("alumni_user", JSON.stringify(storedUser));
+        window.dispatchEvent(new Event("storage"));
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("email", storedUser.email);
-      localStorage.setItem("alumni_user", JSON.stringify(storedUser));
-      window.dispatchEvent(new Event("storage"));
+        setToken(data.token);
+        setUser(storedUser);
+      }
 
-      setToken(data.token);
-      setUser(storedUser);
-    }
-
-    return data;
-  }, []);
+      return data;
+    },
+    [],
+  );
 
   const logout = useCallback(() => {
     localStorage.removeItem("token");

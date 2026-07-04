@@ -2,7 +2,7 @@
 
 /**
  * Admin Skills Moderation Page
- * /admin/skills
+ * /main-admin/skills
  *
  * Features:
  * - View pending skills awaiting approval
@@ -35,7 +35,7 @@ import {
   deleteSkillAdmin,
 } from "@/lib/api";
 import { Skill } from "@/types";
-import { isAnyAdmin } from "@/lib/roleUtils"; // ✅ IMPORTED PROPER UTILITY
+import { isMainAdmin } from "@/lib/roleUtils"; // ✅ IMPORTED PROPER UTILITY
 
 type Tab = "pending" | "all";
 
@@ -74,20 +74,20 @@ export default function AdminSkillsPage() {
       const user = JSON.parse(storedUser);
 
       // ✅ PROPER ROLE CHECK: Using the utility function to check the roles array
-      const hasAdminRights = isAnyAdmin(user?.roles);
+      const hasAdminRights = isMainAdmin(user?.roles);
 
       console.log(
         "[AdminSkills] User roles:",
         user?.roles,
-        "Is admin:",
+        "Is main admin:",
         hasAdminRights,
       );
       setIsUserAdmin(hasAdminRights);
 
       if (!hasAdminRights) {
-        // Kick non-admins out to the dashboard instead of leaving them on a broken page
-        console.warn("[AdminSkills] Access Denied: User is not an admin.");
-        router.replace("/");
+        // Kick non-main-admins out to the dashboard instead of leaving them on a broken page
+        console.warn("[AdminSkills] Access Denied: User is not a main admin.");
+        router.replace("/main-admin");
         return;
       }
 

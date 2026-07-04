@@ -6,64 +6,42 @@ import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-import {
-  uploadSessionPhoto
-} from "@/lib/api/alumniSessions";
+import { uploadSessionPhoto } from "@/lib/api/alumniSessions";
 
-import {
-  getToken
-} from "@/lib/auth";
+import { getToken } from "@/lib/auth";
 
 export default function UploadMediaPage() {
-
   const params = useParams();
 
   const router = useRouter();
 
-  const [files, setFiles] =
-  useState<File[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit =
-    async () => {
+  const handleSubmit = async () => {
+    if (files.length === 0) {
+      alert("Select a photo");
+      return;
+    }
+    setLoading(true);
+    try {
+      await Promise.all(
+        files.map((file) =>
+          uploadSessionPhoto(Number(params.id), file, getToken() ?? ""),
+        ),
+      );
 
-      if (files.length===0) {
-        alert("Select a photo");
-        return;
-      }
-      setLoading(true);
-      try {
-
-    await Promise.all(
-
-      files.map(file =>
-        uploadSessionPhoto(
-          Number(params.id),
-          file,
-          getToken() ?? ""
-        )
-      )
-
-    );
-
-    alert("Uploaded");
-
-  } catch {
-
-    alert("Upload Failed");
-
-  } finally {
-
-    setLoading(false);
-  }
-};
+      alert("Uploaded");
+    } catch {
+      alert("Upload Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
-      <Navbar />
-
       <div
         className="
           max-w-3xl
@@ -72,7 +50,6 @@ export default function UploadMediaPage() {
           px-4
         "
       >
-
         <h1
           className="
             text-3xl
@@ -84,33 +61,25 @@ export default function UploadMediaPage() {
         </h1>
 
         <input
-  type="file"
-  multiple
-  accept="image/*"
-  onChange={(e) =>
-    setFiles(
-      Array.from(e.target.files || [])
-    )
-  }
-/>
-<div className="grid grid-cols-3 gap-4 mt-6">
-
-  {files.map((file,index) => (
-
-    <img
-      key={index}
-      src={URL.createObjectURL(file)}
-      className="
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={(e) => setFiles(Array.from(e.target.files || []))}
+        />
+        <div className="grid grid-cols-3 gap-4 mt-6">
+          {files.map((file, index) => (
+            <img
+              key={index}
+              src={URL.createObjectURL(file)}
+              className="
         h-40
         w-full
         object-cover
         rounded-lg
       "
-    />
-
-  ))}
-
-</div>
+            />
+          ))}
+        </div>
 
         <button
           onClick={handleSubmit}
@@ -125,11 +94,8 @@ export default function UploadMediaPage() {
             font-semibold
           "
         >
-          {loading
-            ? "Uploading..."
-            : "Upload"}
+          {loading ? "Uploading..." : "Upload"}
         </button>
-
       </div>
 
       <Footer />

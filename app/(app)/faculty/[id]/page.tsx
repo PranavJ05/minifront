@@ -35,7 +35,11 @@ export default function FacultyProfilePage() {
   const params = useParams();
   const facultyId = params.id as string;
 
-  const { data: profile, isLoading, error } = useFacultyProfileQuery(Number(facultyId));
+  const {
+    data: profile,
+    isLoading,
+    error,
+  } = useFacultyProfileQuery(Number(facultyId));
 
   const qualifications = useMemo<Qualification[]>(() => {
     if (!profile?.qualifications) return [];
@@ -60,7 +64,6 @@ export default function FacultyProfilePage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin text-navy-800 mx-auto mb-4" />
@@ -75,7 +78,6 @@ export default function FacultyProfilePage() {
   if (error || !profile) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
         <div className="max-w-3xl mx-auto px-4 py-16">
           <div className="text-center">
             <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
@@ -83,7 +85,8 @@ export default function FacultyProfilePage() {
               Profile Not Found
             </h2>
             <p className="text-gray-600 mb-6">
-              {error?.message || "The faculty profile you're looking for doesn't exist."}
+              {error?.message ||
+                "The faculty profile you're looking for doesn't exist."}
             </p>
             <Link
               href="/faculty"
@@ -101,8 +104,6 @@ export default function FacultyProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
       <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800 text-white py-12">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back */}
@@ -242,11 +243,14 @@ export default function FacultyProfilePage() {
                     <div className="flex items-center gap-1.5 mt-1">
                       <Clock className="h-4 w-4 text-navy-600" />
                       <p className="font-medium text-navy-900 text-sm">
-                        {new Date(profile.joinDate).toLocaleDateString("en-IN", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
+                        {new Date(profile.joinDate).toLocaleDateString(
+                          "en-IN",
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          },
+                        )}
                       </p>
                     </div>
                   </div>
@@ -330,9 +334,7 @@ export default function FacultyProfilePage() {
                 Subjects Taught
               </h3>
               {subjectsTaught.length === 0 ? (
-                <p className="text-gray-500 text-sm">
-                  No subjects added yet.
-                </p>
+                <p className="text-gray-500 text-sm">No subjects added yet.</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {subjectsTaught.map((subject, index) => (

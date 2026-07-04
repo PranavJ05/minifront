@@ -10,7 +10,8 @@ export const queryKeys = {
   },
   alumni: {
     all: ["alumni"] as const,
-    search: (params?: Record<string, string>) => ["alumni", "search", params] as const,
+    search: (params?: Record<string, string>) =>
+      ["alumni", "search", params] as const,
     detail: (id: number) => ["alumni", id] as const,
   },
   opportunities: {
@@ -23,7 +24,8 @@ export const queryKeys = {
     applicants: (id: number) => ["mentorships", id, "applicants"] as const,
     finalMentees: (id: number) => ["mentorships", id, "final-mentees"] as const,
     my: () => ["mentorships", "mine"] as const,
-    applicationStatus: (id: number) => ["mentorships", id, "application-status"] as const,
+    applicationStatus: (id: number) =>
+      ["mentorships", id, "application-status"] as const,
   },
   sessions: {
     all: ["sessions"] as const,
@@ -43,18 +45,22 @@ export const queryKeys = {
     search: (q: string) => ["skills", "search", q] as const,
     pending: () => ["skills", "pending"] as const,
     alumni: (alumniId: number) => ["skills", "alumni", alumniId] as const,
-    summary: (alumniId: number) => ["skills", "alumni", alumniId, "summary"] as const,
+    summary: (alumniId: number) =>
+      ["skills", "alumni", alumniId, "summary"] as const,
   },
   admin: {
     pending: ["admin", "pending"] as const,
-    users: (params?: Record<string, string>) => ["admin", "users", params] as const,
+    users: (params?: Record<string, string>) =>
+      ["admin", "users", params] as const,
     clubs: () => ["admin", "clubs"] as const,
     dashboardStats: ["admin", "dashboard-stats"] as const,
   },
   location: {
     countries: ["location", "countries"] as const,
-    states: (countryCode: string) => ["location", "states", countryCode] as const,
-    cities: (countryCode: string, stateCode: string) => ["location", "cities", countryCode, stateCode] as const,
+    states: (countryCode: string) =>
+      ["location", "states", countryCode] as const,
+    cities: (countryCode: string, stateCode: string) =>
+      ["location", "cities", countryCode, stateCode] as const,
   },
   referrals: {
     mine: () => ["referrals", "mine"] as const,
@@ -66,5 +72,10 @@ export const queryKeys = {
   },
   clubs: {
     my: () => ["clubs", "mine"] as const,
+  },
+  alumniApplications: {
+    all: ["alumni-applications"] as const,
+    pending: () => ["alumni-applications", "pending"] as const,
+    detail: (id: number) => ["alumni-applications", id] as const,
   },
 };

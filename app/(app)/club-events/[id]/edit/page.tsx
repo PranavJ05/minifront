@@ -14,221 +14,144 @@ import { CreateClubEventRequest } from "@/lib/types/createClubEvent";
 import { getToken } from "@/lib/auth";
 
 import {
-
-    getMyClubs,
-
-    getClubEventForEdit,
-
-    updateClubEvent,
-
-    uploadClubEventCover
-
+  getMyClubs,
+  getClubEventForEdit,
+  updateClubEvent,
+  uploadClubEventCover,
 } from "@/lib/api/clubEvents";
 
 export default function EditClubEventPage() {
+  const params = useParams();
 
-    const params = useParams();
+  const router = useRouter();
 
-    const router = useRouter();
+  const token = getToken() ?? "";
 
-    const token = getToken() ?? "";
+  const [clubs, setClubs] = useState<Club[]>([]);
 
-    const [clubs, setClubs] =
-        useState<Club[]>([]);
+  const [coverImage, setCoverImage] = useState<File | null>(null);
 
-    const [coverImage, setCoverImage] =
-        useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
 
-    const [loading, setLoading] =
-        useState(false);
+  const [form, setForm] = useState<CreateClubEventRequest>({
+    clubId: 0,
 
-    const [form, setForm] =
-        useState<CreateClubEventRequest>({
+    title: "",
 
-            clubId: 0,
+    description: "",
 
-            title: "",
+    venue: "",
 
-            description: "",
+    mode: "OFFLINE",
 
-            venue: "",
+    startTime: "",
 
-            mode: "OFFLINE",
+    endTime: "",
 
-            startTime: "",
+    registrationLink: "",
+  });
 
-            endTime: "",
+  useEffect(() => {
+    load();
+  }, []);
 
-            registrationLink: "",
+  async function load() {
+    try {
+      const [clubs, event] = await Promise.all([
+        getMyClubs(token),
 
-        });
+        getClubEventForEdit(
+          Number(params.id),
 
-    useEffect(() => {
+          token,
+        ),
+      ]);
 
-        load();
+      setClubs(clubs);
 
-    }, []);
+      setForm({
+        clubId: event.clubId,
 
-    async function load() {
+        title: event.title,
 
-        try {
+        description: event.description,
 
-            const [
+        venue: event.venue,
 
-                clubs,
+        mode: event.mode,
 
-                event
+        startTime: event.startTime,
 
-            ] = await Promise.all([
+        endTime: event.endTime,
 
-                getMyClubs(token),
-
-                getClubEventForEdit(
-
-                    Number(params.id),
-
-                    token
-
-                )
-
-            ]);
-
-            setClubs(clubs);
-
-            setForm({
-
-                clubId: event.clubId,
-
-                title: event.title,
-
-                description: event.description,
-
-                venue: event.venue,
-
-                mode: event.mode,
-
-                startTime: event.startTime,
-
-                endTime: event.endTime,
-
-                registrationLink:
-
-                    event.registrationLink ||
-
-                    ""
-
-            });
-
-        }
-
-        catch (err) {
-
-            console.error(err);
-
-        }
-
+        registrationLink: event.registrationLink || "",
+      });
+    } catch (err) {
+      console.error(err);
     }
+  }
 
-    async function handleSubmit() {
+  async function handleSubmit() {
+    try {
+      setLoading(true);
 
-        try {
+      await updateClubEvent(
+        Number(params.id),
 
-            setLoading(true);
+        form,
 
-            await updateClubEvent(
+        token,
+      );
 
-                Number(params.id),
+      if (coverImage) {
+        await uploadClubEventCover(
+          Number(params.id),
 
-                form,
+          coverImage,
 
-                token
+          token,
+        );
+      }
 
-            );
+      alert("Updated successfully.");
 
-            if (coverImage) {
+      router.push("/club-events/mine");
+    } catch (err) {
+      console.error(err);
 
-                await uploadClubEventCover(
-
-                    Number(params.id),
-
-                    coverImage,
-
-                    token
-
-                );
-
-            }
-
-            alert(
-                "Updated successfully."
-            );
-
-            router.push(
-                "/club-events/mine"
-            );
-
-        }
-
-        catch (err) {
-
-            console.error(err);
-
-            alert(
-                "Update failed."
-            );
-
-        }
-
-        finally {
-
-            setLoading(false);
-
-        }
-
+      alert("Update failed.");
+    } finally {
+      setLoading(false);
     }
+  }
 
-    return (
+  return (
+    <>
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <h1 className="text-4xl font-bold mb-8">Edit Club Event</h1>
 
-        <>
+        <ClubEventForm
+          form={form}
 
-            <Navbar />
+          setForm={setForm}
 
-            <div className="max-w-4xl mx-auto px-6 py-8">
+          clubs={clubs}
 
-                <h1 className="text-4xl font-bold mb-8">
+          coverImage={coverImage}
 
-                    Edit Club Event
+          setCoverImage={setCoverImage}
 
-                </h1>
+          loading={loading}
 
-                <ClubEventForm
+          submitText="Save Changes"
 
-                    form={form}
+          onSubmit={handleSubmit}
 
-                    setForm={setForm}
+          onCancel={() => router.back()}
+        />
+      </div>
 
-                    clubs={clubs}
-
-                    coverImage={coverImage}
-
-                    setCoverImage={setCoverImage}
-
-                    loading={loading}
-
-                    submitText="Save Changes"
-
-                    onSubmit={handleSubmit}
-
-                    onCancel={() => router.back()}
-
-                />
-
-            </div>
-
-            <Footer />
-
-        </>
-
-    );
-
+      <Footer />
+    </>
+  );
 }

@@ -15,24 +15,35 @@
  * hasRole(['alumni', 'admin'], ['admin', 'batch_admin']) // true
  * hasRole('alumni', 'admin') // false
  */
+function normalizeRoleToken(role: string): string {
+  const normalized = role.toLowerCase().replace(/^role_/, "");
+
+  if (normalized === "main_admin" || normalized === "mainadmin") {
+    return "admin";
+  }
+
+  if (normalized === "batchadmin") {
+    return "batch_admin";
+  }
+
+  return normalized;
+}
+
 export function hasRole(
   userRoles: string | string[] | null | undefined,
-  requiredRoles: string | string[]
+  requiredRoles: string | string[],
 ): boolean {
   if (!userRoles) return false;
 
-  // Normalize user roles to array
   const rolesArray = Array.isArray(userRoles)
-    ? userRoles.map(r => r.toLowerCase())
-    : [userRoles.toLowerCase()];
+    ? userRoles.map((r) => normalizeRoleToken(r))
+    : [normalizeRoleToken(userRoles)];
 
-  // Normalize required roles to array
   const requiredArray = Array.isArray(requiredRoles)
-    ? requiredRoles.map(r => r.toLowerCase())
-    : [requiredRoles.toLowerCase()];
+    ? requiredRoles.map((r) => normalizeRoleToken(r))
+    : [normalizeRoleToken(requiredRoles)];
 
-  // Check if ANY required role matches
-  return requiredArray.some(required => rolesArray.includes(required));
+  return requiredArray.some((required) => rolesArray.includes(required));
 }
 
 /**
@@ -42,72 +53,62 @@ export function hasRole(
  * Main Admin only
  */
 export function isMainAdmin(
-  userRoles: string | string[] | null | undefined
+  userRoles: string | string[] | null | undefined,
 ): boolean {
-
   return hasRole(userRoles, "admin");
-
 }
 
 /**
  * Batch Admin only
  */
 export function isBatchAdmin(
-  userRoles: string | string[] | null | undefined
+  userRoles: string | string[] | null | undefined,
 ): boolean {
-
   return hasRole(userRoles, "batch_admin");
-
 }
 
 /**
  * Any administrative role
  */
 export function isAnyAdmin(
-  userRoles: string | string[] | null | undefined
+  userRoles: string | string[] | null | undefined,
 ): boolean {
-
   return hasRole(userRoles, ["admin", "batch_admin"]);
-
 }
 
 export function isAlumni(
-  userRoles: string | string[] | null | undefined
+  userRoles: string | string[] | null | undefined,
 ): boolean {
-
   return hasRole(userRoles, "alumni");
-
 }
 
 export function isStudent(
-  userRoles: string | string[] | null | undefined
+  userRoles: string | string[] | null | undefined,
 ): boolean {
-
   return hasRole(userRoles, "student");
-
 }
 
 export function isFaculty(
-  userRoles: string | string[] | null | undefined
+  userRoles: string | string[] | null | undefined,
 ): boolean {
-
   return hasRole(userRoles, "faculty");
-
 }
 
 /**
  * Get the primary role (first non-alumni admin role if exists, otherwise first role)
  * Useful for display purposes
  */
-export function getPrimaryRole(userRoles: string | string[] | null | undefined): string | null {
+export function getPrimaryRole(
+  userRoles: string | string[] | null | undefined,
+): string | null {
   if (!userRoles) return null;
 
   const rolesArray = Array.isArray(userRoles)
-    ? userRoles.map(r => r.toLowerCase())
-    : [userRoles.toLowerCase()];
+    ? userRoles.map((r) => normalizeRoleToken(r))
+    : [normalizeRoleToken(userRoles)];
 
   // Priority: admin > batch_admin > faculty > student > alumni
-  const priority = ['admin', 'batch_admin', 'faculty', 'student', 'alumni'];
+  const priority = ["admin", "batch_admin", "faculty", "student", "alumni"];
 
   for (const role of priority) {
     if (rolesArray.includes(role)) {
@@ -121,10 +122,31 @@ export function getPrimaryRole(userRoles: string | string[] | null | undefined):
 /**
  * Normalize role for display (batch_admin -> alumni for UI purposes)
  */
-export function normalizeRoleForDisplay(role: string): "faculty" | "student" | "alumni" | "admin" {
-  const normalized = role.toLowerCase();
+export function normalizeRoleForDisplay(
+  role: string,
+): "faculty" | "student" | "alumni" | "admin" {
+  const normalized = normalizeRoleToken(role);
   if (normalized === "faculty") return "faculty";
   if (normalized === "student") return "student";
   if (normalized === "admin" || normalized === "batch_admin") return "admin";
   return "alumni";
+}
+
+export function getDashboardPathForRoles(
+  userRoles: string | string[] | null | undefined,
+): string {
+  console.log("getDashboardPathForRoles", userRoles);
+  if (isAnyAdmin(userRoles)) {
+    return "/dashboard/mainadmin";
+  }
+
+  if (isFaculty(userRoles)) {
+    return "/dashboard/faculty";
+  }
+
+  if (isStudent(userRoles)) {
+    return "/dashboard/student";
+  }
+  console.log("hieq3awefadfa");
+  return "/dashboard/alumni";
 }

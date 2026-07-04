@@ -147,8 +147,6 @@ export default function ApplicationsPage() {
 
   return (
     <>
-      <Navbar />
-
       <div className="max-w-7xl mx-auto py-10 px-6">
         <h1 className="text-4xl font-bold mb-3">Applications</h1>
 

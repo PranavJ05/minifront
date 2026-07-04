@@ -7,21 +7,17 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import {
   CreateMentorshipRequest,
-  MentorshipMode
+  MentorshipMode,
 } from "@/lib/types/mentorship";
 import { createMentorship } from "@/lib/api/mentorship";
 import { getToken } from "@/lib/auth";
 
 export default function CreateMentorshipPage() {
+  const router = useRouter();
 
-    const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
-    const [loading,setLoading] =
-        useState(false);
-
-    const [form, setForm] =
-  useState<CreateMentorshipRequest>({
-
+  const [form, setForm] = useState<CreateMentorshipRequest>({
     title: "",
 
     description: "",
@@ -38,285 +34,194 @@ export default function CreateMentorshipPage() {
 
     expertise: "",
 
-    applicationDeadline: ""
+    applicationDeadline: "",
+  });
 
-});
+  function handleChange(
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) {
+    setForm({
+      ...form,
 
-    function handleChange(
-        e:React.ChangeEvent<
-        HTMLInputElement |
-        HTMLTextAreaElement |
-        HTMLSelectElement>
-    ){
+      [e.target.name]: e.target.value,
+    });
+  }
 
-        setForm({
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
 
-            ...form,
+    try {
+      setLoading(true);
 
-            [e.target.name]:
-                e.target.value
+      await createMentorship(
+        form,
 
-        });
+        getToken() ?? "",
+      );
 
+      alert("Mentorship Created Successfully");
+
+      router.push("/alumni-mentorship");
+    } catch {
+      alert("Failed to create mentorship.");
+    } finally {
+      setLoading(false);
     }
+  }
 
-    async function handleSubmit(
-        e:React.FormEvent
-    ){
+  return (
+    <>
+      <div className="max-w-3xl mx-auto py-10 px-6">
+        <h1 className="text-4xl font-bold mb-8">Create Mentorship</h1>
 
-        e.preventDefault();
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <input
+            name="title"
 
-        try{
+            placeholder="Title"
 
-            setLoading(true);
+            value={form.title}
 
-            await createMentorship(
+            onChange={handleChange}
 
-                form,
+            required
 
-                getToken() ?? ""
+            className="w-full border rounded p-3"
+          />
 
-            );
+          <textarea
+            name="description"
 
-            alert(
-                "Mentorship Created Successfully"
-            );
+            placeholder="Description"
 
-            router.push(
-                "/alumni-mentorship"
-            );
+            rows={5}
 
-        }catch{
+            value={form.description}
 
-            alert(
-                "Failed to create mentorship."
-            );
+            onChange={handleChange}
 
-        }finally{
+            required
 
-            setLoading(false);
+            className="w-full border rounded p-3"
+          />
 
-        }
+          <input
+            name="domain"
 
-    }
+            placeholder="Domain"
 
-    return(
+            value={form.domain}
 
-        <>
+            onChange={handleChange}
 
-        <Navbar/>
+            required
 
-        <div
-        className="max-w-3xl mx-auto py-10 px-6">
+            className="w-full border rounded p-3"
+          />
 
-            <h1
-            className="text-4xl font-bold mb-8">
+          <select
+            name="mode"
 
-                Create Mentorship
+            value={form.mode}
 
-            </h1>
+            onChange={handleChange}
 
-            <form
-            onSubmit={handleSubmit}
-            className="space-y-5">
+            className="w-full border rounded p-3"
+          >
+            <option value="ONLINE">ONLINE</option>
 
-                <input
+            <option value="OFFLINE">OFFLINE</option>
 
-                    name="title"
+            <option value="HYBRID">HYBRID</option>
+          </select>
 
-                    placeholder="Title"
+          <input
+            name="duration"
 
-                    value={form.title}
+            placeholder="Duration (Example: 6 Weeks)"
 
-                    onChange={handleChange}
+            value={form.duration}
 
-                    required
+            onChange={handleChange}
 
-                    className="w-full border rounded p-3"
+            required
 
-                />
+            className="w-full border rounded p-3"
+          />
 
-                <textarea
+          <input
+            type="number"
 
-                    name="description"
+            name="yearsOfExperience"
 
-                    placeholder="Description"
+            placeholder="Years of Experience"
 
-                    rows={5}
+            value={form.yearsOfExperience}
 
-                    value={form.description}
+            onChange={handleChange}
 
-                    onChange={handleChange}
+            required
 
-                    required
+            className="w-full border rounded p-3"
+          />
 
-                    className="w-full border rounded p-3"
+          <input
+            name="industry"
 
-                />
+            placeholder="Industry"
 
-                <input
+            value={form.industry}
 
-                    name="domain"
+            onChange={handleChange}
 
-                    placeholder="Domain"
+            required
 
-                    value={form.domain}
+            className="w-full border rounded p-3"
+          />
 
-                    onChange={handleChange}
+          <input
+            name="expertise"
 
-                    required
+            placeholder="Expertise (Spring Boot, React, AWS...)"
 
-                    className="w-full border rounded p-3"
+            value={form.expertise}
 
-                />
+            onChange={handleChange}
 
-                <select
+            required
 
-                    name="mode"
+            className="w-full border rounded p-3"
+          />
 
-                    value={form.mode}
+          <label className="font-semibold">Application Deadline</label>
 
-                    onChange={handleChange}
+          <input
+            type="datetime-local"
 
-                    className="w-full border rounded p-3"
+            name="applicationDeadline"
 
-                >
+            value={form.applicationDeadline}
 
-                    <option value="ONLINE">
-                        ONLINE
-                    </option>
+            onChange={handleChange}
 
-                    <option value="OFFLINE">
-                        OFFLINE
-                    </option>
+            required
 
-                    <option value="HYBRID">
-                        HYBRID
-                    </option>
+            className="w-full border rounded p-3"
+          />
 
-                </select>
+          <button
+            disabled={loading}
 
-                <input
+            className="w-full bg-yellow-500 hover:bg-yellow-400 py-3 rounded-lg font-bold"
+          >
+            {loading ? "Creating..." : "Create Mentorship"}
+          </button>
+        </form>
+      </div>
 
-                    name="duration"
-
-                    placeholder="Duration (Example: 6 Weeks)"
-
-                    value={form.duration}
-
-                    onChange={handleChange}
-
-                    required
-
-                    className="w-full border rounded p-3"
-
-                />
-
-                <input
-
-                    type="number"
-
-                    name="yearsOfExperience"
-
-                    placeholder="Years of Experience"
-
-                    value={form.yearsOfExperience}
-
-                    onChange={handleChange}
-
-                    required
-
-                    className="w-full border rounded p-3"
-
-                />
-
-                <input
-
-                    name="industry"
-
-                    placeholder="Industry"
-
-                    value={form.industry}
-
-                    onChange={handleChange}
-
-                    required
-
-                    className="w-full border rounded p-3"
-
-                />
-
-                <input
-
-                    name="expertise"
-
-                    placeholder="Expertise (Spring Boot, React, AWS...)"
-
-                    value={form.expertise}
-
-                    onChange={handleChange}
-
-                    required
-
-                    className="w-full border rounded p-3"
-
-                />
-
-                <label
-                className="font-semibold">
-
-                    Application Deadline
-
-                </label>
-
-                <input
-
-                    type="datetime-local"
-
-                    name="applicationDeadline"
-
-                    value={form.applicationDeadline}
-
-                    onChange={handleChange}
-
-                    required
-
-                    className="w-full border rounded p-3"
-
-                />
-
-                <button
-
-                    disabled={loading}
-
-                    className="w-full bg-yellow-500 hover:bg-yellow-400 py-3 rounded-lg font-bold"
-
-                >
-
-                    {
-
-                        loading
-
-                        ?
-
-                        "Creating..."
-
-                        :
-
-                        "Create Mentorship"
-
-                    }
-
-                </button>
-
-            </form>
-
-        </div>
-
-        <Footer/>
-
-        </>
-
-    );
-
+      <Footer />
+    </>
+  );
 }

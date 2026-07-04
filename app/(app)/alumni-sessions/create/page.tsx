@@ -11,7 +11,6 @@ import { getToken } from "@/lib/auth";
 import { createSession } from "@/lib/api/alumniSessions";
 
 export default function CreateSessionPage() {
-
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -25,79 +24,47 @@ export default function CreateSessionPage() {
     maxParticipants: 50,
   });
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<
-      HTMLInputElement |
-      HTMLTextAreaElement |
-      HTMLSelectElement
-    >
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
-
     setFormData({
       ...formData,
-      [e.target.name]:
-      e.target.value,
+      [e.target.name]: e.target.value,
     });
   };
 
-  const handleSubmit = async (
-    e: React.FormEvent
-  ) => {
-
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-
       setLoading(true);
 
-      const token =
-        getToken() ?? "";
+      const token = getToken() ?? "";
 
-      await createSession(
-        formData,
-        token
-      );
+      await createSession(formData, token);
 
-      alert(
-        "Session Created Successfully"
-      );
+      alert("Session Created Successfully");
 
-      router.push(
-        "/alumni-sessions"
-      );
-
+      router.push("/alumni-sessions");
     } catch (err) {
-
       console.error(err);
 
-      alert(
-        "Failed to create session"
-      );
-
+      alert("Failed to create session");
     } finally {
-
       setLoading(false);
     }
   };
 
   return (
     <>
-      <Navbar />
-
       <div className="max-w-4xl mx-auto py-10 px-4">
+        <h1 className="text-3xl font-bold mb-6">Create Alumni Session</h1>
 
-        <h1 className="text-3xl font-bold mb-6">
-          Create Alumni Session
-        </h1>
-
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4"
-        >
-
+        <form onSubmit={handleSubmit} className="space-y-4">
           <input
             name="title"
             placeholder="Title"
@@ -132,17 +99,11 @@ export default function CreateSessionPage() {
             onChange={handleChange}
             className="w-full border p-3 rounded"
           >
-            <option value="ONLINE">
-              ONLINE
-            </option>
+            <option value="ONLINE">ONLINE</option>
 
-            <option value="OFFLINE">
-              OFFLINE
-            </option>
+            <option value="OFFLINE">OFFLINE</option>
 
-            <option value="HYBRID">
-              HYBRID
-            </option>
+            <option value="HYBRID">HYBRID</option>
           </select>
 
           <input
@@ -192,15 +153,9 @@ export default function CreateSessionPage() {
               font-semibold
             "
           >
-            {
-              loading
-              ? "Creating..."
-              : "Create Session"
-            }
+            {loading ? "Creating..." : "Create Session"}
           </button>
-
         </form>
-
       </div>
 
       <Footer />

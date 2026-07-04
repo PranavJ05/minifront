@@ -3,15 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  GraduationCap,
-  Bell,
-  LogOut,
-  Sun,
-  Moon,
-  User,
-} from "lucide-react";
+import { GraduationCap, Bell, LogOut, Sun, Moon, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -49,6 +43,7 @@ export default function Navbar({
   const [storedUser, setStoredUser] = useState<StoredUser | null>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const { logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [customEventTitle, setCustomEventTitle] = useState<string | null>(null);
@@ -69,7 +64,10 @@ export default function Navbar({
 
       window.addEventListener("current_event_title_changed", handleTitleChange);
       return () =>
-        window.removeEventListener("current_event_title_changed", handleTitleChange);
+        window.removeEventListener(
+          "current_event_title_changed",
+          handleTitleChange,
+        );
     }
   }, []);
 
@@ -97,7 +95,12 @@ export default function Navbar({
     return () => window.removeEventListener("storage", syncAuthState);
   }, []);
 
-  const resolvedRole = (userRoleProp || storedUser?.roles?.[0] || storedUser?.role || "").toLowerCase();
+  const resolvedRole = (
+    userRoleProp ||
+    storedUser?.roles?.[0] ||
+    storedUser?.role ||
+    ""
+  ).toLowerCase();
   const normalizedRole =
     resolvedRole === "batch_admin" ? "alumni" : resolvedRole;
   const resolvedName =
@@ -125,25 +128,32 @@ export default function Navbar({
         : "bg-accent text-accent-foreground";
 
   const handleLogout = () => {
-    localStorage.removeItem("alumni_user");
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("email");
+    logout();
     setStoredUser(null);
     setAccountOpen(false);
-    router.push("/");
+    router.replace("/");
   };
-
   const breadcrumbs = useMemo(() => {
     const parts = pathname.split("/").filter(Boolean);
     if (parts.length === 0) return [{ label: "Home", href: "/" }];
+
+    const isDashboardHome = parts[0] === "dashboard" && parts.length === 2;
+
+    if (isDashboardHome) {
+      return [{ label: "Home", href: "" }];
+    }
+
     return parts.map((part, index) => {
-      const href = "/" + parts.slice(0, index + 1).join("/");
+      let href = "/" + parts.slice(0, index + 1).join("/");
       let label =
         part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, " ");
 
       if (parts[0] === "events" && index === 1 && customEventTitle) {
         label = customEventTitle;
+      }
+
+      if (href === "/dashboard") {
+        href = "";
       }
 
       return { label, href };
@@ -169,7 +179,7 @@ export default function Navbar({
                         className={cn(
                           "hover:text-foreground transition-colors truncate max-w-[120px] sm:max-w-none",
                           idx === breadcrumbs.length - 1 &&
-                            "text-foreground font-semibold"
+                            "text-foreground font-semibold",
                         )}
                       >
                         {crumb.label}
@@ -220,14 +230,21 @@ export default function Navbar({
                 {/* Account dropdown - hover open */}
                 <div
                   onMouseEnter={() => {
-                    if (closeTimeout.current) clearTimeout(closeTimeout.current);
+                    if (closeTimeout.current)
+                      clearTimeout(closeTimeout.current);
                     setAccountOpen(true);
                   }}
                   onMouseLeave={() => {
-                    closeTimeout.current = setTimeout(() => setAccountOpen(false), 200);
+                    closeTimeout.current = setTimeout(
+                      () => setAccountOpen(false),
+                      200,
+                    );
                   }}
                 >
-                  <DropdownMenu open={accountOpen} onOpenChange={setAccountOpen}>
+                  <DropdownMenu
+                    open={accountOpen}
+                    onOpenChange={setAccountOpen}
+                  >
                     <DropdownMenuTrigger
                       render={
                         <Button
@@ -259,7 +276,7 @@ export default function Navbar({
                               variant="secondary"
                               className={cn(
                                 "w-fit text-[10px] font-semibold mt-0.5",
-                                roleBadgeColor
+                                roleBadgeColor,
                               )}
                             >
                               {roleLabel}
@@ -271,7 +288,10 @@ export default function Navbar({
                       <DropdownMenuItem
                         className="cursor-pointer"
                         render={
-                          <Link href="/profile" className="flex items-center gap-2">
+                          <Link
+                            href="/profile"
+                            className="flex items-center gap-2"
+                          >
                             <User className="h-4 w-4" />
                             <span>My Profile</span>
                           </Link>

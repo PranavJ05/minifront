@@ -1,10 +1,8 @@
 // app/alumni/[id]/page.tsx
 "use client";
-
-import { useMemo } from "react";
-import { notFound } from "next/navigation";
-import Link from "next/link";
+import { notFound, useParams } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { FaLinkedin } from "react-icons/fa";
 import {
   ArrowLeft,
@@ -25,14 +23,9 @@ import {
   Clock,
   ChevronRight,
 } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { getInitials } from "@/lib/utils";
 import { useAlumniProfileQuery } from "@/hooks/queries/alumni";
-
-interface Props {
-  params: { id: string };
-}
 
 // Skill object from backend
 interface Skill {
@@ -92,14 +85,16 @@ interface AlumniProfile {
   totalOpportunities: number;
 }
 
-export default function AlumniProfilePage({ params }: Props) {
-  const { data: rawProfile, isLoading, error } = useAlumniProfileQuery(Number(params.id));
+export default function AlumniProfilePage() {
+  const params = useParams();
+  const id = Number(params.id);
+
+  const { data: rawProfile, isLoading, error } = useAlumniProfileQuery(id);
   const alumni = rawProfile as AlumniProfile | null;
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin h-8 w-8 border-4 border-navy-800 border-t-transparent rounded-full mx-auto mb-4" />
@@ -141,8 +136,6 @@ export default function AlumniProfilePage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800 text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

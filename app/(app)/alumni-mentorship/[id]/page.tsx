@@ -102,8 +102,6 @@ export default function MentorshipDetailsPage() {
 
   return (
     <>
-      <Navbar />
-
       <div className="max-w-5xl mx-auto py-10 px-6">
         <h1 className="text-4xl font-bold">{mentorship.title}</h1>
 

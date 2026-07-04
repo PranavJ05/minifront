@@ -17,12 +17,7 @@ import AuthInput from "@/components/auth/AuthInput";
 import { useAuth } from "@/contexts/auth-context";
 import { BACKEND_URL } from "@/lib/config";
 import { UserRole } from "@/types";
-import {
-  isMainAdmin,
-  isAlumni,
-  isStudent,
-  isFaculty,
-} from "@/lib/roleUtils";
+import { getDashboardPathForRoles } from "@/lib/roleUtils";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -62,7 +57,9 @@ export default function LoginPage() {
       });
 
       if (data.emailVerificationRequired) {
-        router.push(`/auth/verify-otp?email=${encodeURIComponent(data.email!)}`);
+        router.push(
+          `/auth/verify-otp?email=${encodeURIComponent(data.email!)}`,
+        );
         return;
       }
       if (data.approvalPending) {
@@ -70,38 +67,72 @@ export default function LoginPage() {
         return;
       }
 
-      if (!data.alumniId || !data.courseId) {
+      const storedUserRaw = localStorage.getItem("alumni_user");
+      let allRoles: string[] = [];
+
+      if (storedUserRaw) {
         try {
-          const profileRes = await fetch(`${BACKEND_URL}/api/profile/me`, {
-            headers: { Authorization: `Bearer ${data.token}` },
-          });
-          if (profileRes.ok) {
-            const profileData = await profileRes.json();
-            updateUser({
-              alumniId: profileData.alumniId ?? null,
-              courseId: profileData.courseId ?? null,
-            });
+          const storedUser = JSON.parse(storedUserRaw) as {
+            roles?: unknown;
+          };
+
+          if (Array.isArray(storedUser.roles)) {
+            allRoles = storedUser.roles.filter(
+              (role): role is string => typeof role === "string",
+            );
           }
         } catch {
-          // Non-critical
+          // ignore parse failure
         }
       }
 
-      let allRoles: string[] = [];
-      if (Array.isArray(data.roles)) allRoles = data.roles;
-      else if (typeof data.roles === "string") allRoles = [data.roles];
-      else if (data.status) allRoles = [data.status];
+      if (allRoles.length === 0) {
+        if (Array.isArray(data.roles)) allRoles = data.roles;
+        else if (typeof data.roles === "string") allRoles = [data.roles];
+        else if (typeof data.role === "string") allRoles = [data.role];
+      }
+
       if (allRoles.length === 0) allRoles = [formData.role.toUpperCase()];
 
-      let dashboardPath = "/";
-      if (isMainAdmin(allRoles)) dashboardPath = "/dashboard/mainadmin";
-      else if (isAlumni(allRoles)) dashboardPath = "/dashboard/alumni";
-      else if (isFaculty(allRoles)) dashboardPath = "/dashboard/faculty";
-      else if (isStudent(allRoles)) dashboardPath = "/dashboard/student";
+      try {
+        const profileRes = await fetch(`${BACKEND_URL}/api/profile/me`, {
+          headers: { Authorization: `Bearer ${data.token}` },
+        });
 
-      router.push(dashboardPath);
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+
+          const profileRoles = Array.isArray(profileData.roles)
+            ? profileData.roles
+            : typeof profileData.role === "string"
+              ? [profileData.role]
+              : [];
+
+          if (profileRoles.length > 0) {
+            allRoles = profileRoles;
+          }
+
+          updateUser({
+            alumniId: profileData.alumniId ?? data.alumniId ?? null,
+            courseId: profileData.courseId ?? data.courseId ?? null,
+            roles: allRoles,
+          });
+        }
+      } catch (profileErr: unknown) {
+        const _ignored = profileErr;
+      }
+
+      const dashboardPath = getDashboardPathForRoles(allRoles);
+      const nextPath = searchParams.get("next");
+      const safeNextPath =
+        nextPath && nextPath.startsWith("/") && !nextPath.startsWith("/auth")
+          ? nextPath
+          : null;
+
+      router.replace(safeNextPath || dashboardPath);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Unable to sign in right now.";
+      const message =
+        err instanceof Error ? err.message : "Unable to sign in right now.";
       const msg = message.toLowerCase();
       if (msg.includes("pending") || msg.includes("approval")) {
         setError("pending");

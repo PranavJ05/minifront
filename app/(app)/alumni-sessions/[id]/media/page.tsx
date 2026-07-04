@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useState
-} from "react";
+import { useEffect, useState } from "react";
 
 import { useParams } from "next/navigation";
 
@@ -11,92 +8,56 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 import {
-  fetchSessionMedia,deleteMedia,fetchSessionById
+  fetchSessionMedia,
+  deleteMedia,
+  fetchSessionById,
 } from "@/lib/api/alumniSessions";
 
-import {
-  getToken
-} from "@/lib/auth";
+import { getToken } from "@/lib/auth";
 
 export default function SessionMediaPage() {
-
   const params = useParams();
-const [session, setSession] =
-  useState<any>(null);
-  const [media, setMedia] =
-    useState<any[]>([]);
+  const [session, setSession] = useState<any>(null);
+  const [media, setMedia] = useState<any[]>([]);
 
-    const [selectedImage,
-setSelectedImage] =
-useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
-
     async function loadMedia() {
-
       try {
-
-        
-
-        const data =
-          await fetchSessionMedia(
-            Number(params.id),
-            getToken() ?? ""
-          );
+        const data = await fetchSessionMedia(
+          Number(params.id),
+          getToken() ?? "",
+        );
 
         setMedia(data);
-        const sessionData =await fetchSessionById(Number(params.id),getToken() ?? "");
+        const sessionData = await fetchSessionById(
+          Number(params.id),
+          getToken() ?? "",
+        );
         setSession(sessionData);
-
       } catch (error) {
-
         console.error(error);
       }
     }
 
     loadMedia();
-    
-
-
   }, [params.id]);
 
+  const currentUser = JSON.parse(localStorage.getItem("alumni_user") || "{}");
 
-  const currentUser = JSON.parse(
-  localStorage.getItem("alumni_user") || "{}"
-);
+  const isCreator = session?.createdBy?.email === currentUser.email;
+  const handleDelete = async (mediaId: number) => {
+    try {
+      await deleteMedia(mediaId, getToken() ?? "");
 
-const isCreator =
-  session?.createdBy?.email ===
-  currentUser.email;
-const handleDelete =
-async (
-  mediaId:number
-) => {
-
-  try {
-
-    await deleteMedia(
-      mediaId,
-      getToken() ?? ""
-    );
-
-    setMedia(
-      media.filter(
-        m => m.id !== mediaId
-      )
-    );
-
-  } catch {
-
-    alert(
-      "Delete Failed"
-    );
-  }
-};
+      setMedia(media.filter((m) => m.id !== mediaId));
+    } catch {
+      alert("Delete Failed");
+    }
+  };
   return (
     <>
-      <Navbar />
-
       <div
         className="
           max-w-6xl
@@ -105,7 +66,6 @@ async (
           px-4
         "
       >
-
         <h1
           className="
             text-3xl
@@ -123,9 +83,7 @@ async (
             gap-5
           "
         >
-
           {media.map((item) => (
-
             <div
               key={item.id}
               className="
@@ -135,51 +93,37 @@ async (
                 border
               "
             >
-
               <img
-  src={item.mediaUrl}
-  alt=""
-  onClick={() =>
-    setSelectedImage(
-      item.mediaUrl
-    )
-  }
-  className="
+                src={item.mediaUrl}
+                alt=""
+                onClick={() => setSelectedImage(item.mediaUrl)}
+                className="
     w-full
     h-64
     object-cover
     cursor-pointer
   "
-/>
-{isCreator &&
-(<button
-  onClick={() =>
-    handleDelete(item.id)
-  }
-  className="
+              />
+              {isCreator && (
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="
     w-full
     bg-red-600
     text-white
     py-2
   "
->
-  Delete
-</button>)
-}
-
-
+                >
+                  Delete
+                </button>
+              )}
             </div>
-
           ))}
-
         </div>
-
       </div>
-      {
-selectedImage && (
-
-<div
-  className="
+      {selectedImage && (
+        <div
+          className="
     fixed
     inset-0
     bg-black/90
@@ -188,23 +132,18 @@ selectedImage && (
     justify-center
     z-50
   "
-  onClick={() =>
-    setSelectedImage(null)
-  }
->
-
-<img
-  src={selectedImage}
-  alt=""
-  className="
+          onClick={() => setSelectedImage(null)}
+        >
+          <img
+            src={selectedImage}
+            alt=""
+            className="
     max-w-[90vw]
     max-h-[90vh]
   "
-/>
-
-</div>
-
-)}
+          />
+        </div>
+      )}
 
       <Footer />
     </>

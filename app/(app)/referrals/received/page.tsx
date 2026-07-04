@@ -125,7 +125,9 @@ function RespondPanel({ referralId, onResponded }: RespondPanelProps) {
 
       onResponded(referralId, action === "approve", responseMessage);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to submit response.");
+      setError(
+        err instanceof Error ? err.message : "Failed to submit response.",
+      );
       setSubmitting(false);
     }
   };
@@ -230,12 +232,22 @@ function RespondPanel({ referralId, onResponded }: RespondPanelProps) {
 
 export default function ReceivedReferralsPage() {
   const { user } = useAuth();
-  const { data: referrals = [], isLoading, error: queryError, refetch, isRefetching } = useReceivedReferralsQuery();
+  const {
+    data: referrals = [],
+    isLoading,
+    error: queryError,
+    refetch,
+    isRefetching,
+  } = useReceivedReferralsQuery();
   const [activeFilter, setActiveFilter] = useState<
     "ALL" | ReferralRequest["status"]
   >("ALL");
 
-  const error = queryError ? (queryError instanceof Error ? queryError.message : "Failed to load referral requests.") : null;
+  const error = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : "Failed to load referral requests."
+    : null;
 
   const queryClient = useQueryClient();
 
@@ -274,8 +286,6 @@ export default function ReceivedReferralsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
       {/* Page Header */}
       <div className="bg-navy-950 py-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -360,10 +370,7 @@ export default function ReceivedReferralsPage() {
           <div className="rounded-2xl bg-red-50 border border-red-200 p-8 text-center">
             <XCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
             <p className="text-red-700 font-medium">{error}</p>
-            <button
-              onClick={() => refetch()}
-              className="mt-4 btn-primary px-6"
-            >
+            <button onClick={() => refetch()} className="mt-4 btn-primary px-6">
               Retry
             </button>
           </div>

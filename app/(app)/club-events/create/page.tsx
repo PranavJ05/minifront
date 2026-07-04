@@ -20,221 +20,138 @@ import { Club } from "@/lib/types/mainAdmin";
 import { CreateClubEventRequest } from "@/lib/types/createClubEvent";
 
 export default function CreateClubEventPage() {
-
   const router = useRouter();
 
   const token = getToken() ?? "";
 
   const [clubs, setClubs] = useState<Club[]>([]);
 
-  const [coverImage, setCoverImage] =
-    useState<File | null>(null);
+  const [coverImage, setCoverImage] = useState<File | null>(null);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [form, setForm] =
-    useState<CreateClubEventRequest>({
+  const [form, setForm] = useState<CreateClubEventRequest>({
+    clubId: 0,
 
-      clubId: 0,
+    title: "",
 
-      title: "",
+    description: "",
 
-      description: "",
+    venue: "",
 
-      venue: "",
+    mode: "OFFLINE",
 
-      mode: "OFFLINE",
+    startTime: "",
 
-      startTime: "",
+    endTime: "",
 
-      endTime: "",
-
-      registrationLink: "",
-
-    });
+    registrationLink: "",
+  });
 
   useEffect(() => {
-
     loadClubs();
-
   }, []);
 
   async function loadClubs() {
-
     try {
-
-      const data =
-        await getMyClubs(token);
+      const data = await getMyClubs(token);
 
       setClubs(data);
-
-    }
-
-    catch (err) {
-
+    } catch (err) {
       console.error(err);
-
     }
-
   }
 
   async function handleSubmit() {
-
     if (form.clubId === 0) {
-
       alert("Please select a club.");
 
       return;
-
     }
 
     if (!form.title.trim()) {
-
       alert("Please enter an event title.");
 
       return;
-
     }
 
     if (!form.description.trim()) {
-
       alert("Please enter the event description.");
 
       return;
-
     }
 
     if (!form.venue.trim()) {
-
       alert("Please enter the venue.");
 
       return;
-
     }
 
     if (!form.startTime) {
-
       alert("Please select the start time.");
 
       return;
-
     }
 
     if (!form.endTime) {
-
       alert("Please select the end time.");
 
       return;
-
     }
 
-    const start =
-      new Date(form.startTime);
+    const start = new Date(form.startTime);
 
-    const end =
-      new Date(form.endTime);
+    const end = new Date(form.endTime);
 
     if (start >= end) {
-
-      alert(
-        "End time must be after start time."
-      );
+      alert("End time must be after start time.");
 
       return;
-
     }
 
     if (form.registrationLink.trim() !== "") {
-
       try {
-
-        new URL(
-          form.registrationLink
-        );
-
-      }
-
-      catch {
-
-        alert(
-          "Please enter a valid registration link."
-        );
+        new URL(form.registrationLink);
+      } catch {
+        alert("Please enter a valid registration link.");
 
         return;
-
       }
-
     }
 
     try {
-
       setLoading(true);
 
-      const event =
-        await createClubEvent(
-          form,
-          token
-        );
+      const event = await createClubEvent(form, token);
 
       if (coverImage) {
-
         await uploadClubEventCover(
-
           event.id,
 
           coverImage,
 
-          token
-
+          token,
         );
-
       }
 
-      alert(
-        "Event created successfully!"
-      );
+      alert("Event created successfully!");
 
-      router.push(
-        "/club-events/mine"
-      );
-
-    }
-
-    catch (err) {
-
+      router.push("/club-events/mine");
+    } catch (err) {
       console.error(err);
 
-      alert(
-        "Failed to create event."
-      );
-
-    }
-
-    finally {
-
+      alert("Failed to create event.");
+    } finally {
       setLoading(false);
-
     }
-
   }
 
   return (
-
     <>
-
-      <Navbar />
-
       <div className="max-w-4xl mx-auto px-6 py-8">
-
-        <h1 className="text-4xl font-bold mb-8">
-
-          Create Club Event
-
-        </h1>
+        <h1 className="text-4xl font-bold mb-8">Create Club Event</h1>
 
         <ClubEventForm
-
           form={form}
 
           setForm={setForm}
@@ -252,15 +169,10 @@ export default function CreateClubEventPage() {
           onSubmit={handleSubmit}
 
           onCancel={() => router.back()}
-
         />
-
       </div>
 
       <Footer />
-
     </>
-
   );
-
 }

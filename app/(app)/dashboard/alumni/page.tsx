@@ -14,7 +14,7 @@ import {
   MapPin,
 } from "lucide-react";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
-import PendingModal from "@/components/admin/PendingModal";
+import PendingModal from "@/components/main-admin/PendingModal";
 import SkillsOnboardingModal from "@/components/profile/SkillsOnboardingModal";
 import { useAuth } from "@/contexts/auth-context";
 import { useEventsQuery } from "@/hooks/queries/events";
@@ -43,7 +43,13 @@ const resolveImageUrl = (value: string | null) => {
 
 export default function AlumniDashboard() {
   const router = useRouter();
-  const { user, token, isAuthenticated, isLoading: authLoading, updateUser } = useAuth();
+  const {
+    user,
+    token,
+    isAuthenticated,
+    isLoading: authLoading,
+    updateUser,
+  } = useAuth();
   const {
     data: events = [],
     isLoading: eventsLoading,

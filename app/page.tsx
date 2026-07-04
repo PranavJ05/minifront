@@ -16,10 +16,9 @@ import {
   Quote,
   Lock,
 } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { mockAlumni, stats } from "@/lib/mockData";
-import { isAnyAdmin, isAlumni, isFaculty, isStudent } from "@/lib/roleUtils";
+import { getDashboardPathForRoles } from "@/lib/roleUtils";
 import { useAuth } from "@/contexts/auth-context";
 
 /**
@@ -39,19 +38,9 @@ export default function LandingPage() {
     if (!isAuthenticated || !user) return;
 
     const userRoles = user.roles;
-    let dashboardPath = "/";
-
-    if (isAnyAdmin(userRoles) || isAlumni(userRoles)) {
-      dashboardPath = "/dashboard/alumni";
-    } else if (isFaculty(userRoles)) {
-      dashboardPath = "/dashboard/faculty";
-    } else if (isStudent(userRoles)) {
-      dashboardPath = "/dashboard/student";
-    }
-
-    if (dashboardPath !== "/") {
-      router.replace(dashboardPath);
-    }
+    const dashboardPath = getDashboardPathForRoles(userRoles);
+    console.log("dashboardPath", dashboardPath);
+    router.replace(dashboardPath);
   }, [isLoading, isAuthenticated, user, router]);
 
   if (isLoading) {
@@ -64,8 +53,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
-
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-navy-950 min-h-[92vh] flex items-center">
         <div className="absolute inset-0 pointer-events-none">

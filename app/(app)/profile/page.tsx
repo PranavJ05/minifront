@@ -138,8 +138,7 @@ const syncStoredUserName = (name: string) => {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
-  const router = useRouter();
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRoles, setUserRoles] = useState<string | string[] | null>(null);
   const [roleChecked, setRoleChecked] = useState(false);
 
   // Check role on mount and render appropriate component
@@ -148,27 +147,50 @@ export default function ProfilePage() {
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
-        const roles = parsed?.roles || parsed?.role || "";
-        setUserRole(roles);
+        const roles = parsed?.roles || parsed?.role || null;
+        setUserRoles(roles);
       } catch {
-        setUserRole(null);
+        setUserRoles(null);
       }
     }
     setRoleChecked(true);
   }, []);
 
-  // If user is a student, render StudentProfile component
-  if (roleChecked && isStudent(userRole)) {
+  if (!roleChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Student profile has highest priority for dual-role users (e.g. main admin + student)
+  if (isStudent(userRoles)) {
     return <StudentProfile />;
   }
 
-  // If user is faculty, render FacultyProfile component
-  if (roleChecked && isFaculty(userRole)) {
+  // Faculty users
+  if (isFaculty(userRoles)) {
     return <FacultyProfile />;
   }
 
-  // Otherwise, render the alumni profile (existing code)
-  return <AlumniProfileContent />;
+  // Only explicit alumni role uses alumni profile
+  if (hasRole(userRoles, "alumni")) {
+    return <AlumniProfileContent />;
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-6">
+      <div className="max-w-md text-center">
+        <h2 className="text-xl font-semibold mb-2">Profile unavailable</h2>
+        <p className="text-muted-foreground">
+          This account does not have a direct profile endpoint. If this user
+          should have one, include an explicit `student`, `faculty`, or `alumni`
+          role in the login/profile payload.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 // Alumni Profile Content (extracted from original component)
@@ -357,7 +379,10 @@ function AlumniProfileContent() {
       );
     } catch (err: unknown) {
       ERR("resolveCourseId error:", err);
-      setSkillsError("Failed to resolve course information: " + (err instanceof Error ? err.message : String(err)));
+      setSkillsError(
+        "Failed to resolve course information: " +
+          (err instanceof Error ? err.message : String(err)),
+      );
     } finally {
       setCourseResolving(false);
     }
@@ -374,7 +399,9 @@ function AlumniProfileContent() {
       setSkillsData(data);
     } catch (err: unknown) {
       ERR("loadSkills error:", err);
-      setSkillsError(err instanceof Error ? err.message : "Failed to load skills");
+      setSkillsError(
+        err instanceof Error ? err.message : "Failed to load skills",
+      );
     } finally {
       setSkillsLoading(false);
     }
@@ -488,7 +515,9 @@ function AlumniProfileContent() {
         body?.message || "Profile photo updated successfully.",
       );
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to upload profile photo");
+      setError(
+        err instanceof Error ? err.message : "Failed to upload profile photo",
+      );
     } finally {
       setIsUploadingPhoto(false);
       if (event.target) event.target.value = "";
@@ -518,7 +547,9 @@ function AlumniProfileContent() {
         body?.message || "Profile photo removed successfully.",
       );
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to remove profile photo");
+      setError(
+        err instanceof Error ? err.message : "Failed to remove profile photo",
+      );
     } finally {
       setIsRemovingPhoto(false);
     }
@@ -551,8 +582,8 @@ function AlumniProfileContent() {
               My Profile
             </h1>
             <p className="text-muted-foreground mt-2 max-w-2xl">
-              Edit your public identity, update your contact details, and
-              manage your profile photo and skills.
+              Edit your public identity, update your contact details, and manage
+              your profile photo and skills.
             </p>
           </div>
 
@@ -587,7 +618,10 @@ function AlumniProfileContent() {
 
         {/* System Messages */}
         {error && (
-          <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive">
+          <Alert
+            variant="destructive"
+            className="bg-destructive/10 border-destructive/20 text-destructive"
+          >
             <AlertCircle className="h-5 w-5" />
             <div>
               <AlertTitle>Something went wrong</AlertTitle>
@@ -598,7 +632,9 @@ function AlumniProfileContent() {
 
         {successMessage && (
           <Alert className="bg-green-500/10 border-green-500/20 text-green-600">
-            <AlertTitle className="text-sm font-medium">{successMessage}</AlertTitle>
+            <AlertTitle className="text-sm font-medium">
+              {successMessage}
+            </AlertTitle>
           </Alert>
         )}
 
@@ -683,9 +719,7 @@ function AlumniProfileContent() {
                       </p>
                       <p className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-3">
                         <MapPin className="h-4 w-4 text-primary" />
-                        <span>
-                          {profile.location || "Location not added"}
-                        </span>
+                        <span>{profile.location || "Location not added"}</span>
                       </p>
                       <p className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-3">
                         <GraduationCap className="h-4 w-4 text-primary" />
@@ -764,9 +798,7 @@ function AlumniProfileContent() {
                       disabled={isSaving}
                       className="cursor-pointer"
                     >
-                      {isSaving && (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      )}
+                      {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
                       Save Changes
                     </Button>
                   )}
@@ -778,9 +810,7 @@ function AlumniProfileContent() {
                     <Input
                       type="text"
                       value={formValues.name}
-                      onChange={(e) =>
-                        updateFormValue("name", e.target.value)
-                      }
+                      onChange={(e) => updateFormValue("name", e.target.value)}
                       disabled={!isEditing || isSaving}
                       className="mt-1.5"
                     />
@@ -791,9 +821,7 @@ function AlumniProfileContent() {
                     <Input
                       type="email"
                       value={formValues.gmail}
-                      onChange={(e) =>
-                        updateFormValue("gmail", e.target.value)
-                      }
+                      onChange={(e) => updateFormValue("gmail", e.target.value)}
                       disabled={!isEditing || isSaving}
                       className="mt-1.5"
                     />
@@ -894,16 +922,14 @@ function AlumniProfileContent() {
                   )}
 
                   {/* Diagnostics panel: Resolving Course */}
-                  {profile.alumniId &&
-                    !resolvedCourseId &&
-                    courseResolving && (
-                      <div className="bg-muted/50 rounded-xl border border-border/50 p-4 flex items-center gap-3">
-                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                        <p className="text-sm text-muted-foreground">
-                          Resolving course information…
-                        </p>
-                      </div>
-                    )}
+                  {profile.alumniId && !resolvedCourseId && courseResolving && (
+                    <div className="bg-muted/50 rounded-xl border border-border/50 p-4 flex items-center gap-3">
+                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      <p className="text-sm text-muted-foreground">
+                        Resolving course information…
+                      </p>
+                    </div>
+                  )}
 
                   {/* Diagnostics panel: Course Missing */}
                   {profile.alumniId &&
@@ -918,8 +944,8 @@ function AlumniProfileContent() {
                               Course not found in profile
                             </p>
                             <p className="text-sm text-yellow-600 mt-1">
-                              Your course could not be mapped. Skills cannot
-                              be added until your department is updated.
+                              Your course could not be mapped. Skills cannot be
+                              added until your department is updated.
                             </p>
                           </div>
                         </div>
