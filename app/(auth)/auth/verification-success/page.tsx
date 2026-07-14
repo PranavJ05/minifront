@@ -1,9 +1,14 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { CheckCircle } from "lucide-react";
 
 export default function VerificationSuccessPage() {
+  useEffect(() => {
+    localStorage.removeItem("pendingUserData");
+  }, []);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
 

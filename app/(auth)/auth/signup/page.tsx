@@ -322,19 +322,20 @@ export default function SignupPage() {
           undefined,
       };
 
-      const res = await fetch(`${BACKEND_URL}/auth/register`, {
+      const res = await fetch(`${BACKEND_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       const data: SignupResponse = await res.json().catch(() => ({}));
+      console.log("[Signup] raw response from backend:", JSON.stringify(data));
 
       if (!res.ok) {
         throw new Error(data.message || "Registration failed");
       }
 
-      if (typeof window !== "undefined") {
+      if (formData.role !== "student" && typeof window !== "undefined") {
         localStorage.setItem(
           "pendingUserData",
           JSON.stringify({

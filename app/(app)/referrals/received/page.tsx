@@ -104,7 +104,7 @@ function RespondPanel({ referralId, onResponded }: RespondPanelProps) {
       }
 
       const res = await fetch(
-        `${BACKEND_URL}/referrals/respond/${referralId}`,
+        `${BACKEND_URL}/api/referrals/respond/${referralId}`,
         {
           method: "POST",
           headers: {

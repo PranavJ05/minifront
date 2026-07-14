@@ -20,6 +20,8 @@ import {
 import { useTheme } from "next-themes";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
+import PendingModal from "@/components/main-admin/PendingModal";
+import { isAnyAdmin } from "@/lib/roleUtils";
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -226,6 +228,8 @@ export default function Navbar({
                 >
                   <Bell className="h-4 w-4" />
                 </Button>
+
+                {isAnyAdmin(storedUser?.roles) && <PendingModal />}
 
                 {/* Account dropdown - hover open */}
                 <div

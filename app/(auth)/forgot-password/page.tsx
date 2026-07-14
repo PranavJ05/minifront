@@ -28,7 +28,7 @@ export default function ForgotPasswordPage() {
     try {
       console.log("[Forgot Password] Sending request for:", email);
       // Use BACKEND_URL to match your other auth routes
-      const res = await fetch(`${BACKEND_URL}/auth/forgot-password`, {
+      const res = await fetch(`${BACKEND_URL}/api/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Clock,
   CheckCircle2,
+  ExternalLink,
 } from "lucide-react";
 import AuthInput from "@/components/auth/AuthInput";
 import { useAuth } from "@/contexts/auth-context";
@@ -35,6 +36,11 @@ export default function LoginPage() {
 
   const resetSuccess = useMemo(
     () => searchParams.get("reset") === "success",
+    [searchParams],
+  );
+
+  const approvedSuccess = useMemo(
+    () => searchParams.get("approved") === "true",
     [searchParams],
   );
 
@@ -121,6 +127,8 @@ export default function LoginPage() {
       } catch (profileErr: unknown) {
         const _ignored = profileErr;
       }
+
+      localStorage.removeItem("pendingUserData");
 
       const dashboardPath = getDashboardPathForRoles(allRoles);
       const nextPath = searchParams.get("next");
@@ -265,6 +273,20 @@ export default function LoginPage() {
             </div>
           )}
 
+          {approvedSuccess && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3 text-green-700">
+              <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-sm">
+                  Account approved!
+                </p>
+                <p className="text-sm mt-0.5">
+                  Your account has been approved. Sign in with your credentials.
+                </p>
+              </div>
+            </div>
+          )}
+
           {error === "pending" && (
             <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
               <Clock className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
@@ -273,9 +295,14 @@ export default function LoginPage() {
                   Account Pending Approval
                 </p>
                 <p className="text-amber-700 text-sm mt-0.5">
-                  Your account is awaiting admin approval. You&apos;ll receive
-                  an email once it&apos;s approved.
+                  Your account is awaiting admin approval.
                 </p>
+                <Link
+                  href="/auth/pending"
+                  className="inline-flex items-center gap-1 text-amber-700 underline text-sm mt-1 hover:no-underline"
+                >
+                  Check approval status <ExternalLink className="h-3 w-3" />
+                </Link>
               </div>
             </div>
           )}

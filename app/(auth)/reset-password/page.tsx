@@ -14,6 +14,7 @@ import {
   Lock,
 } from "lucide-react";
 import AuthInput from "@/components/auth/AuthInput";
+import { BACKEND_URL } from "@/lib/config";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -49,7 +50,7 @@ export default function ResetPasswordPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8080/auth/reset-password", {
+      const res = await fetch(`${BACKEND_URL}/api/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, newPassword }),

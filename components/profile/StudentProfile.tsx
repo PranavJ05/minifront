@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { FaLinkedin, FaGithub } from "react-icons/fa";
+import { BACKEND_URL } from "@/lib/config";
 import {
   ExternalLink,
   GraduationCap,
@@ -24,7 +25,7 @@ import {
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import { getInitials } from "@/lib/utils";
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = BACKEND_URL;
 
 interface StudentProfile {
   userId: number;
@@ -126,7 +127,7 @@ export default function StudentProfilePage() {
         return;
       }
 
-      const res = await fetch(`${API_BASE}/students/profile`, {
+      const res = await fetch(`${API_BASE}/api/students/profile`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -173,7 +174,7 @@ export default function StudentProfilePage() {
         bio: formValues.bio || undefined,
       };
 
-      const res = await fetch(`${API_BASE}/students/profile`, {
+      const res = await fetch(`${API_BASE}/api/students/profile`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,

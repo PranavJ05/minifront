@@ -1,4 +1,7 @@
 export const queryKeys = {
+  auth: {
+    pendingStatus: (userId: number) => ["auth", "pending-status", userId] as const,
+  },
   profile: {
     all: ["profile"] as const,
     me: () => ["profile", "me"] as const,

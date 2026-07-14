@@ -6,21 +6,21 @@ import type { Event, EventActionResponse, CreateEventPayload } from "@/lib/types
 export function useEventsQuery() {
   return useQuery({
     queryKey: queryKeys.events.all,
-    queryFn: () => api<Event[]>("/events/all"),
+    queryFn: () => api<Event[]>("/api/events/all"),
   });
 }
 
 export function useMyEventsQuery() {
   return useQuery({
     queryKey: queryKeys.events.mine(),
-    queryFn: () => api<Event[]>("/events/mine"),
+    queryFn: () => api<Event[]>("/api/events/mine"),
   });
 }
 
 export function useEventQuery(id: number) {
   return useQuery({
     queryKey: queryKeys.events.detail(id),
-    queryFn: () => api<Event>(`/events/${id}`),
+    queryFn: () => api<Event>(`/api/events/${id}`),
     enabled: !!id,
   });
 }
@@ -29,7 +29,7 @@ export function useCreateEventMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateEventPayload) =>
-      api<EventActionResponse>("/events/create", {
+      api<EventActionResponse>("/api/events/create", {
         method: "POST",
         body: payload,
       }),
@@ -45,7 +45,7 @@ export function useAddPhotoMutation() {
     mutationFn: ({ eventId, file }: { eventId: number; file: File }) => {
       const formData = new FormData();
       formData.append("file", file);
-      return fetch(`/events/${eventId}/photos`, {
+      return fetch(`/api/events/${eventId}/photos`, {
         method: "POST",
         body: formData,
       });
@@ -60,7 +60,7 @@ export function useAddVideoMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ eventId, url }: { eventId: number; url: string }) =>
-      api<EventActionResponse>(`/events/${eventId}/videos`, {
+      api<EventActionResponse>(`/api/events/${eventId}/videos`, {
         method: "POST",
         body: { url },
       }),
@@ -74,7 +74,7 @@ export function useDeletePhotoMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ eventId, photoId }: { eventId: number; photoId: number }) =>
-      api<EventActionResponse>(`/events/${eventId}/photos/${photoId}`, {
+      api<EventActionResponse>(`/api/events/${eventId}/photos/${photoId}`, {
         method: "DELETE",
       }),
     onSuccess: () => {
@@ -87,7 +87,7 @@ export function useDeleteVideoMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ eventId, videoId }: { eventId: number; videoId: number }) =>
-      api<EventActionResponse>(`/events/${eventId}/videos/${videoId}`, {
+      api<EventActionResponse>(`/api/events/${eventId}/videos/${videoId}`, {
         method: "DELETE",
       }),
     onSuccess: () => {

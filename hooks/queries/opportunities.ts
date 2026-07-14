@@ -24,14 +24,14 @@ export interface CreateOpportunityInput {
 export function useOpportunitiesQuery() {
   return useQuery({
     queryKey: queryKeys.opportunities.all,
-    queryFn: () => api<Opportunity[]>("/opportunities/all"),
+    queryFn: () => api<Opportunity[]>("/api/opportunities/all"),
   });
 }
 
 export function useMyOpportunitiesQuery() {
   return useQuery({
     queryKey: queryKeys.opportunities.mine(),
-    queryFn: () => api<Opportunity[]>("/opportunities/mine"),
+    queryFn: () => api<Opportunity[]>("/api/opportunities/mine"),
   });
 }
 
@@ -39,7 +39,7 @@ export function useCreateOpportunityMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateOpportunityInput) =>
-      api<{ success: boolean }>("/opportunities/create", {
+      api<{ success: boolean }>("/api/opportunities/create", {
         method: "POST",
         body: payload,
       }),

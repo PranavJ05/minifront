@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { BACKEND_URL } from "@/lib/config";
 
 interface Opportunity {
   id: number;
@@ -59,7 +60,7 @@ export default function ReferralRequestModal({
     }
 
     try {
-      const res = await fetch("http://localhost:8080/referrals/request", {
+      const res = await fetch(`${BACKEND_URL}/api/referrals/request`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

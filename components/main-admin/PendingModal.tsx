@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FaLinkedin } from "react-icons/fa";
 import {
   UserCheck,
@@ -9,6 +9,8 @@ import {
   Briefcase,
   GraduationCap,
 } from "lucide-react";
+import { api } from "@/lib/fetcher";
+import { ApiError } from "@/lib/api-error";
 
 interface PendingRequest {
   requestId: number;
@@ -22,7 +24,7 @@ interface PendingRequest {
   linkedinUrl?: string;
   status?: string;
   requestedAt?: string;
-  [key: string]: unknown; // allow unknown fields from backend
+  [key: string]: unknown;
 }
 
 export default function PendingModal() {
@@ -31,44 +33,22 @@ export default function PendingModal() {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.warn("No token found in localStorage");
-        return;
-      }
-
-      const res = await fetch("http://localhost:8080/admin/pending", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (res.ok) {
-        const data: PendingRequest[] = await res.json();
-        console.log("Pending requests raw response:", data);
-        if (Array.isArray(data) && data.length > 0) {
-          console.log("First item keys:", Object.keys(data[0]));
-          console.log("First item values:", data[0]);
-        }
-        setRequests(data);
-      } else {
-        console.error("Failed to fetch pending requests. Status:", res.status);
-      }
-    } catch (error) {
-      console.error("Network error fetching pending requests:", error);
+      const data = await api<PendingRequest[]>("/admin/pending");
+      setRequests(data);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to fetch";
+      console.error("Failed to fetch pending requests:", message);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [fetchRequests]);
 
   const handleAction = async (
     requestId: number,
@@ -76,40 +56,22 @@ export default function PendingModal() {
   ) => {
     setActionLoading(requestId);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:8080/admin/${action}/${requestId}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token ?? ""}`,
-          },
-        },
+      await api<{ success: boolean }>(`/admin/${action}/${requestId}`, {
+        method: "POST",
+      });
+      setRequests((prev) =>
+        prev.filter((req) => req.requestId !== requestId),
       );
-
-      if (res.ok) {
-        console.log(`Request ${requestId} ${action}d successfully`);
-        setRequests((prev) =>
-          prev.filter((req) => req.requestId !== requestId),
-        );
-      } else {
-        console.error(
-          `Failed to ${action} request ${requestId}. Status:`,
-          res.status,
-        );
-      }
-    } catch (error) {
-      console.error(
-        `Network error processing ${action} for request ${requestId}:`,
-        error,
-      );
+    } catch (err: unknown) {
+      const message = err instanceof ApiError ? err.message : "Action failed";
+      console.error(`Failed to ${action} request ${requestId}:`, message);
     } finally {
       setActionLoading(null);
     }
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return "—";
+    if (!dateString) return "\u2014";
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -118,42 +80,39 @@ export default function PendingModal() {
     });
   };
 
-  // Backend may return "name" or "fullName" — resolve whichever exists
   const resolveName = (req: PendingRequest): string => {
     return req.name || req.fullName || "Unknown";
   };
 
   return (
     <div className="relative">
-      {/* Trigger Button */}
       <button
+        type="button"
         onClick={() => {
           setIsOpen((prev) => !prev);
           if (!isOpen) fetchRequests();
         }}
         title="Pending Approvals"
-        className="relative p-2 text-gray-400 hover:text-navy-800 transition-colors"
+        className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
       >
-        <UserCheck className="h-6 w-6" />
+        <UserCheck className="h-5 w-5" />
         {requests.length > 0 && (
-          <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
+          <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-background">
             {requests.length}
           </span>
         )}
       </button>
 
-      {/* Dropdown */}
       {isOpen && (
         <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40"
+          <button
+            type="button"
+            className="fixed inset-0 z-40 cursor-default"
+            aria-label="Close"
             onClick={() => setIsOpen(false)}
           />
 
-          {/* Panel */}
-          <div className="absolute right-0 top-full mt-3 w-96 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden ring-1 ring-black/5">
-            {/* Header */}
+          <div className="absolute right-0 top-full mt-3 w-96 bg-popover rounded-xl shadow-2xl border border-border z-50 overflow-hidden">
             <div className="px-4 py-3 bg-navy-950 flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-white text-sm tracking-wide">
@@ -168,71 +127,65 @@ export default function PendingModal() {
               </span>
             </div>
 
-            {/* Body */}
-            <div className="max-h-[460px] overflow-y-auto bg-gray-50">
-              {/* Loading */}
+            <div className="max-h-[460px] overflow-y-auto bg-muted/30">
               {loading ? (
                 <div className="flex flex-col items-center justify-center gap-4 py-14">
                   <div className="relative h-12 w-12">
-                    <div className="absolute inset-0 rounded-full border-4 border-gray-200" />
+                    <div className="absolute inset-0 rounded-full border-4 border-border" />
                     <div className="absolute inset-0 rounded-full border-4 border-t-gold-500 animate-spin" />
                   </div>
-                  <p className="text-sm font-medium text-gray-500 animate-pulse">
+                  <p className="text-sm font-medium text-muted-foreground animate-pulse">
                     Loading requests...
                   </p>
                 </div>
               ) : requests.length === 0 ? (
-                /* Empty */
                 <div className="flex flex-col items-center justify-center gap-3 py-14">
                   <div className="w-14 h-14 bg-green-50 border-2 border-green-100 rounded-full flex items-center justify-center">
                     <Check className="h-7 w-7 text-green-500" />
                   </div>
-                  <p className="text-sm font-semibold text-gray-600">
+                  <p className="text-sm font-semibold text-foreground">
                     All caught up!
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     No pending requests right now.
                   </p>
                 </div>
               ) : (
-                /* List */
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-border">
                   {requests.map((req) => {
                     const displayName = resolveName(req);
                     const initial = displayName.charAt(0).toUpperCase();
                     return (
                       <div
                         key={req.requestId}
-                        className="p-4 bg-white hover:bg-gray-50/80 transition-colors"
+                        className="p-4 bg-card hover:bg-accent/50 transition-colors"
                       >
-                        {/* Avatar + name + date */}
                         <div className="flex items-start gap-3 mb-3">
                           <div className="h-10 w-10 bg-navy-100 rounded-full flex items-center justify-center text-navy-700 font-bold text-sm border-2 border-white shadow-sm flex-shrink-0">
                             {initial}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="font-bold text-navy-900 text-sm truncate">
+                              <p className="font-bold text-foreground text-sm truncate">
                                 {displayName}
                               </p>
-                              <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0">
+                              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0">
                                 {formatDate(req.requestedAt)}
                               </span>
                             </div>
-                            <p className="text-xs text-gray-500 truncate mt-0.5">
-                              {req.email ?? "—"}
+                            <p className="text-xs text-muted-foreground truncate mt-0.5">
+                              {req.email ?? "\u2014"}
                             </p>
                           </div>
                         </div>
 
-                        {/* Badges */}
                         <div className="flex flex-wrap gap-2 mb-3 pl-13">
                           <span className="flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 rounded text-xs font-medium">
                             <GraduationCap className="h-3 w-3" />
-                            {req.batchYear ?? "—"}
+                            {req.batchYear ?? "\u2014"}
                           </span>
                           <span className="flex items-center gap-1 bg-purple-50 text-purple-700 border border-purple-100 px-2 py-1 rounded text-xs font-medium max-w-[120px] truncate">
-                            {req.department ?? "—"}
+                            {req.department ?? "\u2014"}
                           </span>
                           {req.profession && (
                             <span className="flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-100 px-2 py-1 rounded text-xs font-medium max-w-[130px] truncate">
@@ -242,7 +195,6 @@ export default function PendingModal() {
                           )}
                         </div>
 
-                        {/* LinkedIn */}
                         {req.linkedinUrl && (
                           <div className="mb-3 pl-13">
                             <a
@@ -257,9 +209,9 @@ export default function PendingModal() {
                           </div>
                         )}
 
-                        {/* Actions */}
                         <div className="flex gap-2">
                           <button
+                            type="button"
                             onClick={() =>
                               handleAction(req.requestId, "approve")
                             }
@@ -274,6 +226,7 @@ export default function PendingModal() {
                             Approve
                           </button>
                           <button
+                            type="button"
                             onClick={() =>
                               handleAction(req.requestId, "reject")
                             }
@@ -295,10 +248,9 @@ export default function PendingModal() {
               )}
             </div>
 
-            {/* Footer */}
             {!loading && requests.length > 0 && (
-              <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 text-center">
-                <p className="text-[10px] text-gray-400">
+              <div className="px-4 py-2.5 bg-muted/50 border-t border-border text-center">
+                <p className="text-[10px] text-muted-foreground">
                   Actions are permanent and cannot be undone.
                 </p>
               </div>

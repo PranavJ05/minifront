@@ -127,8 +127,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (params: LoginParams): Promise<LoginResponse> => {
       const loginUrl =
         params.role === "faculty"
-          ? `${BACKEND_URL}/auth/faculty/login`
-          : `${BACKEND_URL}/auth/login`;
+          ? `${BACKEND_URL}/api/auth/faculty/login`
+          : `${BACKEND_URL}/api/auth/login`;
 
       const res = await fetch(loginUrl, {
         method: "POST",

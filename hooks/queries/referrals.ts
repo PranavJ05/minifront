@@ -18,14 +18,14 @@ export interface ReferralRequest {
 export function useMyReferralsQuery() {
   return useQuery({
     queryKey: queryKeys.referrals.mine(),
-    queryFn: () => api<ReferralRequest[]>("/referrals/mine"),
+    queryFn: () => api<ReferralRequest[]>("/api/referrals/mine"),
   });
 }
 
 export function useReceivedReferralsQuery() {
   return useQuery({
     queryKey: queryKeys.referrals.received(),
-    queryFn: () => api<ReferralRequest[]>("/referrals/received"),
+    queryFn: () => api<ReferralRequest[]>("/api/referrals/received"),
   });
 }
 
@@ -33,7 +33,7 @@ export function useRequestReferralMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: { email: string; message?: string }) =>
-      api<{ success: boolean }>("/referrals/request", {
+      api<{ success: boolean }>("/api/referrals/request", {
         method: "POST",
         body: payload,
       }),

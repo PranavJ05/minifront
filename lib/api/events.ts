@@ -1,12 +1,13 @@
 // lib/api/events.ts
 
+import { BACKEND_URL } from "@/lib/config";
 import {
   CreateEventPayload,
   Event,
   EventActionResponse,
 } from "@/lib/types/events";
 
-const BASE = "http://localhost:8080";
+const BASE = BACKEND_URL;
 
 function authHeaders(token: string): Record<string, string> {
   return {
@@ -16,7 +17,7 @@ function authHeaders(token: string): Record<string, string> {
 }
 
 export async function fetchAllEvents(token: string): Promise<Event[]> {
-  const res = await fetch(`${BASE}/events/all`, {
+  const res = await fetch(`${BASE}/api/events/all`, {
     headers: authHeaders(token),
     cache: "no-store",
   });
@@ -28,7 +29,7 @@ export async function fetchEventById(
   id: number,
   token: string,
 ): Promise<Event> {
-  const res = await fetch(`${BASE}/events/${id}`, {
+  const res = await fetch(`${BASE}/api/events/${id}`, {
     headers: authHeaders(token),
     cache: "no-store",
   });
@@ -41,7 +42,7 @@ export async function createEvent(
   payload: CreateEventPayload,
   token: string,
 ): Promise<EventActionResponse> {
-  const res = await fetch(`${BASE}/events/create`, {
+  const res = await fetch(`${BASE}/api/events/create`, {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify(payload),
@@ -57,7 +58,7 @@ export async function addPhoto(
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${BASE}/events/${eventId}/photos`, {
+  const res = await fetch(`${BASE}/api/events/${eventId}/photos`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -72,7 +73,7 @@ export async function addVideo(
   url: string,
   token: string,
 ): Promise<EventActionResponse> {
-  const res = await fetch(`${BASE}/events/${eventId}/videos`, {
+  const res = await fetch(`${BASE}/api/events/${eventId}/videos`, {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify({ url }),
@@ -85,7 +86,7 @@ export async function deletePhoto(
   photoId: number,
   token: string,
 ): Promise<EventActionResponse> {
-  const res = await fetch(`${BASE}/events/${eventId}/photos/${photoId}`, {
+  const res = await fetch(`${BASE}/api/events/${eventId}/photos/${photoId}`, {
     method: "DELETE",
     headers: authHeaders(token),
   });
@@ -97,7 +98,7 @@ export async function deleteVideo(
   videoId: number,
   token: string,
 ): Promise<EventActionResponse> {
-  const res = await fetch(`${BASE}/events/${eventId}/videos/${videoId}`, {
+  const res = await fetch(`${BASE}/api/events/${eventId}/videos/${videoId}`, {
     method: "DELETE",
     headers: authHeaders(token),
   });
