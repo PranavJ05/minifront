@@ -8,7 +8,6 @@ import Footer from "@/components/layout/Footer";
 
 import ClubEventForm from "@/components/club-events/ClubEventForm";
 
-import { getToken } from "@/lib/auth";
 
 import {
   createClubEvent,
@@ -16,13 +15,13 @@ import {
   getMyClubs,
 } from "@/lib/api/clubEvents";
 
+import { getErrorMessage } from "@/lib/get-error-message";
+
 import { Club } from "@/lib/types/mainAdmin";
 import { CreateClubEventRequest } from "@/lib/types/createClubEvent";
 
 export default function CreateClubEventPage() {
   const router = useRouter();
-
-  const token = getToken() ?? "";
 
   const [clubs, setClubs] = useState<Club[]>([]);
 
@@ -54,7 +53,7 @@ export default function CreateClubEventPage() {
 
   async function loadClubs() {
     try {
-      const data = await getMyClubs(token);
+      const data = await getMyClubs();
 
       setClubs(data);
     } catch (err) {
@@ -112,8 +111,8 @@ export default function CreateClubEventPage() {
     if (form.registrationLink.trim() !== "") {
       try {
         new URL(form.registrationLink);
-      } catch {
-        alert("Please enter a valid registration link.");
+      } catch (err: unknown) {
+        alert(getErrorMessage(err, "Please enter a valid registration link."));
 
         return;
       }
@@ -122,15 +121,13 @@ export default function CreateClubEventPage() {
     try {
       setLoading(true);
 
-      const event = await createClubEvent(form, token);
+      const event = await createClubEvent(form);
 
       if (coverImage) {
         await uploadClubEventCover(
           event.id,
 
           coverImage,
-
-          token,
         );
       }
 
@@ -140,7 +137,7 @@ export default function CreateClubEventPage() {
     } catch (err) {
       console.error(err);
 
-      alert("Failed to create event.");
+      alert(getErrorMessage(err, "Failed to create event."));
     } finally {
       setLoading(false);
     }

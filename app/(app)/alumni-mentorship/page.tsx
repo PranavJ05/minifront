@@ -1,105 +1,40 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-import { getToken, getUserRole } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { isAlumni, isStudent } from "@/lib/roleUtils";
 
-import { getAllMentorships, getApplicationStatus } from "@/lib/api/mentorship";
+import { useMentorshipsQuery, useGetApplicationStatusQuery } from "@/hooks/queries/mentorships";
 
-import { ApplicationStatusResponse, Mentorship } from "@/lib/types/mentorship";
+import type { ApplicationStatusResponse, Mentorship } from "@/lib/types/mentorship";
 
 export default function MentorshipPage() {
-  const [mentorships, setMentorships] = useState<Mentorship[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("ALL");
-  const [applicationStatuses, setApplicationStatuses] = useState<
-    Record<number, ApplicationStatusResponse>
-  >({});
 
-  const token = getToken() ?? "";
-  const role = getUserRole();
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = await getAllMentorships(token);
-        setMentorships(data);
-
-        if (isStudent(role) && data.length > 0) {
-          const statuses = await Promise.all(
-            data.map(async (mentorship) => ({
-              mentorshipId: mentorship.id,
-              status: await getApplicationStatus(mentorship.id, token),
-            })),
-          );
-
-          const statusMap: Record<number, ApplicationStatusResponse> = {};
-          statuses.forEach(({ mentorshipId, status }) => {
-            statusMap[mentorshipId] = status;
-          });
-          setApplicationStatuses(statusMap);
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, [role, token]);
+  const roles = user?.roles;
+  const { data: mentorships, isLoading: loading } = useMentorshipsQuery();
 
   const filtered = useMemo(() => {
+    if (!mentorships) return [];
     return mentorships.filter((m) => {
       const matchSearch =
         m.title.toLowerCase().includes(search.toLowerCase()) ||
         m.domain.toLowerCase().includes(search.toLowerCase());
-
       const matchMode = filter === "ALL" || m.mode === filter;
-
       return matchSearch && matchMode;
     });
   }, [mentorships, search, filter]);
 
   function renderStudentStatusCard(mentorshipId: number) {
-    if (!isStudent(role)) return null;
-
-    const status = applicationStatuses[mentorshipId];
-    if (!status) return null;
-
-    if (!status.applied) {
-      return null;
-    }
-
-    if (!status.finalPublished) {
-      return (
-        <div className="bg-yellow-50 text-yellow-700 mt-4 p-2 rounded text-sm">
-          Application submitted / under review
-        </div>
-      );
-    }
-
-    if (status.selected === true) {
-      return (
-        <div className="bg-green-50 text-green-700 mt-4 p-2 rounded text-sm">
-          {status.message ?? "Congratulations! You are selected."}
-        </div>
-      );
-    }
-
-    if (status.selected === false) {
-      return (
-        <div className="bg-slate-100 text-slate-700 mt-4 p-2 rounded text-sm">
-          {status.message ?? "Not selected this time."}
-        </div>
-      );
-    }
-
-    return null;
+    if (!isStudent(roles)) return null;
+    return <ApplicationStatusWrapper mentorshipId={mentorshipId} />;
   }
 
   return (
@@ -113,9 +48,9 @@ export default function MentorshipPage() {
             </p>
           </div>
 
-          {isAlumni(role) && (
+          {isAlumni(roles) && (
             <Link href="/alumni-mentorship/create">
-              <button className="bg-yellow-500 px-5 py-3 rounded font-semibold">
+              <button type="button" className="bg-yellow-500 px-5 py-3 rounded font-semibold">
                 Create Mentorship
               </button>
             </Link>
@@ -169,7 +104,7 @@ export default function MentorshipPage() {
                 {renderStudentStatusCard(m.id)}
 
                 <Link href={`/alumni-mentorship/${m.id}`}>
-                  <button className="w-full mt-5 bg-blue-600 text-white py-2 rounded">
+                  <button type="button" className="w-full mt-5 bg-blue-600 text-white py-2 rounded">
                     View Details
                   </button>
                 </Link>
@@ -182,4 +117,37 @@ export default function MentorshipPage() {
       <Footer />
     </>
   );
+}
+
+function ApplicationStatusWrapper({ mentorshipId }: { mentorshipId: number }) {
+  const { data: status } = useGetApplicationStatusQuery(mentorshipId);
+  if (!status) return null;
+
+  if (!status.applied) return null;
+
+  if (!status.finalPublished) {
+    return (
+      <div className="bg-yellow-50 text-yellow-700 mt-4 p-2 rounded text-sm">
+        Application submitted / under review
+      </div>
+    );
+  }
+
+  if (status.selected === true) {
+    return (
+      <div className="bg-green-50 text-green-700 mt-4 p-2 rounded text-sm">
+        {status.message ?? "Congratulations! You are selected."}
+      </div>
+    );
+  }
+
+  if (status.selected === false) {
+    return (
+      <div className="bg-slate-100 text-slate-700 mt-4 p-2 rounded text-sm">
+        {status.message ?? "Not selected this time."}
+      </div>
+    );
+  }
+
+  return null;
 }

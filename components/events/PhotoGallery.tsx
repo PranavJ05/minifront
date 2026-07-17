@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { EventPhoto } from "@/lib/types/events";
 import { deletePhoto } from "@/lib/api/events";
-import { getToken } from "@/lib/auth";
 
 interface PhotoGalleryProps {
   eventId: number;
@@ -48,8 +47,7 @@ export default function PhotoGallery({
     if (!confirm("Remove this photo?")) return;
     setDeletingId(photo.id);
     try {
-      const token = getToken() ?? "";
-      await deletePhoto(eventId, photo.id, token);
+      await deletePhoto(eventId, photo.id);
       onPhotosChanged();
     } finally {
       setDeletingId(null);

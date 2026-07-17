@@ -15,10 +15,11 @@ import {
 
 import { AlumniSession } from "@/lib/types/alumniSession";
 
-import { getToken, getUserRole } from "@/lib/auth";
+import { getUserRole } from "@/lib/auth";
 
 import { isAnyAdmin, isAlumni, isStudent } from "@/lib/roleUtils";
 import Link from "next/link";
+import { getErrorMessage } from "@/lib/get-error-message";
 export default function SessionDetailsPage() {
   const params = useParams();
 
@@ -30,14 +31,12 @@ export default function SessionDetailsPage() {
 
   const [registered, setRegistered] = useState(false);
 
-  const token = getToken() ?? "";
-
   const userRole = getUserRole();
 
   useEffect(() => {
     async function loadSession() {
       try {
-        const data = await fetchSessionById(Number(params.id), token);
+        const data = await fetchSessionById(Number(params.id));
 
         setSession(data);
       } catch (error) {
@@ -48,29 +47,29 @@ export default function SessionDetailsPage() {
     }
 
     loadSession();
-  }, [params.id, token]);
+  }, [params.id]);
 
   const handleRegister = async () => {
     try {
-      await registerForSession(Number(params.id), token);
+      await registerForSession(Number(params.id));
 
       alert("Registered Successfully");
 
       setRegistered(true);
-    } catch (error) {
-      alert("Registration Failed");
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, "Registration Failed"));
     }
   };
 
   const handleCancel = async () => {
     try {
-      await cancelRegistration(Number(params.id), token);
+      await cancelRegistration(Number(params.id));
 
       alert("Registration Cancelled");
 
       setRegistered(false);
-    } catch (error) {
-      alert("Failed");
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, "Failed"));
     }
   };
 
@@ -80,13 +79,13 @@ export default function SessionDetailsPage() {
     }
 
     try {
-      await deleteSession(Number(params.id), token);
+      await deleteSession(Number(params.id));
 
       alert("Deleted");
 
       router.push("/alumni-sessions");
-    } catch (error) {
-      alert("Delete Failed");
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, "Delete Failed"));
     }
   };
 

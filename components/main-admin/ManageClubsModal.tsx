@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { getErrorMessage } from "@/lib/get-error-message";
 import {
   assignClub,
   getClubs,
@@ -24,8 +25,6 @@ interface Props {
 
   userName: string;
 
-  token: string;
-
 }
 
 export default function ManageClubsModal({
@@ -37,8 +36,6 @@ export default function ManageClubsModal({
   userId,
 
   userName,
-
-  token,
 
 }: Props) {
 
@@ -86,11 +83,10 @@ export default function ManageClubsModal({
 
       ] = await Promise.all([
 
-        getClubs(token),
+        getClubs(),
 
         getUserClubs(
-          userId,
-          token
+          userId
         ),
 
       ]);
@@ -123,9 +119,7 @@ export default function ManageClubsModal({
 
         userId,
 
-        Number(selectedClub),
-
-        token
+        Number(selectedClub)
 
       );
 
@@ -137,7 +131,7 @@ export default function ManageClubsModal({
 
     catch (err) {
 
-      alert("Assignment failed");
+      alert(getErrorMessage(err, "Assignment failed"));
 
     }
 
@@ -165,9 +159,7 @@ export default function ManageClubsModal({
 
       await removeClub(
 
-        userClubId,
-
-        token
+        userClubId
 
       );
 
@@ -177,7 +169,7 @@ export default function ManageClubsModal({
 
     catch (err) {
 
-      alert("Failed");
+      alert(getErrorMessage(err, "Failed"));
 
     }
 

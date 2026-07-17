@@ -12,8 +12,7 @@ import {
   deleteMedia,
   fetchSessionById,
 } from "@/lib/api/alumniSessions";
-
-import { getToken } from "@/lib/auth";
+import { getErrorMessage } from "@/lib/get-error-message";
 
 export default function SessionMediaPage() {
   const params = useParams();
@@ -27,13 +26,11 @@ export default function SessionMediaPage() {
       try {
         const data = await fetchSessionMedia(
           Number(params.id),
-          getToken() ?? "",
         );
 
         setMedia(data);
         const sessionData = await fetchSessionById(
           Number(params.id),
-          getToken() ?? "",
         );
         setSession(sessionData);
       } catch (error) {
@@ -49,11 +46,11 @@ export default function SessionMediaPage() {
   const isCreator = session?.createdBy?.email === currentUser.email;
   const handleDelete = async (mediaId: number) => {
     try {
-      await deleteMedia(mediaId, getToken() ?? "");
+      await deleteMedia(mediaId);
 
       setMedia(media.filter((m) => m.id !== mediaId));
-    } catch {
-      alert("Delete Failed");
+    } catch (err: unknown) {
+      alert(getErrorMessage(err, "Delete Failed"));
     }
   };
   return (

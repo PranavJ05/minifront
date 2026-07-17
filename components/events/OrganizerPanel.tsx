@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { ImagePlus, Video, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { getErrorMessage } from "@/lib/get-error-message";
 import { addPhoto, addVideo } from "@/lib/api/events";
-import { getToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,11 +46,10 @@ export default function OrganizerPanel({
     setErrorMsg("");
 
     try {
-      const token = getToken() ?? "";
       const res =
         tab === "photo"
-          ? await addPhoto(eventId, selectedPhoto as File, token)
-          : await addVideo(eventId, videoUrl.trim(), token);
+          ? await addPhoto(eventId, selectedPhoto as File)
+          : await addVideo(eventId, videoUrl.trim());
 
       if (!res.success) throw new Error(res.message);
       setStatus("success");
@@ -59,7 +58,7 @@ export default function OrganizerPanel({
       onMediaAdded();
       setTimeout(() => setStatus("idle"), 2500);
     } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : "Failed to add media.");
+      setErrorMsg(getErrorMessage(err, "Failed to add media."));
       setStatus("error");
     }
   };

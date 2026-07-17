@@ -6,10 +6,10 @@ import { useRouter } from "next/navigation";
 import ManageClubsModal from "@/components/main-admin/ManageClubsModal";
 import { getUsers } from "@/lib/api/mainAdmin";
 import { UserSummary } from "@/lib/types/mainAdmin";
-import { getToken } from "@/lib/auth";
 import { useAuth } from "@/contexts/auth-context";
 import { isMainAdmin } from "@/lib/roleUtils";
 import { Loader2 } from "lucide-react";
+import { getErrorMessage } from "@/lib/get-error-message";
 
 export default function MainAdminUsersPage() {
   const router = useRouter();
@@ -22,8 +22,6 @@ export default function MainAdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<UserSummary | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const token = getToken() ?? "";
-
   const filteredUsers = useMemo(() => {
     return users.filter(
       (user) =>
@@ -35,14 +33,14 @@ export default function MainAdminUsersPage() {
   const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getUsers(token, roleFilter || undefined);
+      const data = await getUsers(roleFilter || undefined);
       setUsers(data);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [token, roleFilter]);
+  }, [roleFilter]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -149,7 +147,6 @@ export default function MainAdminUsersPage() {
           }}
           userId={selectedUser.id}
           userName={selectedUser.name}
-          token={token}
         />
       )}
     </div>

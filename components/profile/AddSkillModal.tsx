@@ -28,6 +28,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { Skill } from "@/types";
+import { getErrorMessage } from "@/lib/get-error-message";
 import {
   getApprovedSkills,
   searchSkills,
@@ -176,7 +177,7 @@ export default function AddSkillModal({
       setShownSkills(data);
     } catch (err: unknown) {
       ERR("loadApprovedSkills error:", err);
-      setLoadError(err instanceof Error ? err.message : "Failed to load skills");
+      setLoadError(getErrorMessage(err, "Failed to load skills"));
     } finally {
       setLoadingSkills(false);
     }
@@ -203,7 +204,7 @@ export default function AddSkillModal({
       setShownSkills(data);
     } catch (err: unknown) {
       ERR("handleSearch error:", err);
-      setLoadError(err instanceof Error ? err.message : "Search failed");
+      setLoadError(getErrorMessage(err, "Search failed"));
     } finally {
       setLoadingSkills(false);
     }
@@ -247,7 +248,7 @@ export default function AddSkillModal({
       }, 1200);
     } catch (err: unknown) {
       ERR("handleAddSkill error:", err);
-      setSaveError(err instanceof Error ? err.message : "Failed to add skill");
+      setSaveError(getErrorMessage(err, "Failed to add skill"));
     } finally {
       setSaving(false);
     }
@@ -290,7 +291,7 @@ export default function AddSkillModal({
       }, 2500);
     } catch (err: unknown) {
       ERR("handleProposeSkill error:", err);
-      setSaveError(err instanceof Error ? err.message : "Failed to submit skill proposal");
+      setSaveError(getErrorMessage(err, "Failed to submit skill proposal"));
     } finally {
       setSaving(false);
     }

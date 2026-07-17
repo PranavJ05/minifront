@@ -3,6 +3,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getErrorMessage } from "@/lib/get-error-message";
+
 import { useCreateOpportunityMutation } from "@/hooks/queries/opportunities";
 
 interface OpportunityFormData {
@@ -67,9 +69,7 @@ export default function NewOpportunityPage() {
         router.push("/opportunities");
       }, 2000);
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "An unexpected error occurred.",
-      );
+      setError(getErrorMessage(err, "An unexpected error occurred."));
     }
   };
   return (
