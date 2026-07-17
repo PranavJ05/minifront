@@ -11,7 +11,8 @@ import ClubEventForm from "@/components/club-events/ClubEventForm";
 import { Club } from "@/lib/types/mainAdmin";
 import { CreateClubEventRequest } from "@/lib/types/createClubEvent";
 
-import { getToken } from "@/lib/auth";
+
+import { getErrorMessage } from "@/lib/get-error-message";
 
 import {
   getMyClubs,
@@ -24,8 +25,6 @@ export default function EditClubEventPage() {
   const params = useParams();
 
   const router = useRouter();
-
-  const token = getToken() ?? "";
 
   const [clubs, setClubs] = useState<Club[]>([]);
 
@@ -58,12 +57,10 @@ export default function EditClubEventPage() {
   async function load() {
     try {
       const [clubs, event] = await Promise.all([
-        getMyClubs(token),
+        getMyClubs(),
 
         getClubEventForEdit(
           Number(params.id),
-
-          token,
         ),
       ]);
 
@@ -99,8 +96,6 @@ export default function EditClubEventPage() {
         Number(params.id),
 
         form,
-
-        token,
       );
 
       if (coverImage) {
@@ -108,8 +103,6 @@ export default function EditClubEventPage() {
           Number(params.id),
 
           coverImage,
-
-          token,
         );
       }
 
@@ -119,7 +112,7 @@ export default function EditClubEventPage() {
     } catch (err) {
       console.error(err);
 
-      alert("Update failed.");
+      alert(getErrorMessage(err, "Update failed."));
     } finally {
       setLoading(false);
     }

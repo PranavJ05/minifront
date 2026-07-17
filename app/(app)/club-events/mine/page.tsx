@@ -11,7 +11,8 @@ import { ClubEvent } from "@/lib/types/clubEvent";
 
 import { getMyClubEvents, deleteClubEvent } from "@/lib/api/clubEvents";
 
-import { getToken } from "@/lib/auth";
+
+import { getErrorMessage } from "@/lib/get-error-message";
 
 import { getStatus } from "@/lib/utils/clubEvent";
 
@@ -19,8 +20,6 @@ export default function MyClubEventsPage() {
   const [events, setEvents] = useState<ClubEvent[]>([]);
 
   const [loading, setLoading] = useState(true);
-
-  const token = getToken() ?? "";
 
   useEffect(() => {
     loadEvents();
@@ -31,19 +30,19 @@ export default function MyClubEventsPage() {
     }
 
     try {
-      await deleteClubEvent(id, token);
+      await deleteClubEvent(id);
 
       loadEvents();
     } catch (err) {
       console.error(err);
 
-      alert("Failed to delete event.");
+      alert(getErrorMessage(err, "Failed to delete event."));
     }
   }
 
   async function loadEvents() {
     try {
-      const data = await getMyClubEvents(token);
+      const data = await getMyClubEvents();
 
       setEvents(data);
     } catch (err) {

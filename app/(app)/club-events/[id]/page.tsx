@@ -6,7 +6,6 @@ import { useParams } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-import { getToken } from "@/lib/auth";
 
 import { ClubEvent } from "@/lib/types/clubEvent";
 
@@ -16,8 +15,6 @@ import { getStatus } from "@/lib/utils/clubEvent";
 
 export default function ClubEventDetailsPage() {
   const params = useParams();
-
-  const token = getToken() ?? "";
 
   const [event, setEvent] = useState<ClubEvent | null>(null);
 
@@ -31,8 +28,6 @@ export default function ClubEventDetailsPage() {
     try {
       const data = await getClubEventById(
         Number(params.id),
-
-        token,
       );
 
       setEvent(data);

@@ -6,8 +6,8 @@ import { useParams } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-import { getToken } from "@/lib/auth";
 import { fetchRegistrations } from "@/lib/api/alumniSessions";
+import { getErrorMessage } from "@/lib/get-error-message";
 
 type Registration = {
   id?: number | string;
@@ -62,9 +62,7 @@ export default function RegistrationsPage() {
   useEffect(() => {
     async function load() {
       try {
-        const token = getToken() ?? "";
-
-        const data = await fetchRegistrations(Number(params.id), token);
+        const data = await fetchRegistrations(Number(params.id));
 
         setRegistrations(Array.isArray(data) ? data : []);
       } catch (error) {

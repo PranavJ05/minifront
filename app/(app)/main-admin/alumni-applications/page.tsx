@@ -32,6 +32,8 @@ import {
   useApproveAlumniApplicationMutation,
   useRejectAlumniApplicationMutation,
 } from "@/hooks/queries/alumniApplications";
+import { getErrorMessage } from "@/lib/get-error-message";
+
 import { isAnyAdmin } from "@/lib/roleUtils";
 import type { AlumniApplication } from "@/lib/types/alumniApplications";
 
@@ -92,9 +94,7 @@ export default function AdminAlumniApplicationsPage() {
         setSelectedApplication(null);
       }
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to approve application",
-      );
+      setError(getErrorMessage(err, "Failed to approve application"));
     }
   }
 
@@ -118,9 +118,7 @@ export default function AdminAlumniApplicationsPage() {
         setSelectedApplication(null);
       }
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to reject application",
-      );
+      setError(getErrorMessage(err, "Failed to reject application"));
     }
   }
 

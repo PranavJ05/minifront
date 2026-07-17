@@ -28,6 +28,7 @@ import type { ReferralRequest } from "@/hooks/queries/referrals";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/hooks/queries/keys";
 import { BACKEND_URL } from "@/lib/config";
+import { getErrorMessage } from "@/lib/get-error-message";
 
 const STATUS_CONFIG = {
   PENDING: {
@@ -125,9 +126,7 @@ function RespondPanel({ referralId, onResponded }: RespondPanelProps) {
 
       onResponded(referralId, action === "approve", responseMessage);
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to submit response.",
-      );
+      setError(getErrorMessage(err, "Failed to submit response."));
       setSubmitting(false);
     }
   };

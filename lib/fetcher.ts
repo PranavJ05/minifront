@@ -13,6 +13,11 @@ export const api = ofetch.create({
       headers.set("Authorization", `Bearer ${token}`);
       options.headers = headers;
     }
+    if (options.body instanceof FormData) {
+      const headers = new Headers(options.headers);
+      headers.delete("Content-Type");
+      options.headers = headers;
+    }
   },
   onResponseError({ response }) {
     throw new ApiError(

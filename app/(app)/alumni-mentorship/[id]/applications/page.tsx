@@ -14,13 +14,13 @@ import {
   updateApplicationStatus,
 } from "@/lib/api/mentorship";
 
+import { getErrorMessage } from "@/lib/get-error-message";
+
 import {
   Mentorship,
   MentorshipApplication,
   ReviewableMentorshipApplicationStatus,
 } from "@/lib/types/mentorship";
-
-import { getToken } from "@/lib/auth";
 
 const REVIEW_STATUSES: ReviewableMentorshipApplicationStatus[] = [
   "PROVISIONAL_SELECTED",
@@ -30,7 +30,6 @@ const REVIEW_STATUSES: ReviewableMentorshipApplicationStatus[] = [
 export default function ApplicationsPage() {
   const params = useParams();
   const mentorshipId = Number(params.id);
-  const token = getToken() ?? "";
 
   const [applications, setApplications] = useState<MentorshipApplication[]>([]);
   const [mentorship, setMentorship] = useState<Mentorship | null>(null);
@@ -45,25 +44,21 @@ export default function ApplicationsPage() {
     async function load() {
       try {
         const [applicationsData, mentorshipData] = await Promise.all([
-          getApplicants(mentorshipId, token),
-          getMentorship(mentorshipId, token),
+          getApplicants(mentorshipId),
+          getMentorship(mentorshipId),
         ]);
 
         setApplications(applicationsData);
         setMentorship(mentorshipData);
       } catch (error) {
-        alert(
-          error instanceof Error
-            ? error.message
-            : "Failed to load applications",
-        );
+        alert(getErrorMessage(error, "Failed to load applications"));
       } finally {
         setLoading(false);
       }
     }
 
     load();
-  }, [mentorshipId, token]);
+  }, [mentorshipId]);
 
   async function handleStatusUpdate(
     applicationId: number,
@@ -76,7 +71,6 @@ export default function ApplicationsPage() {
         mentorshipId,
         applicationId,
         { status },
-        token,
       );
 
       setApplications((prev) =>
@@ -85,7 +79,7 @@ export default function ApplicationsPage() {
         ),
       );
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Failed to update status");
+      alert(getErrorMessage(error, "Failed to update status"));
     } finally {
       setUpdatingApplicationId(null);
     }
@@ -104,16 +98,15 @@ export default function ApplicationsPage() {
       setForceClosing(true);
       const updatedMentorship = await forceCloseMentorshipApplications(
         mentorshipId,
-        token,
       );
       setMentorship(updatedMentorship);
 
-      const refreshedApplications = await getApplicants(mentorshipId, token);
+      const refreshedApplications = await getApplicants(mentorshipId);
       setApplications(refreshedApplications);
 
       alert("Applications closed for this mentorship.");
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Failed to force close");
+      alert(getErrorMessage(error, "Failed to force close"));
     } finally {
       setForceClosing(false);
     }
@@ -128,16 +121,15 @@ export default function ApplicationsPage() {
       setSubmittingFinal(true);
       const updatedMentorship = await finalSubmitMentorship(
         mentorshipId,
-        token,
       );
       setMentorship(updatedMentorship);
 
-      const refreshedApplications = await getApplicants(mentorshipId, token);
+      const refreshedApplications = await getApplicants(mentorshipId);
       setApplications(refreshedApplications);
 
       alert("Final submit completed and published.");
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Final submit failed");
+      alert(getErrorMessage(error, "Final submit failed"));
     } finally {
       setSubmittingFinal(false);
     }

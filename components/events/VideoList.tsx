@@ -6,7 +6,6 @@ import { useState } from "react";
 import { ExternalLink, Trash2, Loader2, Play, Video } from "lucide-react";
 import { EventVideo } from "@/lib/types/events";
 import { deleteVideo } from "@/lib/api/events";
-import { getToken } from "@/lib/auth";
 
 interface VideoListProps {
   eventId: number;
@@ -42,8 +41,7 @@ export default function VideoList({
     if (!confirm("Remove this video?")) return;
     setDeletingId(video.id);
     try {
-      const token = getToken() ?? "";
-      await deleteVideo(eventId, video.id, token);
+      await deleteVideo(eventId, video.id);
       onVideosChanged();
       if (expandedId === video.id) setExpandedId(null);
     } finally {

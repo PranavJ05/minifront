@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Play, Trash2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { EventPhoto, EventVideo } from "@/lib/types/events";
 import { deletePhoto, deleteVideo } from "@/lib/api/events";
-import { getToken } from "@/lib/auth";
 
 interface EventMediaCarouselProps {
   eventId: number;
@@ -89,12 +88,11 @@ export default function EventMediaCarousel({
     if (!confirm(`Remove this ${item.type}?`)) return;
     setDeletingId(item.id);
     try {
-      const token = getToken() ?? "";
       if (item.type === "photo") {
-        await deletePhoto(eventId, item.id, token);
+        await deletePhoto(eventId, item.id);
         onPhotosChanged();
       } else {
-        await deleteVideo(eventId, item.id, token);
+        await deleteVideo(eventId, item.id);
         onVideosChanged();
       }
     } catch (err) {

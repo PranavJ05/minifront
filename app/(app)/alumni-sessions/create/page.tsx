@@ -6,9 +6,8 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-import { getToken } from "@/lib/auth";
-
 import { createSession } from "@/lib/api/alumniSessions";
+import { getErrorMessage } from "@/lib/get-error-message";
 
 export default function CreateSessionPage() {
   const router = useRouter();
@@ -43,17 +42,15 @@ export default function CreateSessionPage() {
     try {
       setLoading(true);
 
-      const token = getToken() ?? "";
-
-      await createSession(formData, token);
+      await createSession(formData);
 
       alert("Session Created Successfully");
 
       router.push("/alumni-sessions");
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
 
-      alert("Failed to create session");
+      alert(getErrorMessage(err, "Failed to create session"));
     } finally {
       setLoading(false);
     }

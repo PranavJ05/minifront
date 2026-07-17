@@ -19,6 +19,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { AlumniSkillSummary } from "@/types";
+import { getErrorMessage } from "@/lib/get-error-message";
 import { removeSkillFromAlumni } from "@/lib/api";
 
 const LOG = (...args: unknown[]) => console.log("[SkillsSection]", ...args);
@@ -83,7 +84,7 @@ export default function SkillsSection({
       onSkillRemoved();
     } catch (err: unknown) {
       ERR(`Failed to remove skill id=${skillId}:`, err);
-      setRemoveError(`Failed to remove "${skillName}": ${err instanceof Error ? err.message : String(err)}`);
+      setRemoveError(`Failed to remove "${skillName}": ${getErrorMessage(err, String(err))}`);
     } finally {
       setRemovingSkillId(null);
     }

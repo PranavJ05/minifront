@@ -10,14 +10,10 @@ import { getMentorship, updateMentorship } from "@/lib/api/mentorship";
 
 import { CreateMentorshipRequest, Mentorship } from "@/lib/types/mentorship";
 
-import { getToken } from "@/lib/auth";
-
 export default function EditMentorshipPage() {
   const params = useParams();
 
   const router = useRouter();
-
-  const token = getToken() ?? "";
 
   const [loading, setLoading] = useState(true);
 
@@ -48,7 +44,6 @@ export default function EditMentorshipPage() {
       try {
         const mentorship: Mentorship = await getMentorship(
           Number(params.id),
-          token,
         );
 
         setForm({
@@ -76,7 +71,7 @@ export default function EditMentorshipPage() {
     }
 
     load();
-  }, [params.id, token]);
+  }, [params.id]);
 
   function handleChange(
     e: React.ChangeEvent<
@@ -100,8 +95,6 @@ export default function EditMentorshipPage() {
         Number(params.id),
 
         form,
-
-        token,
       );
 
       alert("Mentorship Updated Successfully");

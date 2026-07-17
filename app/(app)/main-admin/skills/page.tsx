@@ -36,6 +36,7 @@ import {
 } from "@/lib/api";
 import { Skill } from "@/types";
 import { isMainAdmin } from "@/lib/roleUtils"; // ✅ IMPORTED PROPER UTILITY
+import { getErrorMessage } from "@/lib/get-error-message";
 
 type Tab = "pending" | "all";
 
@@ -115,7 +116,7 @@ export default function AdminSkillsPage() {
       }
     } catch (err: unknown) {
       console.error("[AdminSkills] Failed to load data:", err);
-      setError(err instanceof Error ? err.message : "Failed to load skills");
+      setError(getErrorMessage(err, "Failed to load skills"));
     } finally {
       setLoading(false);
     }
@@ -143,7 +144,7 @@ export default function AdminSkillsPage() {
       }
     } catch (err: unknown) {
       console.error("[AdminSkills] Failed to approve skill:", err);
-      setError(err instanceof Error ? err.message : "Failed to approve skill");
+      setError(getErrorMessage(err, "Failed to approve skill"));
     } finally {
       setActionLoading(null);
     }
@@ -171,7 +172,7 @@ export default function AdminSkillsPage() {
       }
     } catch (err: unknown) {
       console.error("[AdminSkills] Failed to reject skill:", err);
-      setError(err instanceof Error ? err.message : "Failed to reject skill");
+      setError(getErrorMessage(err, "Failed to reject skill"));
     } finally {
       setActionLoading(null);
     }
@@ -206,7 +207,7 @@ export default function AdminSkillsPage() {
       }
     } catch (err: unknown) {
       console.error("[AdminSkills] Failed to delete skill:", err);
-      setError(err instanceof Error ? err.message : "Failed to delete skill");
+      setError(getErrorMessage(err, "Failed to delete skill"));
     } finally {
       setActionLoading(null);
     }

@@ -1,18 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/fetcher";
 import { queryKeys } from "./keys";
+import type { ClubEvent } from "@/lib/types/clubEvent";
 
 export function useClubEventsQuery() {
   return useQuery({
     queryKey: queryKeys.clubEvents.all,
-    queryFn: () => api<{ id: number; title: string }[]>("/club-events/all"),
+    queryFn: () => api<ClubEvent[]>("/api/club-events"),
   });
 }
 
 export function useClubEventQuery(id: number) {
   return useQuery({
     queryKey: queryKeys.clubEvents.detail(id),
-    queryFn: () => api<{ id: number; title: string }>(`/club-events/${id}`),
+    queryFn: () => api<ClubEvent>(`/api/club-events/${id}`),
     enabled: !!id,
   });
 }
@@ -20,7 +21,7 @@ export function useClubEventQuery(id: number) {
 export function useMyClubEventsQuery() {
   return useQuery({
     queryKey: queryKeys.clubEvents.mine(),
-    queryFn: () => api<{ id: number; title: string }[]>("/club-events/mine"),
+    queryFn: () => api<ClubEvent[]>("/api/club-events/mine"),
   });
 }
 
@@ -28,7 +29,7 @@ export function useCreateClubEventMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
-      api<{ success: boolean }>("/club-events/create", {
+      api<{ success: boolean }>("/api/club-events", {
         method: "POST",
         body: payload,
       }),
@@ -42,7 +43,7 @@ export function useUpdateClubEventMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...payload }: Record<string, unknown>) =>
-      api<{ success: boolean }>(`/club-events/${id}`, {
+      api<{ success: boolean }>(`/api/club-events/${id}`, {
         method: "PUT",
         body: payload,
       }),
@@ -56,7 +57,7 @@ export function useDeleteClubEventMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) =>
-      api<{ success: boolean }>(`/club-events/${id}`, { method: "DELETE" }),
+      api<{ success: boolean }>(`/api/club-events/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.clubEvents.all });
     },
@@ -66,7 +67,7 @@ export function useDeleteClubEventMutation() {
 export function useClubEventForEditQuery(id: number) {
   return useQuery({
     queryKey: queryKeys.clubEvents.edit(id),
-    queryFn: () => api<{ id: number; title: string }>(`/club-events/${id}/edit`),
+    queryFn: () => api<ClubEvent>(`/api/club-events/${id}/edit`),
     enabled: !!id,
   });
 }
@@ -77,7 +78,7 @@ export function useUploadClubEventCoverMutation() {
     mutationFn: ({ eventId, file }: { eventId: number; file: File }) => {
       const formData = new FormData();
       formData.append("file", file);
-      return fetch(`/club-events/${eventId}/cover`, {
+      return api(`/api/club-events/${eventId}/cover`, {
         method: "POST",
         body: formData,
       });

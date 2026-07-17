@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Loader2, CheckCircle2, CalendarPlus, AlertCircle, Calendar as CalendarIcon } from "lucide-react";
+import { getErrorMessage } from "@/lib/get-error-message";
 import { createEvent } from "@/lib/api/events";
-import { getToken } from "@/lib/auth";
 import {
   Dialog,
   DialogContent,
@@ -79,25 +79,21 @@ export default function CreateEventModal({
     setError("");
     setState("submitting");
     try {
-      const token = getToken() ?? "";
-      const res = await createEvent(
-        {
-          title,
-          description,
-          eventDate: selectedDate.toISOString().slice(0, 19),
-          location,
-          batchYear: batchYear ? parseInt(batchYear) : 0,
-          registrationRequired,
-          registrationLink: registrationRequired ? registrationLink : undefined,
-        },
-        token,
-      );
+      const res = await createEvent({
+        title,
+        description,
+        eventDate: selectedDate.toISOString().slice(0, 19),
+        location,
+        batchYear: batchYear ? parseInt(batchYear) : 0,
+        registrationRequired,
+        registrationLink: registrationRequired ? registrationLink : undefined,
+      });
 
       if (!res.success) throw new Error(res.message);
       setState("success");
       onCreated();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to create event.");
+      setError(getErrorMessage(err, "Failed to create event."));
       setState("error");
     }
   };

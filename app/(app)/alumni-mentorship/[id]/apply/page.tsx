@@ -6,9 +6,9 @@ import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
-import { applyMentorship } from "@/lib/api/mentorship";
+import { getErrorMessage } from "@/lib/get-error-message";
 
-import { getToken } from "@/lib/auth";
+import { applyMentorship } from "@/lib/api/mentorship";
 
 export default function ApplyMentorshipPage() {
   const params = useParams();
@@ -39,15 +39,13 @@ export default function ApplyMentorshipPage() {
         motivation.trim(),
 
         resume,
-
-        getToken() ?? "",
       );
 
       alert("Application Submitted Successfully");
 
       router.push(`/alumni-mentorship/${params.id}`);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Submission Failed");
+      alert(getErrorMessage(error, "Submission Failed"));
     } finally {
       setLoading(false);
     }

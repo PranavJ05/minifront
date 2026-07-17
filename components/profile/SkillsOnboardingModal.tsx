@@ -12,6 +12,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Skill, Course } from "@/types";
+import { getErrorMessage } from "@/lib/get-error-message";
 import {
   getStarterSkills,
   getApprovedSkills,
@@ -80,7 +81,7 @@ export default function SkillsOnboardingModal({
     } catch (err: unknown) {
       console.error("[Onboarding] Failed to load courses:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to load courses. Make sure backend is running.",
+        getErrorMessage(err, "Failed to load courses. Make sure backend is running."),
       );
     } finally {
       setLoading(false);
@@ -108,7 +109,7 @@ export default function SkillsOnboardingModal({
       setSelectedSkillIds(preselected);
     } catch (err: unknown) {
       console.error("[Onboarding] Failed to load skills:", err);
-      setError(err instanceof Error ? err.message : "Failed to load skills");
+      setError(getErrorMessage(err, "Failed to load skills"));
     } finally {
       setLoading(false);
     }
@@ -151,7 +152,7 @@ export default function SkillsOnboardingModal({
 
       setStep("complete");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to save skills");
+      setError(getErrorMessage(err, "Failed to save skills"));
     } finally {
       setSaving(false);
     }

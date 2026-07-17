@@ -18,7 +18,9 @@ import {
 
 import { ApplicationStatusResponse, Mentorship } from "@/lib/types/mentorship";
 
-import { getToken, getUserRole } from "@/lib/auth";
+import { getErrorMessage } from "@/lib/get-error-message";
+
+import { getUserRole } from "@/lib/auth";
 import { isAnyAdmin, isAlumni, isStudent } from "@/lib/roleUtils";
 
 export default function MentorshipDetailsPage() {
@@ -26,7 +28,6 @@ export default function MentorshipDetailsPage() {
   const router = useRouter();
 
   const mentorshipId = Number(params.id);
-  const token = getToken() ?? "";
   const role = getUserRole();
 
   const [mentorship, setMentorship] = useState<Mentorship | null>(null);
@@ -40,57 +41,53 @@ export default function MentorshipDetailsPage() {
     async function load() {
       try {
         const [mentorshipData, edit] = await Promise.all([
-          getMentorship(mentorshipId, token),
-          canEdit(mentorshipId, token),
+          getMentorship(mentorshipId),
+          canEdit(mentorshipId),
         ]);
 
         setMentorship(mentorshipData);
         setEditable(edit.canEdit);
 
         if (isStudent(role)) {
-          const status = await getApplicationStatus(mentorshipId, token);
+          const status = await getApplicationStatus(mentorshipId);
           setApplicationStatus(status);
         }
 
         if (isAlumni(role)) {
-          const mine = await getMyMentorships(token);
+          const mine = await getMyMentorships();
           setIsMentorOwner(mine.some((item) => item.id === mentorshipId));
         }
       } catch (error) {
-        alert(
-          error instanceof Error ? error.message : "Failed to load mentorship",
-        );
+        alert(getErrorMessage(error, "Failed to load mentorship"));
       } finally {
         setLoading(false);
       }
     }
 
     load();
-  }, [mentorshipId, role, token]);
+  }, [mentorshipId, role]);
 
   async function handleDelete() {
     if (!confirm("Delete this mentorship?")) return;
 
     try {
-      await deleteMentorship(mentorshipId, token);
+      await deleteMentorship(mentorshipId);
       alert("Deleted successfully");
       router.push("/alumni-mentorship");
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Delete failed");
+      alert(getErrorMessage(error, "Delete failed"));
     }
   }
 
   async function handleCancel() {
     try {
-      await cancelApplication(mentorshipId, token);
+      await cancelApplication(mentorshipId);
       alert("Application cancelled");
 
-      const latestStatus = await getApplicationStatus(mentorshipId, token);
+      const latestStatus = await getApplicationStatus(mentorshipId);
       setApplicationStatus(latestStatus);
     } catch (error) {
-      alert(
-        error instanceof Error ? error.message : "Failed to cancel application",
-      );
+        alert(getErrorMessage(error, "Failed to cancel application"));
     }
   }
 

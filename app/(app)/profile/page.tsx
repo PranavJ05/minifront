@@ -30,6 +30,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { getAlumniSkillsSummary, getCourses } from "@/lib/api";
 import { UserRole, AlumniSkillSummary } from "@/types";
 import { hasRole, isStudent, isFaculty } from "@/lib/roleUtils";
+import { getErrorMessage } from "@/lib/get-error-message";
 
 const API_BASE = "http://localhost:8080";
 const LOG = (...args: unknown[]) => console.log("[ProfilePage]", ...args);
@@ -335,7 +336,7 @@ function AlumniProfileContent() {
       );
     } catch (err: unknown) {
       ERR("Profile load error:", err);
-      setError(err instanceof Error ? err.message : "Failed to load profile");
+      setError(getErrorMessage(err, "Failed to load profile"));
     } finally {
       setLoading(false);
     }
@@ -379,10 +380,7 @@ function AlumniProfileContent() {
       );
     } catch (err: unknown) {
       ERR("resolveCourseId error:", err);
-      setSkillsError(
-        "Failed to resolve course information: " +
-          (err instanceof Error ? err.message : String(err)),
-      );
+      setSkillsError("Failed to resolve course information: " + getErrorMessage(err, String(err)));
     } finally {
       setCourseResolving(false);
     }
@@ -399,9 +397,7 @@ function AlumniProfileContent() {
       setSkillsData(data);
     } catch (err: unknown) {
       ERR("loadSkills error:", err);
-      setSkillsError(
-        err instanceof Error ? err.message : "Failed to load skills",
-      );
+      setSkillsError(getErrorMessage(err, "Failed to load skills"));
     } finally {
       setSkillsLoading(false);
     }
@@ -477,7 +473,7 @@ function AlumniProfileContent() {
       applyProfile(data, "Profile updated successfully.");
       setIsEditing(false);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to update profile");
+      setError(getErrorMessage(err, "Failed to update profile"));
     } finally {
       setIsSaving(false);
     }
@@ -515,9 +511,7 @@ function AlumniProfileContent() {
         body?.message || "Profile photo updated successfully.",
       );
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to upload profile photo",
-      );
+      setError(getErrorMessage(err, "Failed to upload profile photo"));
     } finally {
       setIsUploadingPhoto(false);
       if (event.target) event.target.value = "";
@@ -547,9 +541,7 @@ function AlumniProfileContent() {
         body?.message || "Profile photo removed successfully.",
       );
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to remove profile photo",
-      );
+      setError(getErrorMessage(err, "Failed to remove profile photo"));
     } finally {
       setIsRemovingPhoto(false);
     }

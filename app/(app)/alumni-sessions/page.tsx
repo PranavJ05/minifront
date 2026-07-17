@@ -12,8 +12,8 @@ import { AlumniSession } from "@/lib/types/alumniSession";
 import { fetchAllSessions } from "@/lib/api/alumniSessions";
 import { getUserRole } from "@/lib/auth";
 import { isAlumni, isStudent } from "@/lib/roleUtils";
+import { getErrorMessage } from "@/lib/get-error-message";
 
-import { getToken } from "@/lib/auth";
 import Link from "next/link";
 export default function AlumniSessionsPage() {
   const [sessions, setSessions] = useState<AlumniSession[]>([]);
@@ -25,16 +25,12 @@ export default function AlumniSessionsPage() {
   useEffect(() => {
     async function load() {
       try {
-        const token = getToken() ?? "";
-
-        const data = await fetchAllSessions(token);
+        const data = await fetchAllSessions();
         console.log(data);
 
         setSessions(data);
       } catch (err: unknown) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load sessions",
-        );
+        setError(getErrorMessage(err, "Failed to load sessions"));
       } finally {
         setLoading(false);
       }

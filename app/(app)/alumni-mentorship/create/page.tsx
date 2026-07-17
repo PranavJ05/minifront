@@ -10,7 +10,6 @@ import {
   MentorshipMode,
 } from "@/lib/types/mentorship";
 import { createMentorship } from "@/lib/api/mentorship";
-import { getToken } from "@/lib/auth";
 
 export default function CreateMentorshipPage() {
   const router = useRouter();
@@ -57,8 +56,6 @@ export default function CreateMentorshipPage() {
 
       await createMentorship(
         form,
-
-        getToken() ?? "",
       );
 
       alert("Mentorship Created Successfully");

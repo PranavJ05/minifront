@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Figtree } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -43,7 +44,10 @@ export default function RootLayout({
           <TooltipProvider>
             <SidebarProvider defaultOpen={false}>
               <QueryClientProvider>
-                <AuthProvider>{children}</AuthProvider>
+                <AuthProvider>
+                  {children}
+                  <Toaster richColors position="top-right" />
+                </AuthProvider>
               </QueryClientProvider>
             </SidebarProvider>
           </TooltipProvider>

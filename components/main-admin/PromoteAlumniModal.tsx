@@ -11,6 +11,7 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { getErrorMessage } from "@/lib/get-error-message";
 import {
   createBatchAdmin,
   listAlumniForBatchAdminPicker,
@@ -44,7 +45,6 @@ const PAGE_SIZE = 8;
 interface PromoteAlumniModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  token: string;
   existingAlumniIds: Set<number>;
   onPromoted: (message: string) => void;
 }
@@ -52,7 +52,6 @@ interface PromoteAlumniModalProps {
 export function PromoteAlumniModal({
   open,
   onOpenChange,
-  token,
   existingAlumniIds,
   onPromoted,
 }: PromoteAlumniModalProps) {
@@ -87,11 +86,11 @@ export function PromoteAlumniModal({
     try {
       setAlumniLoading(true);
       setError(null);
-      const data = await listAlumniForBatchAdminPicker(token);
+      const data = await listAlumniForBatchAdminPicker();
       setAlumniCandidates(data);
     } catch (err: unknown) {
       setError(
-        err instanceof Error ? err.message : "Failed to load alumni list",
+        getErrorMessage(err, "Failed to load alumni list"),
       );
     } finally {
       setAlumniLoading(false);
@@ -154,14 +153,13 @@ export function PromoteAlumniModal({
           alumniId: parsedAlumniId,
           batchYear: parsedBatchYear,
         },
-        token,
       );
 
       onPromoted("Batch admin created successfully.");
       handleClose();
     } catch (err: unknown) {
       setError(
-        err instanceof Error ? err.message : "Failed to create batch admin",
+        getErrorMessage(err, "Failed to create batch admin"),
       );
     } finally {
       setSubmitting(false);

@@ -19,7 +19,7 @@ import {
   updateBatchAdmin,
 } from "../../../../lib/api/mainAdmin";
 import { BatchAdminSummary } from "../../../../lib/types/mainAdmin";
-import { getToken } from "../../../../lib/auth";
+
 import { useAuth } from "../../../../contexts/auth-context";
 import { hasRole } from "../../../../lib/roleUtils";
 import { Button } from "../../../../components/ui/button";
@@ -29,10 +29,10 @@ import { Badge } from "../../../../components/ui/badge";
 import { Skeleton } from "../../../../components/ui/skeleton";
 import { Alert, AlertDescription } from "../../../../components/ui/alert";
 import { PromoteAlumniModal } from "../../../../components/main-admin/PromoteAlumniModal";
+import { getErrorMessage } from "@/lib/get-error-message";
 
 export default function ManageBatchAdminPage() {
   const router = useRouter();
-  const token = getToken() ?? "";
   const { user, isLoading } = useAuth();
 
   const [rows, setRows] = useState<BatchAdminSummary[]>([]);
@@ -75,12 +75,10 @@ export default function ManageBatchAdminPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await listBatchAdmins(token);
+      const data = await listBatchAdmins();
       setRows(data);
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load batch admins",
-      );
+      setError(getErrorMessage(err, "Failed to load batch admins"));
     } finally {
       setLoading(false);
     }
@@ -89,15 +87,11 @@ export default function ManageBatchAdminPage() {
   async function handleStartEdit(id: number) {
     try {
       setError(null);
-      const row = await getBatchAdminById(id, token);
+      const row = await getBatchAdminById(id);
       setEditingId(row.id);
       setEditBatchYear(row.batchYear ? String(row.batchYear) : "");
     } catch (err: unknown) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load batch admin details",
-      );
+      setError(getErrorMessage(err, "Failed to load batch admin details"));
     }
   }
 
@@ -112,15 +106,13 @@ export default function ManageBatchAdminPage() {
       setSubmitting(true);
       setError(null);
       setSuccess(null);
-      await updateBatchAdmin(id, { batchYear: parsedBatchYear }, token);
+      await updateBatchAdmin(id, { batchYear: parsedBatchYear });
       setSuccess("Batch admin updated successfully.");
       setEditingId(null);
       setEditBatchYear("");
       await loadBatchAdmins();
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to update batch admin",
-      );
+      setError(getErrorMessage(err, "Failed to update batch admin"));
     } finally {
       setSubmitting(false);
     }
@@ -137,13 +129,11 @@ export default function ManageBatchAdminPage() {
       setSubmitting(true);
       setError(null);
       setSuccess(null);
-      const message = await deleteBatchAdmin(row.id, token);
+      const message = await deleteBatchAdmin(row.id);
       setSuccess(message);
       await loadBatchAdmins();
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to delete batch admin",
-      );
+      setError(getErrorMessage(err, "Failed to delete batch admin"));
     } finally {
       setSubmitting(false);
     }
@@ -371,7 +361,7 @@ export default function ManageBatchAdminPage() {
       <PromoteAlumniModal
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        token={token}
+
         existingAlumniIds={batchAdminAlumniIds}
         onPromoted={handlePromoted}
       />

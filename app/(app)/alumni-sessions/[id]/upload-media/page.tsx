@@ -8,8 +8,6 @@ import Footer from "@/components/layout/Footer";
 
 import { uploadSessionPhoto } from "@/lib/api/alumniSessions";
 
-import { getToken } from "@/lib/auth";
-
 export default function UploadMediaPage() {
   const params = useParams();
 
@@ -28,7 +26,7 @@ export default function UploadMediaPage() {
     try {
       await Promise.all(
         files.map((file) =>
-          uploadSessionPhoto(Number(params.id), file, getToken() ?? ""),
+          uploadSessionPhoto(Number(params.id), file),
         ),
       );
 

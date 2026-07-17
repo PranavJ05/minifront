@@ -11,14 +11,15 @@ import {
   getMentorship,
   getMyMentorships,
 } from "@/lib/api/mentorship";
-import { getToken, getUserRole } from "@/lib/auth";
+import { getErrorMessage } from "@/lib/get-error-message";
+
+import { getUserRole } from "@/lib/auth";
 import { isAlumni } from "@/lib/roleUtils";
 import { Mentorship, MentorshipApplication } from "@/lib/types/mentorship";
 
 export default function FinalMenteesPage() {
   const params = useParams();
   const mentorshipId = Number(params.id);
-  const token = getToken() ?? "";
   const role = getUserRole();
 
   const [mentorship, setMentorship] = useState<Mentorship | null>(null);
@@ -38,10 +39,10 @@ export default function FinalMenteesPage() {
           return;
         }
 
-        const mentorshipData = await getMentorship(mentorshipId, token);
+        const mentorshipData = await getMentorship(mentorshipId);
         setMentorship(mentorshipData);
 
-        const mine = await getMyMentorships(token);
+        const mine = await getMyMentorships();
         const isOwner = mine.some((item) => item.id === mentorshipId);
 
         if (!isOwner) {
@@ -56,19 +57,17 @@ export default function FinalMenteesPage() {
           return;
         }
 
-        const finalMentees = await getFinalMentees(mentorshipId, token);
+        const finalMentees = await getFinalMentees(mentorshipId);
         setMentees(finalMentees);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load final mentees.",
-        );
+        setError(getErrorMessage(err, "Failed to load final mentees."));
       } finally {
         setLoading(false);
       }
     }
 
     load();
-  }, [mentorshipId, role, token]);
+  }, [mentorshipId, role]);
 
   return (
     <>

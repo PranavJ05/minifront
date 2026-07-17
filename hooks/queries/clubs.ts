@@ -5,6 +5,6 @@ import { queryKeys } from "./keys";
 export function useMyClubsQuery() {
   return useQuery({
     queryKey: queryKeys.clubs.my(),
-    queryFn: () => api<{ id: number; name: string }[]>("/clubs/mine"),
+    queryFn: () => api<{ id: number; name: string }[]>("/api/clubs/my-clubs"),
   });
 }
