@@ -1,33 +1,33 @@
 "use client";
 
-import { Eye, EyeOff, User } from "lucide-react";
+import { Eye, EyeOff, User, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
-interface StudentFormData {
+interface FacultyFormData {
   fullName: string;
-  rollNumber: string;
   email: string;
   password: string;
   confirmPassword: string;
+  phone: string;
 }
 
-interface StudentSignupFormProps {
-  formData: StudentFormData;
+interface FacultySignupFormProps {
+  formData: FacultyFormData;
   onChange: (key: string, value: string) => void;
   errors: Record<string, string>;
   showPassword: boolean;
   onTogglePassword: () => void;
 }
 
-export default function StudentSignupForm({
+export default function FacultySignupForm({
   formData,
   onChange,
   errors,
   showPassword,
   onTogglePassword,
-}: StudentSignupFormProps) {
+}: FacultySignupFormProps) {
   const passwordStrength = () => {
     const password = formData.password;
     if (!password) return 0;
@@ -61,25 +61,6 @@ export default function StudentSignupForm({
         </h3>
 
         <div className="space-y-2">
-          <Label htmlFor="rollNumber">
-            Roll Number <span className="text-destructive">*</span>
-          </Label>
-          <div className="relative">
-            <User className={inputIconClass} />
-            <Input
-              id="rollNumber"
-              className="pl-8"
-              placeholder="MDL23CS201"
-              value={formData.rollNumber}
-              onChange={(e) => onChange("rollNumber", e.target.value)}
-            />
-          </div>
-          {errors.rollNumber && (
-            <p className="text-xs text-destructive">{errors.rollNumber}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="fullName">
             Full Name <span className="text-destructive">*</span>
           </Label>
@@ -88,7 +69,7 @@ export default function StudentSignupForm({
             <Input
               id="fullName"
               className="pl-8"
-              placeholder="John Kumar Doe"
+              placeholder="Dr. John Doe"
               value={formData.fullName}
               onChange={(e) => onChange("fullName", e.target.value)}
             />
@@ -108,13 +89,39 @@ export default function StudentSignupForm({
               id="email"
               type="email"
               className="pl-8"
-              placeholder="john@mec.ac.in"
+              placeholder="faculty@mec.ac.in"
               value={formData.email}
               onChange={(e) => onChange("email", e.target.value)}
             />
           </div>
           {errors.email && (
             <p className="text-xs text-destructive">{errors.email}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="phone">Phone Number</Label>
+          <div className="relative">
+            <User className={inputIconClass} />
+            <Input
+              id="phone"
+              type="tel"
+              className="pl-8"
+              placeholder="+91 9876543210"
+              value={formData.phone}
+              onChange={(e) => onChange("phone", e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2 bg-muted/30 border border-border rounded-lg p-3">
+            <Info className="h-4 w-4 text-muted-foreground/60 mt-0.5 shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              Your phone number is used exclusively for ARC Cell communication
+              and official records. It will not be shared publicly or with third
+              parties.
+            </p>
+          </div>
+          {errors.phone && (
+            <p className="text-xs text-destructive">{errors.phone}</p>
           )}
         </div>
       </div>

@@ -1,17 +1,15 @@
 "use client";
 
-import { Eye, EyeOff, Briefcase, Building2, GraduationCap, User } from "lucide-react";
-import { FaLinkedin } from "react-icons/fa";
-import AuthInput from "./AuthInput";
+import { Eye, EyeOff, User, Info } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 interface AlumniFormData {
   fullName: string;
   email: string;
   password: string;
   confirmPassword: string;
-  linkedinUrl: string;
-  currentRole: string;
-  company: string;
   phone: string;
 }
 
@@ -44,147 +42,168 @@ export default function AlumniSignupForm({
 
   const strengthColors = [
     "",
-    "bg-red-400",
+    "bg-destructive",
     "bg-orange-400",
     "bg-yellow-400",
-    "bg-green-500",
+    "bg-emerald-500",
   ];
   const strengthLabels = ["", "Weak", "Fair", "Good", "Strong"];
   const strength = passwordStrength();
 
+  const inputIconClass =
+    "absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60 pointer-events-none";
+
   return (
     <div className="space-y-4">
-      {/* Basic Info Section */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-navy-800 uppercase tracking-wide">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
           Basic Information
         </h3>
 
-        <AuthInput
-          label="Full Name *"
-          type="text"
-          placeholder="John Doe"
-          icon={User}
-          value={formData.fullName}
-          onChange={(e) => onChange("fullName", e.target.value)}
-          error={errors.fullName}
-        />
+        <div className="space-y-2">
+          <Label htmlFor="fullName">
+            Full Name <span className="text-destructive">*</span>
+          </Label>
+          <div className="relative">
+            <User className={inputIconClass} />
+            <Input
+              id="fullName"
+              className="pl-8"
+              placeholder="John Doe"
+              value={formData.fullName}
+              onChange={(e) => onChange("fullName", e.target.value)}
+            />
+          </div>
+          {errors.fullName && (
+            <p className="text-xs text-destructive">{errors.fullName}</p>
+          )}
+        </div>
 
-        <AuthInput
-          label="Email Address *"
-          type="email"
-          placeholder="john@example.com"
-          icon={User}
-          value={formData.email}
-          onChange={(e) => onChange("email", e.target.value)}
-          error={errors.email}
-        />
+        <div className="space-y-2">
+          <Label htmlFor="email">
+            Email Address <span className="text-destructive">*</span>
+          </Label>
+          <div className="relative">
+            <User className={inputIconClass} />
+            <Input
+              id="email"
+              type="email"
+              className="pl-8"
+              placeholder="john@example.com"
+              value={formData.email}
+              onChange={(e) => onChange("email", e.target.value)}
+            />
+          </div>
+          {errors.email && (
+            <p className="text-xs text-destructive">{errors.email}</p>
+          )}
+        </div>
 
-        <AuthInput
-          label="Phone Number"
-          type="tel"
-          placeholder="+91 9876543210"
-          icon={User}
-          value={formData.phone}
-          onChange={(e) => onChange("phone", e.target.value)}
-          error={errors.phone}
-        />
+        <div className="space-y-2">
+          <Label htmlFor="phone">Phone Number</Label>
+          <div className="relative">
+            <User className={inputIconClass} />
+            <Input
+              id="phone"
+              type="tel"
+              className="pl-8"
+              placeholder="+91 9876543210"
+              value={formData.phone}
+              onChange={(e) => onChange("phone", e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2 bg-muted/30 border border-border rounded-lg p-3">
+            <Info className="h-4 w-4 text-muted-foreground/60 mt-0.5 shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              Your phone number is used exclusively for ARC Cell communication
+              and official records. It will not be shared publicly or with third
+              parties.
+            </p>
+          </div>
+          {errors.phone && (
+            <p className="text-xs text-destructive">{errors.phone}</p>
+          )}
+        </div>
       </div>
 
-      {/* Password Section */}
+      <Separator />
+
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-navy-800 uppercase tracking-wide">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
           Security
         </h3>
 
-        <div>
-          <AuthInput
-            label="Password *"
-            type={showPassword ? "text" : "password"}
-            placeholder="Min 8 characters"
-            icon={User}
-            value={formData.password}
-            onChange={(e) => onChange("password", e.target.value)}
-            error={errors.password}
-            rightElement={
-              <button
-                type="button"
-                onClick={onTogglePassword}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            }
-          />
+        <div className="space-y-2">
+          <Label htmlFor="password">
+            Password <span className="text-destructive">*</span>
+          </Label>
+          <div className="relative">
+            <User className={inputIconClass} />
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              className="pl-8 pr-10"
+              placeholder="Min 8 characters"
+              value={formData.password}
+              onChange={(e) => onChange("password", e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={onTogglePassword}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-muted-foreground cursor-pointer"
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          </div>
           {formData.password && (
-            <div className="mt-1.5 flex items-center gap-2">
+            <div className="flex items-center gap-2 mt-1">
               <div className="flex-1 flex gap-1">
                 {[1, 2, 3, 4].map((index) => (
                   <div
                     key={index}
                     className={`h-1.5 flex-1 rounded-full ${
-                      index <= strength ? strengthColors[strength] : "bg-gray-200"
+                      index <= strength
+                        ? strengthColors[strength]
+                        : "bg-muted"
                     }`}
                   />
                 ))}
               </div>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted-foreground">
                 {strengthLabels[strength]}
               </span>
             </div>
           )}
+          {errors.password && (
+            <p className="text-xs text-destructive">{errors.password}</p>
+          )}
         </div>
 
-        <AuthInput
-          label="Confirm Password *"
-          type="password"
-          placeholder="Repeat password"
-          icon={User}
-          value={formData.confirmPassword}
-          onChange={(e) => onChange("confirmPassword", e.target.value)}
-          error={errors.confirmPassword}
-        />
-      </div>
-
-      {/* Professional Info Section */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-navy-800 uppercase tracking-wide">
-          Professional Details
-        </h3>
-
-        <AuthInput
-          label="Current Role"
-          type="text"
-          placeholder="Software Engineer"
-          icon={Briefcase}
-          value={formData.currentRole}
-          onChange={(e) => onChange("currentRole", e.target.value)}
-          error={errors.currentRole}
-        />
-
-        <AuthInput
-          label="Company"
-          type="text"
-          placeholder="Google"
-          icon={Building2}
-          value={formData.company}
-          onChange={(e) => onChange("company", e.target.value)}
-          error={errors.company}
-        />
-
-        <AuthInput
-          label="LinkedIn URL"
-          type="url"
-          placeholder="https://linkedin.com/in/johndoe"
-          icon={FaLinkedin}
-          value={formData.linkedinUrl}
-          onChange={(e) => onChange("linkedinUrl", e.target.value)}
-          error={errors.linkedinUrl}
-        />
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword">
+            Confirm Password <span className="text-destructive">*</span>
+          </Label>
+          <div className="relative">
+            <User className={inputIconClass} />
+            <Input
+              id="confirmPassword"
+              type="password"
+              className="pl-8"
+              placeholder="Repeat password"
+              value={formData.confirmPassword}
+              onChange={(e) => onChange("confirmPassword", e.target.value)}
+            />
+          </div>
+          {errors.confirmPassword && (
+            <p className="text-xs text-destructive">
+              {errors.confirmPassword}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

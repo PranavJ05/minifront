@@ -1,6 +1,14 @@
 "use client";
 
 import { MapPin } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface LocationCountry {
   name: string;
@@ -56,100 +64,111 @@ export default function LocationSelector({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-2">
-        <MapPin className="h-4 w-4 text-navy-600" />
-        <h3 className="text-sm font-semibold text-navy-800 uppercase tracking-wide">
+        <MapPin className="h-4 w-4 text-muted-foreground/60" />
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
           Location Details
         </h3>
       </div>
 
-      {/* Country */}
-      <div>
-        <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
-          Country *
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">
+          Country <span className="text-destructive">*</span>
         </label>
-        <select
+        <Select
           value={selectedCountryCode}
-          onChange={(e) => onCountryChange(e.target.value)}
-          className="input-field cursor-pointer"
+          onValueChange={(v) => v !== null && onCountryChange(v)}
           disabled={loading.countries}
         >
-          <option value="">Select country</option>
-          {countries.map((country) => (
-            <option key={country.iso2} value={country.iso2}>
-              {country.name}
-            </option>
-          ))}
-        </select>
-        {loading.countries && (
-          <p className="mt-1 text-xs text-gray-500">Loading countries...</p>
-        )}
+          <SelectTrigger className="w-full h-9 text-xs bg-muted/30 border-border cursor-pointer">
+            <SelectValue
+              placeholder={
+                loading.countries ? "Loading countries..." : "Select country"
+              }
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {countries.map((country) => (
+              <SelectItem key={country.iso2} value={country.iso2}>
+                {country.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {errors.country && (
-          <p className="mt-1 text-sm text-red-600">{errors.country}</p>
+          <p className="text-xs text-destructive">{errors.country}</p>
         )}
       </div>
 
-      {/* State */}
-      <div>
-        <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
-          State *
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">
+          State <span className="text-destructive">*</span>
         </label>
-        <select
+        <Select
           value={selectedStateCode}
-          onChange={(e) => onStateChange(e.target.value)}
-          className="input-field cursor-pointer"
+          onValueChange={(v) => v !== null && onStateChange(v)}
           disabled={!selectedCountryCode || loading.states}
         >
-          <option value="">
-            {!selectedCountryCode
-              ? "Select country first"
-              : loading.states
-              ? "Loading states..."
-              : "Select state"}
-          </option>
-          {states.map((state) => (
-            <option key={state.iso2} value={state.iso2}>
-              {state.name}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="w-full h-9 text-xs bg-muted/30 border-border cursor-pointer">
+            <SelectValue
+              placeholder={
+                !selectedCountryCode
+                  ? "Select country first"
+                  : loading.states
+                    ? "Loading states..."
+                    : "Select state"
+              }
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {states.map((state) => (
+              <SelectItem key={state.iso2} value={state.iso2}>
+                {state.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {errors.state && (
-          <p className="mt-1 text-sm text-red-600">{errors.state}</p>
+          <p className="text-xs text-destructive">{errors.state}</p>
         )}
       </div>
 
-      {/* City */}
-      <div>
-        <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
-          City *
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">
+          City <span className="text-destructive">*</span>
         </label>
-        <select
+        <Select
           value={selectedCity}
-          onChange={(e) => onCityChange(e.target.value)}
-          className="input-field cursor-pointer"
+          onValueChange={(v) => v !== null && onCityChange(v)}
           disabled={!selectedStateCode || loading.cities}
         >
-          <option value="">
-            {!selectedStateCode
-              ? "Select state first"
-              : loading.cities
-              ? "Loading cities..."
-              : "Select city"}
-          </option>
-          {cities.map((city) => (
-            <option key={city.name} value={city.name}>
-              {city.name}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="w-full h-9 text-xs bg-muted/30 border-border cursor-pointer">
+            <SelectValue
+              placeholder={
+                !selectedStateCode
+                  ? "Select state first"
+                  : loading.cities
+                    ? "Loading cities..."
+                    : "Select city"
+              }
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {cities.map((city) => (
+              <SelectItem key={city.name} value={city.name}>
+                {city.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {errors.city && (
-          <p className="mt-1 text-sm text-red-600">{errors.city}</p>
+          <p className="text-xs text-destructive">{errors.city}</p>
         )}
       </div>
 
       {errors.location && (
-        <div className="bg-amber-50 text-amber-700 px-3 py-2 rounded text-sm">
-          {errors.location}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{errors.location}</AlertDescription>
+        </Alert>
       )}
     </div>
   );

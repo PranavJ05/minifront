@@ -1,15 +1,24 @@
 "use client";
 
 import { GraduationCap } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AcademicDetailsProps {
-  role: "student" | "alumni";
+  role: "student" | "alumni" | "faculty";
   departments: string[];
   branches: string[];
   batchYears: string[];
   selectedDepartment: string;
   selectedBranch: string;
   selectedBatchYear: string;
+  branchDisabled: boolean;
   errors: Record<string, string>;
   onDepartmentChange: (value: string) => void;
   onBranchChange: (value: string) => void;
@@ -24,6 +33,7 @@ export default function AcademicDetails({
   selectedDepartment,
   selectedBranch,
   selectedBatchYear,
+  branchDisabled,
   errors,
   onDepartmentChange,
   onBranchChange,
@@ -32,77 +42,82 @@ export default function AcademicDetails({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-2">
-        <GraduationCap className="h-4 w-4 text-navy-600" />
-        <h3 className="text-sm font-semibold text-navy-800 uppercase tracking-wide">
+        <GraduationCap className="h-4 w-4 text-muted-foreground/60" />
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
           Academic Information
         </h3>
       </div>
 
-      {/* Department */}
-      <div>
-        <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
-          Department *
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">
+          Course <span className="text-destructive">*</span>
         </label>
-        <select
-          value={selectedDepartment}
-          onChange={(e) => onDepartmentChange(e.target.value)}
-          className="input-field cursor-pointer"
-        >
-          <option value="">Select department</option>
-          {departments.map((dept) => (
-            <option key={dept} value={dept}>
-              {dept}
-            </option>
-          ))}
-        </select>
+        <Select value={selectedDepartment} onValueChange={(v) => v !== null && onDepartmentChange(v)}>
+          <SelectTrigger className="w-full h-9 text-xs bg-muted/30 border-border cursor-pointer">
+            <SelectValue placeholder="Select course" />
+          </SelectTrigger>
+          <SelectContent>
+            {departments.map((dept) => (
+              <SelectItem key={dept} value={dept}>
+                {dept}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {errors.department && (
-          <p className="mt-1 text-sm text-red-600">{errors.department}</p>
+          <p className="text-xs text-destructive">{errors.department}</p>
         )}
       </div>
 
-      {/* Branch - Only for students and alumni */}
       {(role === "student" || role === "alumni") && (
-        <div>
-          <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
-            Branch *
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">
+            Branch {!branchDisabled && <span className="text-destructive">*</span>}
           </label>
-          <select
-            value={selectedBranch}
-            onChange={(e) => onBranchChange(e.target.value)}
-            className="input-field cursor-pointer"
-          >
-            <option value="">Select branch</option>
-            {branches.map((branch) => (
-              <option key={branch} value={branch}>
-                {branch}
-              </option>
-            ))}
-          </select>
+          {branchDisabled ? (
+            <Input
+              value={selectedBranch}
+              disabled
+              className="h-9 text-xs bg-muted/30"
+            />
+          ) : (
+            <Select value={selectedBranch} onValueChange={(v) => v !== null && onBranchChange(v)}>
+              <SelectTrigger className="w-full h-9 text-xs bg-muted/30 border-border cursor-pointer">
+                <SelectValue placeholder="Select branch" />
+              </SelectTrigger>
+              <SelectContent>
+                {branches.map((branch) => (
+                  <SelectItem key={branch} value={branch}>
+                    {branch}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           {errors.branch && (
-            <p className="mt-1 text-sm text-red-600">{errors.branch}</p>
+            <p className="text-xs text-destructive">{errors.branch}</p>
           )}
         </div>
       )}
 
-      {/* Batch Year */}
-      <div>
-        <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">
-          {role === "student" ? "Expected Graduation Year *" : "Batch Year *"}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">
+          Year of Graduation <span className="text-destructive">*</span>
         </label>
-        <select
-          value={selectedBatchYear}
-          onChange={(e) => onBatchYearChange(e.target.value)}
-          className="input-field cursor-pointer"
-        >
-          <option value="">Select year</option>
-          {batchYears.map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
+        <Select value={selectedBatchYear} onValueChange={(v) => v !== null && onBatchYearChange(v)}>
+          <SelectTrigger className="w-full h-9 text-xs bg-muted/30 border-border cursor-pointer">
+            <SelectValue placeholder="Select year" />
+          </SelectTrigger>
+          <SelectContent>
+            {batchYears.map((year) => (
+              <SelectItem key={year} value={year}>
+                {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {errors.batchYear && (
-          <p className="mt-1 text-sm text-red-600">{errors.batchYear}</p>
+          <p className="text-xs text-destructive">{errors.batchYear}</p>
         )}
       </div>
     </div>

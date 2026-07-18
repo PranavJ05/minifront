@@ -1,14 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle, GraduationCap } from "lucide-react";
+import {
+  CheckCircle,
+  GraduationCap,
+  Loader2,
+  AlertCircle,
+  Briefcase,
+  Building2,
+  Globe,
+  MapPin,
+} from "lucide-react";
+import { FaLinkedin } from "react-icons/fa";
 
-import AuthInput from "@/components/auth/AuthInput";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import RoleSelector from "@/components/auth/RoleSelector";
 import StudentSignupForm from "@/components/auth/StudentSignupForm";
 import AlumniSignupForm from "@/components/auth/AlumniSignupForm";
+import FacultySignupForm from "@/components/auth/FacultySignupForm";
 import AcademicDetails from "@/components/auth/AcademicDetails";
 import LocationSelector from "@/components/auth/LocationSelector";
 import { useCountriesQuery, useStatesQuery, useCitiesQuery } from "@/hooks/queries/location";
@@ -17,23 +32,22 @@ import { BACKEND_URL } from "@/lib/config";
 import { departments } from "@/lib/mockData";
 import { UserRole } from "@/types";
 
+const currentYear = new Date().getFullYear();
+
 const batchYears = Array.from(
-  { length: new Date().getFullYear() - 1979 + 4 },
-  (_, index) => String(1980 + index),
+  { length: currentYear + 4 - 1991 + 1 },
+  (_, index) => String(1991 + index),
 );
 
-const branchesList = [
-  "CSA",
-  "CSB",
-  "CSC",
-  "CSBS",
-  "ECA",
-  "ECB",
-  "EV",
-  "EEE",
-  "EB",
-  "ME",
-];
+const courseBranchMap: Record<string, { branches: string[]; auto: boolean }> = {
+  "CSE": { branches: ["CSA", "CSB", "CSC"], auto: false },
+  "Electrical Engineering": { branches: ["EEE"], auto: true },
+  "Electronics Engineering": { branches: ["ECA", "ECB"], auto: false },
+  "Computer Science and Business Systems": { branches: ["CSBS"], auto: true },
+  "Mechanical Engineering": { branches: ["ME"], auto: true },
+  "VLSI Engineering": { branches: ["EV"], auto: true },
+  "Biomedical Engineering": { branches: ["EB"], auto: true },
+};
 
 type SignupResponse = {
   id?: string | number | null;
@@ -46,9 +60,6 @@ type SignupResponse = {
   message?: string;
 };
 
-
-
-// Base form data interface
 interface BaseFormData {
   email: string;
   password: string;
@@ -64,7 +75,6 @@ interface BaseFormData {
   city: string;
 }
 
-// Student-specific fields
 interface StudentFields {
   fullName: string;
   rollNumber: string;
@@ -77,17 +87,24 @@ interface StudentFields {
   bio: string;
 }
 
-// Alumni-specific fields
 interface AlumniFields {
   fullName: string;
-  linkedinUrl: string;
   currentRole: string;
   company: string;
   phone: string;
 }
 
-// Combined form data type
-type FormData = BaseFormData & StudentFields & AlumniFields;
+interface FacultyFields {
+  fullName: string;
+  designation: string;
+  officeLocation: string;
+  phone: string;
+}
+
+type FormData = BaseFormData & StudentFields & AlumniFields & FacultyFields;
+
+const inputIconClass =
+  "absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60 pointer-events-none";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -97,7 +114,6 @@ export default function SignupPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState<FormData>({
-    // Base fields
     email: "",
     password: "",
     confirmPassword: "",
@@ -110,7 +126,6 @@ export default function SignupPage() {
     stateCode: "",
     state: "",
     city: "",
-    // Student fields
     fullName: "",
     rollNumber: "",
     linkedinUrl: "",
@@ -120,10 +135,11 @@ export default function SignupPage() {
     currentSemester: "",
     cgpa: "",
     bio: "",
-    // Alumni fields
     currentRole: "",
     company: "",
     phone: "",
+    designation: "",
+    officeLocation: "",
   });
 
   const { data: countries, isLoading: countriesLoading } = useCountriesQuery();
@@ -144,10 +160,31 @@ export default function SignupPage() {
   const safeStates = states ?? [];
   const safeCities = cities ?? [];
 
+  const courseInfo = useMemo(
+    () => (formData.department ? courseBranchMap[formData.department] : null),
+    [formData.department],
+  );
+  const filteredBranches = courseInfo?.branches ?? [];
+  const branchAutoSelected = courseInfo?.auto ?? false;
+
   const update = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) {
       setErrors((prev) => ({ ...prev, [key]: "" }));
+    }
+  };
+
+  const handleCourseChange = (course: string) => {
+    const info = courseBranchMap[course];
+    if (info?.auto && info.branches.length === 1) {
+      setFormData((prev) => ({
+        ...prev,
+        department: course,
+        branch: info.branches[0],
+      }));
+    } else {
+      update("department", course);
+      update("branch", "");
     }
   };
 
@@ -199,7 +236,8 @@ export default function SignupPage() {
       if (!formData.rollNumber.trim()) {
         nextErrors.rollNumber = "Roll number is required";
       }
-    } else if (!formData.fullName.trim()) {
+    }
+    if (!formData.fullName.trim()) {
       nextErrors.fullName = "Full name is required";
     }
 
@@ -223,15 +261,18 @@ export default function SignupPage() {
     const nextErrors: Record<string, string> = {};
 
     if (!formData.department) {
-      nextErrors.department = "Department is required";
+      nextErrors.department = "Course is required";
     }
 
-    if (!formData.branch) {
+    if (
+      (formData.role === "student" || formData.role === "alumni") &&
+      !formData.branch
+    ) {
       nextErrors.branch = "Branch is required";
     }
 
     if (!formData.batchYear) {
-      nextErrors.batchYear = "Batch year is required";
+      nextErrors.batchYear = "Year of graduation is required";
     }
 
     if (!formData.countryCode || !formData.country) {
@@ -244,6 +285,10 @@ export default function SignupPage() {
 
     if (!formData.city) {
       nextErrors.city = "City is required";
+    }
+
+    if (formData.role === "faculty" && !formData.designation.trim()) {
+      nextErrors.designation = "Designation is required";
     }
 
     setErrors(nextErrors);
@@ -282,7 +327,6 @@ export default function SignupPage() {
         batchYear: Number(formData.batchYear),
         department: formData.department,
         branch: formData.branch,
-        // Student specific
         rollNumber:
           formData.role === "student" ? formData.rollNumber : undefined,
         fullName: formData.role !== "student" ? formData.fullName : undefined,
@@ -297,13 +341,18 @@ export default function SignupPage() {
           formData.role === "student"
             ? formData.profileUrl
             : formData.profileUrl || undefined,
-        // Alumni specific
         phone: formData.phone.trim() || undefined,
         currentRole:
           formData.role === "alumni" ? formData.currentRole : undefined,
         company: formData.role === "alumni" ? formData.company : undefined,
-        // Common
-        linkedinUrl: formData.linkedinUrl.trim() || undefined,
+        designation:
+          formData.role === "faculty" ? formData.designation : undefined,
+        officeLocation:
+          formData.role === "faculty" ? formData.officeLocation : undefined,
+        linkedinUrl:
+          formData.role === "student"
+            ? formData.linkedinUrl.trim() || undefined
+            : undefined,
         location,
         country: formData.country,
         state: formData.state,
@@ -363,14 +412,17 @@ export default function SignupPage() {
 
       if (formData.role === "student") {
         router.push(
-          `/auth/verify-otp?email=${encodeURIComponent(formData.email)}`
+          `/auth/verify-otp?email=${encodeURIComponent(formData.email)}`,
         );
       } else {
         router.push("/auth/pending");
       }
     } catch (err: unknown) {
       setErrors({
-        submit: err instanceof Error ? err.message : "Signup failed. Please try again.",
+        submit:
+          err instanceof Error
+            ? err.message
+            : "Signup failed. Please try again.",
       });
     } finally {
       setLoading(false);
@@ -386,28 +438,25 @@ export default function SignupPage() {
   const selectedCity = safeCities.find((city) => city.name === formData.city);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Left Panel - Desktop */}
-      <div className="hidden lg:flex lg:w-1/2 bg-navy-950 relative overflow-hidden flex-col justify-between p-12">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gold-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-navy-700/50 rounded-full blur-3xl" />
-
+    <div className="min-h-screen bg-background flex">
+      {/* Left Panel — Desktop (fixed) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-card border-r border-border flex-col justify-between p-12 sticky top-0 self-start h-screen">
         <Link href="/" className="flex items-center gap-2.5 relative z-10">
-          <div className="bg-gold-500 p-1.5 rounded-lg">
-            <GraduationCap className="h-5 w-5 text-navy-950" />
+          <div className="bg-primary p-1.5 rounded-lg">
+            <GraduationCap className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-serif font-bold text-white text-xl">
-            ALUMNI
+          <span className="font-bold text-lg text-foreground leading-tight">
+            Alumni Relations Cell
           </span>
         </Link>
 
         <div className="relative z-10">
-          <h1 className="font-serif text-4xl font-bold text-white leading-tight mb-6">
+          <h1 className="text-4xl font-bold text-foreground leading-tight mb-6">
             Join 35,000+
             <br />
-            alumni <span className="gradient-text">worldwide</span>
+            alumni worldwide
           </h1>
-          <p className="text-gray-300 text-lg leading-relaxed mb-10">
+          <p className="text-muted-foreground text-lg leading-relaxed mb-10">
             Create your account to access the full suite of alumni resources,
             connections, and opportunities.
           </p>
@@ -415,16 +464,16 @@ export default function SignupPage() {
           <div className="space-y-3">
             {[
               { num: 1, label: "Account Setup", done: step > 1 },
-              { num: 2, label: "Academic Details", done: false },
+              { num: 2, label: "Profile Details", done: false },
             ].map((item) => (
               <div key={item.num} className="flex items-center gap-3">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
                     item.done
-                      ? "bg-green-500 text-white"
+                      ? "bg-emerald-500 text-white"
                       : step === item.num
-                        ? "bg-gold-500 text-navy-950"
-                        : "bg-navy-800 text-gray-400"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {item.done ? <CheckCircle className="h-4 w-4" /> : item.num}
@@ -432,8 +481,8 @@ export default function SignupPage() {
                 <span
                   className={`text-sm ${
                     step === item.num
-                      ? "text-white font-medium"
-                      : "text-gray-400"
+                      ? "text-foreground font-medium"
+                      : "text-muted-foreground"
                   }`}
                 >
                   {item.label}
@@ -443,58 +492,51 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <p className="text-gray-500 text-xs relative z-10">
-          © 2024 Alumni Network. Verified University Platform.
+        <p className="text-muted-foreground/60 text-xs relative z-10">
+          &copy; 2024 Alumni Network. Verified University Platform.
         </p>
       </div>
 
-      {/* Right Panel - Form */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12 overflow-y-auto">
+      {/* Right Panel — Form */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="bg-navy-800 p-1.5 rounded-lg">
-              <GraduationCap className="h-5 w-5 text-gold-500" />
+            <div className="bg-primary p-1.5 rounded-lg">
+              <GraduationCap className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-serif font-bold text-navy-900 text-xl">
-              ALUMNI
-            </span>
+            <span className="font-bold text-foreground text-lg">ARC</span>
           </div>
 
           {/* Progress Indicator */}
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-2">
-              <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                  step === 1
-                    ? "bg-navy-800 text-white"
-                    : "bg-green-500 text-white"
-                }`}
-              >
-                {step === 1 ? "1" : "✓"}
+          <div className="mb-8 space-y-3">
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Step {step} of 2
+              </span>
+              <div className="flex items-center gap-2">
+                <div
+                  className={`h-2 flex-1 rounded-full transition-all duration-300 ${
+                    step >= 1 ? "bg-primary" : "bg-muted"
+                  }`}
+                />
+                <div
+                  className={`h-2 flex-1 rounded-full transition-all duration-300 ${
+                    step >= 2 ? "bg-primary" : "bg-muted"
+                  }`}
+                />
               </div>
-              <div className="h-0.5 w-8 bg-gray-200" />
-              <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                  step === 2
-                    ? "bg-navy-800 text-white"
-                    : "bg-gray-200 text-gray-400"
-                }`}
-              >
-                2
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>Account Setup</span>
+                <span>Profile Details</span>
               </div>
             </div>
-            <h2 className="font-serif text-3xl font-bold text-navy-900 mb-1">
-              {step === 1 ? "Create Account" : "Academic Details"}
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">
+              Create Account
             </h2>
-            <p className="text-gray-500 text-sm">
-              {step === 1
-                ? "Step 1 of 2 — Basic information"
-                : "Step 2 of 2 — Tell us about your studies and location"}
-            </p>
           </div>
 
-          {/* Step 1: Basic Info */}
+          {/* Step 1: Identity + Security */}
           {step === 1 && (
             <div className="space-y-4">
               <RoleSelector
@@ -510,13 +552,20 @@ export default function SignupPage() {
                     email: formData.email,
                     password: formData.password,
                     confirmPassword: formData.confirmPassword,
-                    linkedinUrl: formData.linkedinUrl,
-                    githubUrl: formData.githubUrl,
-                    portfolioUrl: formData.portfolioUrl,
-                    profileUrl: formData.profileUrl,
-                    currentSemester: formData.currentSemester,
-                    cgpa: formData.cgpa,
-                    bio: formData.bio,
+                  }}
+                  onChange={update}
+                  errors={errors}
+                  showPassword={showPassword}
+                  onTogglePassword={() => setShowPassword(!showPassword)}
+                />
+              ) : formData.role === "faculty" ? (
+                <FacultySignupForm
+                  formData={{
+                    fullName: formData.fullName,
+                    email: formData.email,
+                    password: formData.password,
+                    confirmPassword: formData.confirmPassword,
+                    phone: formData.phone,
                   }}
                   onChange={update}
                   errors={errors}
@@ -530,9 +579,6 @@ export default function SignupPage() {
                     email: formData.email,
                     password: formData.password,
                     confirmPassword: formData.confirmPassword,
-                    linkedinUrl: formData.linkedinUrl,
-                    currentRole: formData.currentRole,
-                    company: formData.company,
                     phone: formData.phone,
                   }}
                   onChange={update}
@@ -542,38 +588,189 @@ export default function SignupPage() {
                 />
               )}
 
-              <button
-                type="button"
-                onClick={handleNext}
-                className="w-full btn-primary"
-              >
-                Continue →
-              </button>
+              <Button onClick={handleNext} className="w-full cursor-pointer">
+                Continue &rarr;
+              </Button>
             </div>
           )}
 
-          {/* Step 2: Academic & Location */}
+          {/* Step 2: Full Details */}
           {step === 2 && (
             <form onSubmit={handleSubmit} className="space-y-4">
               {errors.submit && (
-                <div className="bg-red-100 text-red-700 px-3 py-2 rounded text-sm">
-                  {errors.submit}
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{errors.submit}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Student: Social Profiles */}
+              {formData.role === "student" && (
+                <div className="space-y-4">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Social Profiles
+                  </h3>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="linkedinUrl">LinkedIn URL</Label>
+                    <div className="relative">
+                      <FaLinkedin className={inputIconClass} />
+                      <Input
+                        id="linkedinUrl"
+                        type="url"
+                        className="pl-8 h-9 text-xs"
+                        placeholder="https://linkedin.com/in/johndoe"
+                        value={formData.linkedinUrl}
+                        onChange={(e) => update("linkedinUrl", e.target.value)}
+                      />
+                    </div>
+                    {errors.linkedinUrl && (
+                      <p className="text-xs text-destructive">
+                        {errors.linkedinUrl}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="portfolioUrl">Portfolio URL</Label>
+                    <div className="relative">
+                      <Globe className={inputIconClass} />
+                      <Input
+                        id="portfolioUrl"
+                        type="url"
+                        className="pl-8 h-9 text-xs"
+                        placeholder="https://johndoe.dev"
+                        value={formData.portfolioUrl}
+                        onChange={(e) => update("portfolioUrl", e.target.value)}
+                      />
+                    </div>
+                    {errors.portfolioUrl && (
+                      <p className="text-xs text-destructive">
+                        {errors.portfolioUrl}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 
+              {/* Alumni: Professional */}
+              {formData.role === "alumni" && (
+                <div className="space-y-4">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Professional Details
+                  </h3>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="currentRole">Current Role</Label>
+                    <div className="relative">
+                      <Briefcase className={inputIconClass} />
+                      <Input
+                        id="currentRole"
+                        className="pl-8 h-9 text-xs"
+                        placeholder="Software Engineer"
+                        value={formData.currentRole}
+                        onChange={(e) => update("currentRole", e.target.value)}
+                      />
+                    </div>
+                    {errors.currentRole && (
+                      <p className="text-xs text-destructive">
+                        {errors.currentRole}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="company">Company</Label>
+                    <div className="relative">
+                      <Building2 className={inputIconClass} />
+                      <Input
+                        id="company"
+                        className="pl-8 h-9 text-xs"
+                        placeholder="Google"
+                        value={formData.company}
+                        onChange={(e) => update("company", e.target.value)}
+                      />
+                    </div>
+                    {errors.company && (
+                      <p className="text-xs text-destructive">
+                        {errors.company}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Faculty: Professional */}
+              {formData.role === "faculty" && (
+                <div className="space-y-4">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Professional Details
+                  </h3>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="designation">
+                      Designation <span className="text-destructive">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Briefcase className={inputIconClass} />
+                      <Input
+                        id="designation"
+                        className="pl-8 h-9 text-xs"
+                        placeholder="Assistant Professor"
+                        value={formData.designation}
+                        onChange={(e) => update("designation", e.target.value)}
+                      />
+                    </div>
+                    {errors.designation && (
+                      <p className="text-xs text-destructive">
+                        {errors.designation}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="officeLocation">Office Location</Label>
+                    <div className="relative">
+                      <MapPin className={inputIconClass} />
+                      <Input
+                        id="officeLocation"
+                        className="pl-8 h-9 text-xs"
+                        placeholder="Main Campus, Block A"
+                        value={formData.officeLocation}
+                        onChange={(e) =>
+                          update("officeLocation", e.target.value)
+                        }
+                      />
+                    </div>
+                    {errors.officeLocation && (
+                      <p className="text-xs text-destructive">
+                        {errors.officeLocation}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
               <AcademicDetails
-                role={formData.role as "student" | "alumni"}
+                role={
+                  formData.role as "student" | "alumni" | "faculty"
+                }
                 departments={departments}
-                branches={branchesList}
+                branches={filteredBranches}
                 batchYears={batchYears}
                 selectedDepartment={formData.department}
                 selectedBranch={formData.branch}
                 selectedBatchYear={formData.batchYear}
+                branchDisabled={branchAutoSelected}
                 errors={errors}
-                onDepartmentChange={(v) => update("department", v)}
+                onDepartmentChange={handleCourseChange}
                 onBranchChange={(v) => update("branch", v)}
                 onBatchYearChange={(v) => update("batchYear", v)}
               />
+
+              <Separator />
 
               <LocationSelector
                 countries={safeCountries}
@@ -590,30 +787,38 @@ export default function SignupPage() {
               />
 
               <div className="flex gap-3 pt-4">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => setStep(1)}
-                  className="flex-1 py-2.5 px-4 border-2 border-navy-800 text-navy-800 font-semibold rounded-lg hover:bg-navy-50 transition-colors"
+                  className="flex-1 cursor-pointer"
                 >
-                  ← Back
-                </button>
-                <button
+                  &larr; Back
+                </Button>
+                <Button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 btn-primary disabled:opacity-50"
+                  className="flex-1 cursor-pointer"
                 >
-                  {loading ? "Creating Account..." : "Create Account"}
-                </button>
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Creating
+                      Account
+                    </>
+                  ) : (
+                    "Create Account"
+                  )}
+                </Button>
               </div>
             </form>
           )}
 
           {/* Footer */}
-          <p className="text-center text-sm text-gray-500 mt-8">
+          <p className="text-center text-sm text-muted-foreground mt-8">
             Already have an account?{" "}
             <Link
               href="/auth/login"
-              className="text-navy-800 font-semibold hover:underline"
+              className="text-foreground font-semibold hover:underline"
             >
               Sign in
             </Link>

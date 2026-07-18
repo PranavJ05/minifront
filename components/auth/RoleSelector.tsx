@@ -1,11 +1,11 @@
 "use client";
 
 import { UserRole } from "@/types";
+import { Button } from "@/components/ui/button";
 
 interface Role {
   value: UserRole;
   label: string;
-  icon: string;
   description: string;
 }
 
@@ -18,14 +18,17 @@ const roles: Role[] = [
   {
     value: "alumni",
     label: "Alumni",
-    icon: "🎓",
     description: "Graduate of the institution",
   },
   {
     value: "student",
     label: "Student",
-    icon: "📚",
     description: "Currently enrolled",
+  },
+  {
+    value: "faculty",
+    label: "Faculty",
+    description: "Faculty member",
   },
 ];
 
@@ -34,30 +37,24 @@ export default function RoleSelector({
   onSelectRole,
 }: RoleSelectorProps) {
   return (
-    <div>
-      <label className="block text-sm font-medium text-navy-800 mb-2 font-sans">
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-foreground">
         I am a
       </label>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-2">
         {roles.map((role) => (
-          <button
+          <Button
             key={role.value}
             type="button"
+            variant={selectedRole === role.value ? "secondary" : "outline"}
             onClick={() => onSelectRole(role.value)}
-            className={`p-4 rounded-lg border-2 text-center transition-all ${
-              selectedRole === role.value
-                ? "border-navy-800 bg-navy-50"
-                : "border-gray-200 hover:border-gray-300"
-            }`}
+            className="flex-col gap-0.5 h-auto py-3 px-2 cursor-pointer"
           >
-            <div className="text-2xl mb-1">{role.icon}</div>
-            <div className="text-sm font-semibold text-navy-900">
-              {role.label}
-            </div>
-            <div className="text-[10px] text-gray-500 mt-0.5">
+            <span className="text-sm font-semibold">{role.label}</span>
+            <span className="text-[10px] text-muted-foreground font-normal">
               {role.description}
-            </div>
-          </button>
+            </span>
+          </Button>
         ))}
       </div>
     </div>
