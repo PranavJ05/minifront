@@ -4,33 +4,24 @@ import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Users,
   Calendar,
-  AlertCircle,
   Briefcase,
   Loader2,
   ArrowRight,
   MapPin,
-  Search,
   GraduationCap,
   Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import DirectorySnapshot from "@/components/dashboard/DirectorySnapshot";
 import { hasRole } from "@/lib/roleUtils";
 import { useAuth } from "@/contexts/auth-context";
 import { useEventsQuery } from "@/hooks/queries/events";
 import { useOpportunitiesQuery } from "@/hooks/queries/opportunities";
 import { useAlumniSearchQuery } from "@/hooks/queries/alumni";
-import { BACKEND_URL } from "@/lib/config";
-
-const resolveImageUrl = (value: string | null) => {
-  if (!value) return null;
-  return value.startsWith("http") ? value : `${BACKEND_URL}${value}`;
-};
 
 export default function FacultyDashboard() {
   const router = useRouter();
@@ -47,8 +38,6 @@ export default function FacultyDashboard() {
   } = useOpportunitiesQuery();
   const {
     data: directoryData,
-    isLoading: directoryLoading,
-    error: directoryError,
   } = useAlumniSearchQuery();
 
   useEffect(() => {
@@ -94,8 +83,6 @@ export default function FacultyDashboard() {
     () => opportunities.slice(0, 3),
     [opportunities],
   );
-
-  const directoryPreview = useMemo(() => directory.slice(0, 3), [directory]);
 
   const statsData = useMemo(
     () => [
@@ -167,22 +154,18 @@ export default function FacultyDashboard() {
         ))}
       </div>
 
-      {/* Search Alumni */}
+      {/* Quick Directory Link */}
       <Card className="p-4 bg-muted/30 border-border">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
             <h2 className="text-sm font-semibold text-foreground">Find Alumni Fast</h2>
-            <Link href="/alumni" className="text-xs text-muted-foreground hover:text-foreground font-medium flex items-center gap-1">
-              Browse full directory <ArrowRight className="h-3 w-3" />
+            <p className="text-xs text-muted-foreground">Search by name, department, or company</p>
+          </div>
+          <Button variant="outline" size="sm" asChild className="cursor-pointer">
+            <Link href="/alumni">
+              Browse Directory <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Link>
-          </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
-            <Input
-              placeholder="Search by name, department, or company..."
-              className="pl-9 h-9 text-xs bg-background border-border"
-            />
-          </div>
+          </Button>
         </div>
       </Card>
 
@@ -287,65 +270,7 @@ export default function FacultyDashboard() {
         </Card>
       </div>
 
-      {/* Directory Snapshot */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">Alumni Directory Snapshot</h2>
-          <Link href="/alumni" className="text-xs text-muted-foreground hover:text-foreground font-medium">
-            View All
-          </Link>
-        </div>
-
-        {directoryLoading ? (
-          <Card>
-            <CardContent className="flex items-center justify-center py-10 gap-2 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-xs">Loading directory...</span>
-            </CardContent>
-          </Card>
-        ) : directoryError ? (
-          <Alert variant="destructive">
-            <AlertDescription className="text-xs">
-              {directoryError?.message || "Could not load directory"}
-            </AlertDescription>
-          </Alert>
-        ) : directoryPreview.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center py-10 text-center gap-1">
-              <Users className="h-6 w-6 text-muted-foreground/60 mb-1" />
-              <p className="text-xs font-semibold text-foreground">No alumni listed</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid md:grid-cols-3 gap-4">
-            {directoryPreview.map((alumni) => {
-              const avatar = resolveImageUrl(alumni.profileImageUrl);
-              return (
-                <Card key={alumni.id} className="p-4 flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-muted overflow-hidden flex items-center justify-center shrink-0 border border-border">
-                    {avatar ? (
-                      <img src={avatar} alt={alumni.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <Users className="h-4 w-4 text-muted-foreground/60" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1 space-y-0.5">
-                    <p className="font-semibold text-xs text-foreground truncate">
-                      {alumni.name}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground truncate">
-                      {alumni.profession || "Alumni"}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground/60 truncate">
-                      {alumni.department || alumni.location || "MEC Graduate"}
-                    </p>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      <DirectorySnapshot title="Alumni Directory Snapshot" />
     </div>
   );
 }

@@ -40,12 +40,6 @@ export const queryKeys = {
     registrations: (id: number) => ["sessions", id, "registrations"] as const,
     media: (id: number) => ["sessions", id, "media"] as const,
   },
-  clubEvents: {
-    all: ["club-events"] as const,
-    detail: (id: number) => ["club-events", id] as const,
-    mine: () => ["club-events", "mine"] as const,
-    edit: (id: number) => ["club-events", id, "edit"] as const,
-  },
   skills: {
     all: ["skills"] as const,
     courses: () => ["courses"] as const,
@@ -59,7 +53,6 @@ export const queryKeys = {
     pending: ["admin", "pending"] as const,
     users: (params?: Record<string, string>) =>
       ["admin", "users", params] as const,
-    clubs: () => ["admin", "clubs"] as const,
   },
   location: {
     countries: ["location", "countries"] as const,
@@ -75,10 +68,6 @@ export const queryKeys = {
   faculty: {
     all: ["faculty"] as const,
     detail: (id: number) => ["faculty", id] as const,
-  },
-  clubs: {
-    all: ["clubs"] as const,
-    my: () => ["clubs", "mine"] as const,
   },
   alumniApplications: {
     all: ["alumni-applications"] as const,

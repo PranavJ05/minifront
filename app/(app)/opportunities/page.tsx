@@ -23,7 +23,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import ReferralRequestModal from "@/components/referrals/ReferralRequestModal";
-import { isAlumni, isStudent, isFaculty, isAnyAdmin } from "@/lib/roleUtils";
+import { isAlumni, isStudent, isFaculty, isMainAdmin } from "@/lib/roleUtils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -55,7 +55,7 @@ export default function OpportunitiesPage() {
   const isStudentUser = isStudent(userRoles);
   const isAlumniUser = isAlumni(userRoles);
   const isFacultyUser = isFaculty(userRoles);
-  const isAdminUser = isAnyAdmin(userRoles);
+  const isAdminUser = isMainAdmin(userRoles);
 
   // All alumni, faculty, and admins can post opportunities
   const canPostOpportunity = isAlumniUser || isFacultyUser || isAdminUser;

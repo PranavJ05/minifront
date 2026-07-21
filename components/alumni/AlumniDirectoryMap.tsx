@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ExternalLink,
@@ -13,12 +13,11 @@ import {
   AlertCircle,
   Users,
   ChevronRight,
-  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import type * as L from "leaflet";
+import { api } from "@/lib/fetcher";
 
 interface AlumniMapPin {
   alumniId: number;
@@ -37,14 +36,13 @@ interface AlumniMapPin {
   country: string | null;
 }
 
-const API_BASE = "http://localhost:8080";
 const MAP_CENTER: [number, number] = [20.5937, 78.9629];
 const MAP_ZOOM = 5;
 
 export default function AlumniDirectoryMap() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
-  const clusterGroup = useRef<L.MarkerClusterGroup | null>(null);
+  const clusterGroup = useRef<any>(null);
 
   const [pins, setPins] = useState<AlumniMapPin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,43 +51,48 @@ export default function AlumniDirectoryMap() {
   const [clusterList, setClusterList] = useState<AlumniMapPin[] | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
-  async function fetchPins() {
+  const fetchPins = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
-      const headers: Record<string, string> = {};
-      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const rawData: Record<string, unknown>[] = await api("/api/alumni/search", {
+        method: "GET",
+      });
 
-      const res = await fetch(`${API_BASE}/api/alumni/search`, { headers });
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
-
-      const rawData = await res.json();
-      const mappedPins: AlumniMapPin[] = (rawData || []).map((item: any) => ({
-        alumniId: item.id || item.alumniId,
-        name: item.name || "Unknown",
-        profileImageUrl: item.profileImageUrl || null,
-        email: item.email || null,
-        batchYear: item.batchYear || null,
-        department: item.department || null,
-        courseName: item.courseName || null,
-        profession: item.profession || null,
-        linkedinUrl: item.linkedinUrl || null,
-        latitude: item.latitude || (MAP_CENTER[0] + (Math.random() - 0.5) * 4),
-        longitude: item.longitude || (MAP_CENTER[1] + (Math.random() - 0.5) * 4),
-        displayLocation: item.location || item.placeOfResidence || "Location unavailable",
-        city: item.city || null,
-        country: item.country || null,
-      }));
+      const mappedPins: AlumniMapPin[] = (rawData || [])
+        .map((item) => ({
+          alumniId: (item.id || item.alumniId) as number,
+          name: (item.name as string) || "Unknown",
+          profileImageUrl: (item.profileImageUrl as string) || null,
+          email: (item.email as string) || null,
+          batchYear: (item.batchYear as number) || null,
+          department: (item.department as string) || null,
+          courseName: (item.courseName as string) || null,
+          profession: (item.profession as string) || null,
+          linkedinUrl: (item.linkedinUrl as string) || null,
+          latitude: item.latitude as number,
+          longitude: item.longitude as number,
+          displayLocation: ((item.location || item.placeOfResidence) as string) || "Location unavailable",
+          city: (item.city as string) || null,
+          country: (item.country as string) || null,
+        }))
+        .filter(
+          (pin) =>
+            typeof pin.latitude === "number" &&
+            typeof pin.longitude === "number" &&
+            !isNaN(pin.latitude) &&
+            !isNaN(pin.longitude),
+        );
 
       setPins(mappedPins);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load alumni locations");
+      const message = err instanceof Error ? err.message : "Failed to load alumni locations";
+      setError(message);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined" || !mapContainer.current) return;
@@ -97,14 +100,13 @@ export default function AlumniDirectoryMap() {
 
     let cancelled = false;
 
-    import("leaflet")
-      .then(async (leaflet) => {
-        if (cancelled) return;
+    (async () => {
+      try {
+        const leafletModule = await import("leaflet");
+        const L = leafletModule.default || leafletModule;
 
-        (window as any).L = leaflet;
-
-        delete (leaflet.Icon.Default.prototype as any)._getIconUrl;
-        leaflet.Icon.Default.mergeOptions({
+        delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
+        L.Icon.Default.mergeOptions({
           iconRetinaUrl:
             "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
           iconUrl:
@@ -113,25 +115,28 @@ export default function AlumniDirectoryMap() {
             "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
         });
 
+        const extensibleL = Object.create(L);
+        (window as any).L = extensibleL;
+
         await import("leaflet.markercluster");
 
         if (cancelled) return;
 
-        const map = leaflet.map(mapContainer.current!, {
+        const map = L.map(mapContainer.current!, {
           center: MAP_CENTER,
           zoom: MAP_ZOOM,
           zoomControl: true,
         });
 
-        leaflet.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution:
             '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
           maxZoom: 18,
         }).addTo(map);
 
-        const markerClusterFn = (leaflet as any).markerClusterGroup || (window as any).L?.markerClusterGroup;
-        if (typeof markerClusterFn === "function") {
-          const cluster = markerClusterFn({
+        const markerClusterGroup = (extensibleL as any).markerClusterGroup;
+        if (typeof markerClusterGroup === "function") {
+          const cluster = markerClusterGroup({
             chunkedLoading: true,
             maxClusterRadius: 60,
             spiderfyOnMaxZoom: true,
@@ -152,11 +157,11 @@ export default function AlumniDirectoryMap() {
 
         mapInstance.current = map;
         setMapReady(true);
-      })
-      .catch((err) => {
+      } catch (err: unknown) {
         console.error("Failed to load Leaflet:", err);
         setError("Failed to initialize map library.");
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;
@@ -176,7 +181,7 @@ export default function AlumniDirectoryMap() {
   useEffect(() => {
     if (!mapReady || !mapInstance.current || !pins.length) return;
 
-    const leaflet = (window as any).L || (window as any).leaflet;
+    const leaflet = (window as any).L;
     if (!leaflet) return;
 
     if (clusterGroup.current) {
@@ -184,12 +189,10 @@ export default function AlumniDirectoryMap() {
     }
 
     pins.forEach((pin) => {
-      if (typeof pin.latitude !== "number" || typeof pin.longitude !== "number") return;
-
       const marker = leaflet.marker([pin.latitude, pin.longitude], {
         title: pin.name,
         alumniPin: pin,
-      } as any);
+      });
 
       marker.on("click", () => {
         setSelected(pin);

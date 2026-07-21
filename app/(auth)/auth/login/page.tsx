@@ -35,7 +35,6 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -356,18 +355,7 @@ export default function LoginPage() {
               required
             />
 
-            <div className="flex items-center justify-between text-xs">
-              <label className="flex items-center gap-2 cursor-pointer text-muted-foreground hover:text-foreground">
-                <input
-                  type="checkbox"
-                  checked={formData.rememberMe}
-                  onChange={(e) =>
-                    setFormData({ ...formData, rememberMe: e.target.checked })
-                  }
-                  className="rounded border-border"
-                />
-                <span>Remember me</span>
-              </label>
+            <div className="flex items-center justify-end text-xs">
               <Link
                 href="/forgot-password"
                 className="text-primary hover:underline font-medium"

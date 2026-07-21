@@ -22,6 +22,7 @@ import {
 import Logo from "@/components/layout/Logo";
 import { cn } from "@/lib/utils";
 import { UserRole } from "@/types";
+import { isMainAdmin, isBatchAdmin } from "@/lib/roleUtils";
 import {
   Sidebar,
   SidebarContent,
@@ -38,16 +39,18 @@ import {
 
 interface SidebarProps {
   role: UserRole;
+  rawRoles?: string | string[];
 }
 
-export default function DashboardSidebar({ role }: SidebarProps) {
+export default function DashboardSidebar({ role, rawRoles }: SidebarProps) {
   const pathname = usePathname();
   const { state, setOpen } = useSidebar();
 
-  const isAdmin = role === "admin" || role === "Batch_admin";
+  const isMainAdminUser = isMainAdmin(rawRoles);
+  const isBatchAdminUser = isBatchAdmin(rawRoles);
 
   const homeHref =
-    role === "admin"
+    isMainAdminUser
       ? "/main-admin"
       : role === "faculty"
         ? "/dashboard/faculty"
@@ -83,7 +86,7 @@ export default function DashboardSidebar({ role }: SidebarProps) {
       }}
       className={cn(state === "collapsed" && "cursor-pointer")}
     >
-      <SidebarHeader className="p-2 border-b border-sidebar-border group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-3">
+      <SidebarHeader className="h-14 px-2 border-b border-sidebar-border group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:h-11 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0">
         <Logo href={homeHref} size="sm" textClassName="group-data-[collapsible=icon]:hidden font-semibold" />
       </SidebarHeader>
 
@@ -95,7 +98,7 @@ export default function DashboardSidebar({ role }: SidebarProps) {
               isActive={pathname === homeHref}
               tooltip="Home"
               className={cn(
-                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer group-data-[collapsible=icon]:justify-center",
                 pathname === homeHref
                   ? "!bg-primary !text-primary-foreground shadow-sm"
                   : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
@@ -107,115 +110,13 @@ export default function DashboardSidebar({ role }: SidebarProps) {
             </SidebarMenuButton>
           </SidebarMenuItem>
 
-          {/* Admin Control Portal (Visible to Admin & Batch Admin) */}
-          {isAdmin && (
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={isAdminPortalActive}
-                tooltip="Admin Portal"
-                className={cn(
-                  "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer justify-between",
-                  isAdminPortalActive
-                    ? "!bg-primary !text-primary-foreground shadow-sm"
-                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                )}
-                render={<Link href="/main-admin" className="flex items-center justify-between w-full" />}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Shield className="h-5 w-5 shrink-0" />
-                  <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">Admin Portal</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setAdminOpen(!adminOpen);
-                  }}
-                  className="group-data-[collapsible=icon]:hidden p-1 text-inherit opacity-70 hover:opacity-100 cursor-pointer"
-                >
-                  {adminOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                </button>
-              </SidebarMenuButton>
-
-              {/* Admin Sub-menu */}
-              {adminOpen && (
-                <SidebarMenuSub className="mt-1 space-y-0.5 group-data-[collapsible=icon]:hidden">
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                      isActive={isAlumniAppsActive}
-                      className={cn(
-                        "text-xs px-2.5 py-1.5 rounded-md font-medium flex items-center gap-2 transition-colors cursor-pointer",
-                        isAlumniAppsActive
-                          ? "bg-primary/10 text-primary font-semibold"
-                          : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-                      )}
-                      render={<Link href="/main-admin/alumni-applications" />}
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span>Alumni Approvals</span>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                      isActive={isUsersMgmtActive}
-                      className={cn(
-                        "text-xs px-2.5 py-1.5 rounded-md font-medium flex items-center gap-2 transition-colors cursor-pointer",
-                        isUsersMgmtActive
-                          ? "bg-primary/10 text-primary font-semibold"
-                          : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-                      )}
-                      render={<Link href="/main-admin/users" />}
-                    >
-                      <Users className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span>User Management</span>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                      isActive={isSkillApprovalActive}
-                      className={cn(
-                        "text-xs px-2.5 py-1.5 rounded-md font-medium flex items-center gap-2 transition-colors cursor-pointer",
-                        isSkillApprovalActive
-                          ? "bg-primary/10 text-primary font-semibold"
-                          : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-                      )}
-                      render={<Link href="/main-admin/skills" />}
-                    >
-                      <Award className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span>Skill Approvals</span>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                      isActive={isBatchAdminMgmtActive}
-                      className={cn(
-                        "text-xs px-2.5 py-1.5 rounded-md font-medium flex items-center gap-2 transition-colors cursor-pointer",
-                        isBatchAdminMgmtActive
-                          ? "bg-primary/10 text-primary font-semibold"
-                          : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-                      )}
-                      render={<Link href="/main-admin/manage-batch-admin" />}
-                    >
-                      <UserCheck className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span>Batch Admins</span>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                </SidebarMenuSub>
-              )}
-            </SidebarMenuItem>
-          )}
-
           {/* Network Hub */}
           <SidebarMenuItem>
             <SidebarMenuButton
               isActive={isNetworkActive}
               tooltip="Network Hub"
               className={cn(
-                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer justify-between",
+                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer justify-between group-data-[collapsible=icon]:justify-center",
                 isNetworkActive
                   ? "!bg-primary !text-primary-foreground shadow-sm"
                   : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
@@ -246,14 +147,14 @@ export default function DashboardSidebar({ role }: SidebarProps) {
                   <SidebarMenuSubButton
                     isActive={isAlumniActive}
                     className={cn(
-                      "text-xs px-2.5 py-1.5 rounded-md font-medium flex items-center gap-2 transition-colors cursor-pointer",
+                      "text-xs px-2.5 py-1.5 rounded-md font-medium flex items-center gap-2 transition-colors cursor-pointer translate-x-0",
                       isAlumniActive
                         ? "bg-primary/10 text-primary font-semibold"
                         : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
                     )}
                     render={<Link href="/network/alumni" />}
                   >
-                    <GraduationCap className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <GraduationCap className="h-4 w-4 text-primary shrink-0" />
                     <span>Alumni Directory</span>
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
@@ -262,14 +163,14 @@ export default function DashboardSidebar({ role }: SidebarProps) {
                   <SidebarMenuSubButton
                     isActive={isFacultyActive}
                     className={cn(
-                      "text-xs px-2.5 py-1.5 rounded-md font-medium flex items-center gap-2 transition-colors cursor-pointer",
+                      "text-xs px-2.5 py-1.5 rounded-md font-medium flex items-center gap-2 transition-colors cursor-pointer translate-x-0",
                       isFacultyActive
                         ? "bg-primary/10 text-primary font-semibold"
                         : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
                     )}
                     render={<Link href="/network/faculty" />}
                   >
-                    <Users className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <Users className="h-4 w-4 text-primary shrink-0" />
                     <span>Faculty Directory</span>
                   </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
@@ -283,7 +184,7 @@ export default function DashboardSidebar({ role }: SidebarProps) {
               isActive={pathname.startsWith("/opportunities")}
               tooltip="Opportunities"
               className={cn(
-                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer group-data-[collapsible=icon]:justify-center",
                 pathname.startsWith("/opportunities")
                   ? "!bg-primary !text-primary-foreground shadow-sm"
                   : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
@@ -301,7 +202,7 @@ export default function DashboardSidebar({ role }: SidebarProps) {
               isActive={pathname.startsWith("/events")}
               tooltip="Events"
               className={cn(
-                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer group-data-[collapsible=icon]:justify-center",
                 pathname.startsWith("/events")
                   ? "!bg-primary !text-primary-foreground shadow-sm"
                   : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
@@ -319,7 +220,7 @@ export default function DashboardSidebar({ role }: SidebarProps) {
               isActive={pathname === "/profile"}
               tooltip="My Profile"
               className={cn(
-                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer group-data-[collapsible=icon]:justify-center",
                 pathname === "/profile"
                   ? "!bg-primary !text-primary-foreground shadow-sm"
                   : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
@@ -331,26 +232,6 @@ export default function DashboardSidebar({ role }: SidebarProps) {
             </SidebarMenuButton>
           </SidebarMenuItem>
 
-          {/* Privacy Settings (Alumni only) */}
-          {role === "alumni" && (
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={pathname === "/profile/privacy"}
-                tooltip="Privacy Settings"
-                className={cn(
-                  "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
-                  pathname === "/profile/privacy"
-                    ? "!bg-primary !text-primary-foreground shadow-sm"
-                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                )}
-                render={<Link href="/profile/privacy" className="flex items-center gap-2.5" />}
-              >
-                <Shield className="h-5 w-5 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">Privacy Settings</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          )}
-
           {/* Mentorship (Alumni & Student) */}
           {(role === "alumni" || role === "student") && (
             <SidebarMenuItem>
@@ -358,8 +239,8 @@ export default function DashboardSidebar({ role }: SidebarProps) {
                 isActive={pathname.startsWith("/alumni-mentorship")}
                 tooltip="Mentorship"
                 className={cn(
-                  "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
-                  pathname.startsWith("/alumni-mentorship")
+"h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer group-data-[collapsible=icon]:justify-center",
+                pathname.startsWith("/alumni-mentorship")
                     ? "!bg-primary !text-primary-foreground shadow-sm"
                     : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
                 )}
@@ -368,6 +249,128 @@ export default function DashboardSidebar({ role }: SidebarProps) {
                 <Handshake className="h-5 w-5 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">Mentorship</span>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+
+          {/* Batch Admin Section */}
+          {isBatchAdminUser && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={isAlumniAppsActive}
+                tooltip="Alumni Approvals"
+                className={cn(
+                  "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer group-data-[collapsible=icon]:justify-center",
+                  isAlumniAppsActive
+                    ? "!bg-primary !text-primary-foreground shadow-sm"
+                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                )}
+                render={<Link href="/main-admin/alumni-applications" className="flex items-center gap-2.5" />}
+              >
+                <CheckCircle2 className="h-5 w-5 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">Alumni Approvals</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+
+          {/* Admin Control Portal (Main Admin only) */}
+          {isMainAdminUser && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={isAdminPortalActive}
+                tooltip="Admin Portal"
+                className={cn(
+                  "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer justify-between group-data-[collapsible=icon]:justify-center",
+                  isAdminPortalActive
+                    ? "!bg-primary !text-primary-foreground shadow-sm"
+                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                )}
+                render={<Link href="/main-admin" className="flex items-center justify-between w-full" />}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Shield className="h-5 w-5 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">Admin Portal</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setAdminOpen(!adminOpen);
+                  }}
+                  className="group-data-[collapsible=icon]:hidden p-1 text-inherit opacity-70 hover:opacity-100 cursor-pointer"
+                >
+                  {adminOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                </button>
+              </SidebarMenuButton>
+
+              {/* Admin Sub-menu */}
+              {adminOpen && (
+                <SidebarMenuSub className="mt-1 space-y-0.5 group-data-[collapsible=icon]:hidden">
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      isActive={isAlumniAppsActive}
+                      className={cn(
+                      "text-xs px-2.5 py-1.5 rounded-md font-medium flex items-center gap-2 transition-colors cursor-pointer translate-x-0",
+                      isAlumniAppsActive
+                        ? "bg-primary/10 text-primary font-semibold"
+                        : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                    )}
+                    render={<Link href="/main-admin/alumni-applications" />}
+                  >
+                    <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                      <span>Alumni Approvals</span>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      isActive={isUsersMgmtActive}
+                      className={cn(
+"text-xs px-2.5 py-1.5 rounded-md font-medium flex items-center gap-2 transition-colors cursor-pointer translate-x-0",
+                      isUsersMgmtActive
+                          ? "bg-primary/10 text-primary font-semibold"
+                          : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                      )}
+                      render={<Link href="/main-admin/users" />}
+                    >
+                      <Users className="h-4 w-4 text-primary shrink-0" />
+                      <span>User Management</span>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      isActive={isSkillApprovalActive}
+                      className={cn(
+"text-xs px-2.5 py-1.5 rounded-md font-medium flex items-center gap-2 transition-colors cursor-pointer translate-x-0",
+                      isSkillApprovalActive
+                          ? "bg-primary/10 text-primary font-semibold"
+                          : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                      )}
+                      render={<Link href="/main-admin/skills" />}
+                    >
+                      <Award className="h-4 w-4 text-primary shrink-0" />
+                      <span>Skill Approvals</span>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      isActive={isBatchAdminMgmtActive}
+                      className={cn(
+"text-xs px-2.5 py-1.5 rounded-md font-medium flex items-center gap-2 transition-colors cursor-pointer translate-x-0",
+                      isBatchAdminMgmtActive
+                          ? "bg-primary/10 text-primary font-semibold"
+                          : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                      )}
+                      render={<Link href="/main-admin/manage-batch-admin" />}
+                    >
+                      <UserCheck className="h-4 w-4 text-primary shrink-0" />
+                      <span>Batch Admins</span>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              )}
             </SidebarMenuItem>
           )}
         </SidebarMenu>

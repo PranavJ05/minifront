@@ -19,9 +19,11 @@ import {
   MapPin,
   Pencil,
   Phone,
+  Shield,
   Sparkles,
   Trash2,
   UserCircle2,
+  Users,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,13 +35,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import {
   useMyProfileQuery,
   useUpdateProfileMutation,
 } from "@/hooks/queries/profile";
+import {
+  useAlumniPrivacyQuery,
+  useUpdateAlumniPrivacyMutation,
+} from "@/hooks/queries/privacy";
 import type { MyProfileResponse } from "@/lib/types/profile";
+import type { AlumniPrivacySettings } from "@/lib/types/privacy";
 import { api } from "@/lib/fetcher";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/get-error-message";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
@@ -75,6 +85,10 @@ type SidebarTabKey = "skills" | "events" | "opportunities";
 export default function ProfilePage() {
   const { data: profile, isLoading, isError, error: queryError } = useMyProfileQuery();
   const updateProfile = useUpdateProfileMutation();
+  const { data: privacySettings } = useAlumniPrivacyQuery({
+    enabled: profile?.primaryRole === "ALUMNI",
+  });
+  const updatePrivacyMutation = useUpdateAlumniPrivacyMutation();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -972,6 +986,93 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Privacy & Visibility Settings — Alumni only */}
+      {role === "ALUMNI" && privacySettings && (
+        <Card>
+          <CardContent className="p-5 sm:p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" />
+              <h3 className="font-semibold text-sm text-foreground">Privacy & Visibility Settings</h3>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-3">
+              Control what contact & career information is visible to students and fellow alumni.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <GraduationCap className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-semibold text-foreground">Visible to Enrolled Students</span>
+                </div>
+                <div className="space-y-2">
+                  {([
+                    { key: "showEmailToStudents", title: "Email Address", desc: "Allow students to view your email" },
+                    { key: "showLinkedinToStudents", title: "LinkedIn Profile", desc: "Display your LinkedIn link to students" },
+                    { key: "showCompanyToStudents", title: "Profession & Company", desc: "Allow students to see your job & employer" },
+                    { key: "showLocationToStudents", title: "Location", desc: "Allow students to view your city/state" },
+                  ] as const).map(({ key, title, desc }) => (
+                    <div key={key} className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-muted/20 border border-border/40">
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-medium text-foreground">{title}</p>
+                        <p className="text-[10px] text-muted-foreground">{desc}</p>
+                      </div>
+                      <Switch
+                        checked={privacySettings[key as keyof AlumniPrivacySettings]}
+                        onCheckedChange={async () => {
+                          try {
+                            await updatePrivacyMutation.mutateAsync({ [key]: !privacySettings[key as keyof AlumniPrivacySettings] });
+                            toast.success("Privacy preference updated");
+                          } catch (err) {
+                            toast.error(getErrorMessage(err, "Failed to update"));
+                          }
+                        }}
+                        disabled={updatePrivacyMutation.isPending}
+                        className="cursor-pointer shrink-0"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Users className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-semibold text-foreground">Visible to Verified Alumni</span>
+                </div>
+                <div className="space-y-2">
+                  {([
+                    { key: "showEmailToAlumni", title: "Email Address", desc: "Allow alumni to view your email" },
+                    { key: "showLinkedinToAlumni", title: "LinkedIn Profile", desc: "Display your LinkedIn to fellow alumni" },
+                    { key: "showCompanyToAlumni", title: "Profession & Company", desc: "Allow alumni to see your job & employer" },
+                    { key: "showLocationToAlumni", title: "Location", desc: "Include your location in alumni directory" },
+                  ] as const).map(({ key, title, desc }) => (
+                    <div key={key} className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-muted/20 border border-border/40">
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-medium text-foreground">{title}</p>
+                        <p className="text-[10px] text-muted-foreground">{desc}</p>
+                      </div>
+                      <Switch
+                        checked={privacySettings[key as keyof AlumniPrivacySettings]}
+                        onCheckedChange={async () => {
+                          try {
+                            await updatePrivacyMutation.mutateAsync({ [key]: !privacySettings[key as keyof AlumniPrivacySettings] });
+                            toast.success("Privacy preference updated");
+                          } catch (err) {
+                            toast.error(getErrorMessage(err, "Failed to update"));
+                          }
+                        }}
+                        disabled={updatePrivacyMutation.isPending}
+                        className="cursor-pointer shrink-0"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

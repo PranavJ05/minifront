@@ -227,7 +227,7 @@ export function PromoteAlumniModal({
       open={open}
       onOpenChange={(next) => (next ? onOpenChange(true) : handleClose())}
     >
-      <DialogContent className="sm:max-w-3xl p-0 gap-0 overflow-hidden">
+      <DialogContent className="sm:max-w-3xl p-0 gap-0">
         <DialogHeader className="p-5 pb-4 border-b border-border">
           <DialogTitle className="flex items-center gap-2 text-base">
             <GraduationCap className="h-4 w-4 text-muted-foreground" />

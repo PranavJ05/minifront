@@ -47,47 +47,4 @@ export function useUsersQuery(params?: Record<string, string>, options?: { enabl
   });
 }
 
-export function useUserClubsQuery(userId: number, options?: { enabled?: boolean }) {
-  const isAuthorized = isCurrentMainAdmin();
-  return useQuery({
-    queryKey: [...queryKeys.admin.users(), "clubs", userId],
-    queryFn: () => api<{ id: number; name: string }[]>(`/admin/users/${userId}/clubs`),
-    enabled: (options?.enabled ?? true) && isAuthorized && !!userId,
-  });
-}
 
-export function useAssignClubMutation() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ userId, clubId }: { userId: number; clubId: number }) =>
-      api<{ success: boolean }>(`/admin/users/${userId}/clubs`, {
-        method: "POST",
-        body: { clubId },
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin"] });
-    },
-  });
-}
-
-export function useRemoveClubMutation() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ userId, clubId }: { userId: number; clubId: number }) =>
-      api<{ success: boolean }>(`/admin/users/${userId}/clubs/${clubId}`, {
-        method: "DELETE",
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin"] });
-    },
-  });
-}
-
-export function useClubsQuery(options?: { enabled?: boolean }) {
-  const isAuthorized = isCurrentMainAdmin();
-  return useQuery({
-    queryKey: queryKeys.admin.clubs(),
-    queryFn: () => api<{ id: number; name: string }[]>("/admin/clubs"),
-    enabled: (options?.enabled ?? true) && isAuthorized,
-  });
-}

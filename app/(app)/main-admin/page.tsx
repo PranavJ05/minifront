@@ -17,8 +17,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import PendingModal from "@/components/main-admin/PendingModal";
 import { useAuth } from "@/contexts/auth-context";
-import { isMainAdmin, isBatchAdmin, isAnyAdmin } from "@/lib/roleUtils";
+import { isMainAdmin, isBatchAdmin } from "@/lib/roleUtils";
 
 interface AdminTask {
   title: string;
@@ -44,15 +45,14 @@ export default function AdminPage() {
       return;
     }
 
-    const hasAdminAccess = isAnyAdmin(user.roles);
     const mainAdmin = isMainAdmin(user.roles);
     const batchAdmin = isBatchAdmin(user.roles);
 
-    setIsAuthorized(hasAdminAccess);
+    setIsAuthorized(mainAdmin);
     setIsAdmin(mainAdmin);
     setIsBatchAdminUser(batchAdmin);
 
-    if (!hasAdminAccess) {
+    if (!mainAdmin) {
       router.replace("/dashboard/alumni");
     }
   }, [authLoading, isAuthenticated, user, router]);
@@ -76,7 +76,7 @@ export default function AdminPage() {
     },
     {
       title: "Users Management",
-      description: "View users and assign club managers for club operations",
+      description: "View and manage registered users",
       href: "/main-admin/users",
       icon: Users,
       adminOnly: true,
@@ -118,9 +118,12 @@ export default function AdminPage() {
                 : "Batch Administrator access portal."}
             </p>
           </div>
-          <Badge variant="secondary" className="text-xs font-normal">
-            {isAdmin ? "Super Admin" : "Batch Admin"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <PendingModal />
+            <Badge variant="secondary" className="text-xs font-normal">
+              {isAdmin ? "Super Admin" : "Batch Admin"}
+            </Badge>
+          </div>
         </div>
       </div>
 

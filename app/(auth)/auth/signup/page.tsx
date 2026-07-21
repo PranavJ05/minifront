@@ -268,8 +268,8 @@ export default function SignupPage() {
       nextErrors.fullName = "Full name is required";
     }
 
-    if (formData.role === "student" && !formData.email.endsWith("@mec.ac.in")) {
-      nextErrors.email = "Student email must be @mec.ac.in";
+    if (formData.role === "student" && !formData.email.endsWith(".mec@gmail.com")) {
+      nextErrors.email = "Student email must end with .mec@gmail.com";
     } else if (!formData.email.includes("@")) {
       nextErrors.email = "Valid email required";
     }

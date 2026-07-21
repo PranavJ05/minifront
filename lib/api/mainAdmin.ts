@@ -11,27 +11,6 @@ export async function getUsers(role?: string) {
   return api(`/api/main-admin/users${params}`);
 }
 
-export async function getUserClubs(userId: number) {
-  return api(`/api/main-admin/users/${userId}/clubs`);
-}
-
-export async function assignClub(userId: number, clubId: number) {
-  return api(`/api/main-admin/users/${userId}/clubs`, {
-    method: "POST",
-    body: { clubId },
-  });
-}
-
-export async function removeClub(userClubId: number) {
-  return api(`/api/main-admin/users/clubs/${userClubId}`, {
-    method: "DELETE",
-  });
-}
-
-export async function getClubs() {
-  return api("/api/clubs");
-}
-
 export async function listBatchAdmins(): Promise<BatchAdminSummary[]> {
   return api("/api/admin/batch-admins");
 }

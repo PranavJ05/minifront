@@ -129,7 +129,8 @@ export default function CreateEventModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-xl max-h-[90vh]">
+        <div className="overflow-y-auto pr-1">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold">Publish Event / Session / Talk</DialogTitle>
           <DialogDescription className="text-xs">
@@ -404,6 +405,7 @@ export default function CreateEventModal({
             </DialogFooter>
           </form>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );

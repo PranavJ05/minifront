@@ -41,7 +41,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background w-full">
-      <DashboardSidebar role={normalizedRole} />
+      <DashboardSidebar role={normalizedRole} rawRoles={user.roles} />
       <SidebarInset>
         <Navbar />
         <ProfileCompletionBar />
