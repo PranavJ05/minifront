@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useFacultyQuery } from "@/hooks/queries/faculty";
+import { useFacultyQuery, type FacultyProfile } from "@/hooks/queries/faculty";
 
 export default function NetworkFacultyPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,7 +46,7 @@ export default function NetworkFacultyPage() {
       </div>
 
       {/* Filter Bar */}
-      <Card variant="outline" className="p-4 bg-card/60 backdrop-blur-xs border-border">
+      <Card className="p-4 bg-card/60 backdrop-blur-xs border-border">
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           <div className="sm:col-span-8 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
@@ -59,7 +59,7 @@ export default function NetworkFacultyPage() {
           </div>
 
           <div className="sm:col-span-4">
-            <Select value={selectedDept} onValueChange={setSelectedDept}>
+            <Select value={selectedDept} onValueChange={(val) => setSelectedDept(val || "all")}>
               <SelectTrigger className="text-xs">
                 <SelectValue placeholder="Department" />
               </SelectTrigger>
@@ -106,11 +106,11 @@ export default function NetworkFacultyPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {facultyList.map((member) => {
+          {facultyList.map((member: FacultyProfile) => {
             const initial = member.name ? member.name.charAt(0).toUpperCase() : "F";
             return (
               <Card
-                key={member.id}
+                key={member.userId || member.email}
                 className="group border-border hover:border-primary/40 transition-all duration-300 shadow-xs hover:shadow-md flex flex-col justify-between"
               >
                 <CardContent className="p-5 space-y-4 flex-1 flex flex-col justify-between">
@@ -139,10 +139,10 @@ export default function NetworkFacultyPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 pt-1">
-                      {member.department && (
+                      {(member.department || member.departmentCode) && (
                         <Badge variant="secondary" className="font-normal text-[11px]">
                           <Building2 className="h-3 w-3 mr-1 text-primary" />
-                          {member.department}
+                          {member.department || member.departmentCode}
                         </Badge>
                       )}
                     </div>

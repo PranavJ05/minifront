@@ -4,10 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   Search,
-  Filter,
   GraduationCap,
   MapPin,
-  Briefcase,
   Mail,
   ExternalLink,
   Loader2,
@@ -28,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import AlumniDirectoryMap from "@/components/alumni/AlumniDirectoryMap";
-import { useAlumniQuery } from "@/hooks/queries/alumni";
+import { useAlumniQuery, type AlumniProfile } from "@/hooks/queries/alumni";
 
 export default function NetworkAlumniPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -84,7 +82,7 @@ export default function NetworkAlumniPage() {
       </div>
 
       {/* Filter Bar */}
-      <Card variant="outline" className="p-4 bg-card/60 backdrop-blur-xs border-border">
+      <Card className="p-4 bg-card/60 backdrop-blur-xs border-border">
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           <div className="sm:col-span-6 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
@@ -97,7 +95,7 @@ export default function NetworkAlumniPage() {
           </div>
 
           <div className="sm:col-span-3">
-            <Select value={selectedDept} onValueChange={setSelectedDept}>
+            <Select value={selectedDept} onValueChange={(v) => setSelectedDept(v || "all")}>
               <SelectTrigger className="text-xs">
                 <SelectValue placeholder="Department" />
               </SelectTrigger>
@@ -113,7 +111,7 @@ export default function NetworkAlumniPage() {
           </div>
 
           <div className="sm:col-span-3">
-            <Select value={selectedBatch} onValueChange={setSelectedBatch}>
+            <Select value={selectedBatch} onValueChange={(v) => setSelectedBatch(v || "all")}>
               <SelectTrigger className="text-xs">
                 <SelectValue placeholder="Batch Year" />
               </SelectTrigger>
@@ -162,7 +160,7 @@ export default function NetworkAlumniPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {alumniList.map((alumni) => {
+          {alumniList.map((alumni: AlumniProfile) => {
             const initial = alumni.name ? alumni.name.charAt(0).toUpperCase() : "A";
             return (
               <Card

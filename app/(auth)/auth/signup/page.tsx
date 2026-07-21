@@ -80,6 +80,8 @@ interface BaseFormData {
   stateCode: string;
   state: string;
   city: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface StudentFields {

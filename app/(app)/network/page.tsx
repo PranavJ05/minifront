@@ -25,7 +25,7 @@ export default function NetworkHubPage() {
       {/* Hero Navigation Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
         {/* Alumni Card */}
-        <Card variant="default" className="group relative overflow-hidden border-border/60 hover:border-primary/50 transition-all duration-300 shadow-sm hover:shadow-md">
+        <Card className="group relative overflow-hidden border-border/60 hover:border-primary/50 transition-all duration-300 shadow-sm hover:shadow-md">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors" />
           <CardContent className="p-8 flex flex-col justify-between h-full space-y-6">
             <div className="space-y-4">
@@ -66,7 +66,7 @@ export default function NetworkHubPage() {
         </Card>
 
         {/* Faculty Card */}
-        <Card variant="default" className="group relative overflow-hidden border-border/60 hover:border-primary/50 transition-all duration-300 shadow-sm hover:shadow-md">
+        <Card className="group relative overflow-hidden border-border/60 hover:border-primary/50 transition-all duration-300 shadow-sm hover:shadow-md">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors" />
           <CardContent className="p-8 flex flex-col justify-between h-full space-y-6">
             <div className="space-y-4">

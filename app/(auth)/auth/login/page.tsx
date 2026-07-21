@@ -381,7 +381,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <Card variant="outline" className="p-4 bg-muted/20 text-center text-xs">
+          <Card className="p-4 bg-muted/20 text-center text-xs">
             <CardContent className="p-0">
               <p className="text-muted-foreground">
                 Don&apos;t have an account yet?{" "}
