@@ -1,11 +1,17 @@
 "use client";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getErrorMessage } from "@/lib/get-error-message";
-
+import Link from "next/link";
+import { ArrowLeft, Briefcase, Building2, MapPin, Link as LinkIcon, Loader2, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCreateOpportunityMutation } from "@/hooks/queries/opportunities";
+import { getErrorMessage } from "@/lib/get-error-message";
 
 interface OpportunityFormData {
   title: string;
@@ -24,259 +30,202 @@ export default function NewOpportunityPage() {
     company: "",
     description: "",
     location: "",
-    type: "",
+    type: "JOB",
     applyLink: "",
-    allowReferrals: false,
+    allowReferrals: true,
   });
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<boolean>(false);
 
   const createMutation = useCreateOpportunityMutation();
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
-  ) => {
-    const { name, value, type, checked } = e.target as HTMLInputElement;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(false);
 
     if (
-      !formData.title ||
-      !formData.company ||
-      !formData.description ||
-      !formData.location ||
+      !formData.title.trim() ||
+      !formData.company.trim() ||
+      !formData.description.trim() ||
+      !formData.location.trim() ||
       !formData.type ||
-      !formData.applyLink
+      !formData.applyLink.trim()
     ) {
-      setError("Please fill in all required fields.");
+      toast.error("Please fill in all required fields.");
       return;
     }
 
     try {
-      await createMutation.mutateAsync(formData);
-      setSuccess(true);
-      setTimeout(() => {
-        router.push("/opportunities");
-      }, 2000);
+      await createMutation.mutateAsync({
+        title: formData.title.trim(),
+        company: formData.company.trim(),
+        description: formData.description.trim(),
+        location: formData.location.trim(),
+        type: formData.type,
+        applyLink: formData.applyLink.trim(),
+        allowReferrals: formData.allowReferrals,
+      });
+
+      toast.success("Opportunity posted successfully!");
+      router.push("/opportunities");
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "An unexpected error occurred."));
+      toast.error(getErrorMessage(err, "Failed to create opportunity."));
     }
   };
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="bg-navy-950 py-12">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="font-serif text-3xl font-bold text-white mb-2">
-            Create New Opportunity
-          </h1>
-          <p className="text-gray-400">
-            Share a new job or internship opportunity with the community.
-          </p>
-        </div>
-      </div>
+    <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <Link
+        href="/opportunities"
+        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-1"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" /> Back to Opportunities
+      </Link>
 
-      <main className="flex-grow max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="card p-8 shadow-lg">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label
-                htmlFor="title"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Title <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="title"
+      <Card className="border-border">
+        <CardHeader className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Briefcase className="h-5 w-5" />
+            </div>
+            <CardTitle className="text-xl font-bold">Post New Opportunity</CardTitle>
+          </div>
+          <CardDescription className="text-xs">
+            Share a job posting or internship opening with fellow alumni and graduates.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="title" className="text-xs font-semibold">
+                Opportunity Title <span className="text-destructive">*</span>
+              </Label>
+              <Input
                 id="title"
+                placeholder="e.g. Senior Software Engineer / Frontend Intern"
                 value={formData.title}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-navy-500 focus:border-navy-500 sm:text-sm"
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className="text-xs"
                 required
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="company"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Company <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="company"
-                id="company"
-                value={formData.company}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-navy-500 focus:border-navy-500 sm:text-sm"
-                required
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="company" className="text-xs font-semibold">
+                  Company Name <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
+                  <Input
+                    id="company"
+                    placeholder="e.g. Google / Microsoft / Startup"
+                    value={formData.company}
+                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                    className="pl-9 text-xs"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="type" className="text-xs font-semibold">
+                  Opportunity Type <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(val) => setFormData({ ...formData, type: (val as "JOB" | "INTERNSHIP") || "JOB" })}
+                >
+                  <SelectTrigger className="text-xs">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="JOB">Full-Time Job</SelectItem>
+                    <SelectItem value="INTERNSHIP">Internship</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div>
-              <label
-                htmlFor="description"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Description <span className="text-red-500">*</span>
-              </label>
+            <div className="space-y-1.5">
+              <Label htmlFor="location" className="text-xs font-semibold">
+                Location <span className="text-destructive">*</span>
+              </Label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
+                <Input
+                  id="location"
+                  placeholder="e.g. Bengaluru, India / Remote"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  className="pl-9 text-xs"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="applyLink" className="text-xs font-semibold">
+                Application URL / Careers Link <span className="text-destructive">*</span>
+              </Label>
+              <div className="relative">
+                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60" />
+                <Input
+                  id="applyLink"
+                  type="url"
+                  placeholder="https://company.careers/job/123"
+                  value={formData.applyLink}
+                  onChange={(e) => setFormData({ ...formData, applyLink: e.target.value })}
+                  className="pl-9 text-xs"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="description" className="text-xs font-semibold">
+                Description &amp; Requirements <span className="text-destructive">*</span>
+              </Label>
               <textarea
-                name="description"
                 id="description"
                 rows={4}
+                placeholder="Brief summary of role responsibilities, tech stack, and eligibility criteria..."
                 value={formData.description}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-navy-500 focus:border-navy-500 sm:text-sm"
-                required
-              ></textarea>
-            </div>
-
-            <div>
-              <label
-                htmlFor="location"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Location <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="location"
-                id="location"
-                value={formData.location}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-navy-500 focus:border-navy-500 sm:text-sm"
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="w-full rounded-md border border-border bg-muted/30 p-3 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-foreground"
                 required
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="type"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Type <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="type"
-                name="type"
-                value={formData.type}
-                onChange={handleChange}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-navy-500 focus:border-navy-500 sm:text-sm rounded-md"
-                required
-              >
-                <option value="">Select a type</option>
-                <option value="JOB">Job</option>
-                <option value="INTERNSHIP">Internship</option>
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="applyLink"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Application Link <span className="text-red-500">*</span>
-              </label>
+            <div className="flex items-center gap-2 pt-2">
               <input
-                type="url"
-                name="applyLink"
-                id="applyLink"
-                value={formData.applyLink}
-                onChange={handleChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-navy-500 focus:border-navy-500 sm:text-sm"
-                placeholder="https://example.com/apply"
-                required
-              />
-            </div>
-
-            <div className="flex items-center">
-              <input
-                id="allowReferrals"
-                name="allowReferrals"
                 type="checkbox"
+                id="allowReferrals"
                 checked={formData.allowReferrals}
-                onChange={handleChange}
-                className="h-4 w-4 text-navy-600 focus:ring-navy-500 border-gray-300 rounded"
+                onChange={(e) => setFormData({ ...formData, allowReferrals: e.target.checked })}
+                className="rounded border-border h-4 w-4"
               />
-              <label
-                htmlFor="allowReferrals"
-                className="ml-2 block text-sm text-gray-900"
-              >
-                Allow Referrals
-              </label>
+              <Label htmlFor="allowReferrals" className="text-xs font-medium cursor-pointer">
+                Open to receiving referral requests from fellow alumni
+              </Label>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                className="w-full btn-primary py-2 px-4 inline-flex justify-center items-center gap-2"
-                disabled={createMutation.isPending}
-              >
+            <div className="pt-4 border-t border-border flex gap-3 justify-end">
+              <Button variant="outline" size="sm" type="button" onClick={() => router.push("/opportunities")} className="cursor-pointer">
+                Cancel
+              </Button>
+              <Button size="sm" type="submit" disabled={createMutation.isPending} className="cursor-pointer">
                 {createMutation.isPending ? (
-                  <svg
-                    className="animate-spin h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                    Posting...
+                  </>
                 ) : (
-                  "Create Opportunity"
+                  "Publish Opportunity"
                 )}
-              </button>
+              </Button>
             </div>
-
-            {error && (
-              <div
-                className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
-                role="alert"
-              >
-                <strong className="font-bold">Error!</strong>
-                <span className="block sm:inline"> {error}</span>
-              </div>
-            )}
-
-            {success && (
-              <div
-                className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative"
-                role="alert"
-              >
-                <strong className="font-bold">Success!</strong>
-                <span className="block sm:inline">
-                  {" "}
-                  Opportunity created successfully! Redirecting...
-                </span>
-              </div>
-            )}
           </form>
-        </div>
-      </main>
-
-      <Footer />
+        </CardContent>
+      </Card>
     </div>
   );
 }
