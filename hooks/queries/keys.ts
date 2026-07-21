@@ -77,6 +77,7 @@ export const queryKeys = {
     detail: (id: number) => ["faculty", id] as const,
   },
   clubs: {
+    all: ["clubs"] as const,
     my: () => ["clubs", "mine"] as const,
   },
   alumniApplications: {
