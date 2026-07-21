@@ -69,7 +69,6 @@ export default function AlumniSignupForm({
             <Input
               id="fullName"
               className="pl-8"
-              placeholder="John Doe"
               value={formData.fullName}
               onChange={(e) => onChange("fullName", e.target.value)}
             />
@@ -89,7 +88,7 @@ export default function AlumniSignupForm({
               id="email"
               type="email"
               className="pl-8"
-              placeholder="john@example.com"
+
               value={formData.email}
               onChange={(e) => onChange("email", e.target.value)}
             />

@@ -35,11 +35,20 @@ export default function LandingPage() {
   useEffect(() => {
     if (isLoading) return;
 
-    if (!isAuthenticated || !user) return;
+    if (!isAuthenticated || !user) {
+      const pendingRaw =
+        typeof window !== "undefined"
+          ? localStorage.getItem("pendingUserData")
+          : null;
+      if (pendingRaw) {
+        router.replace("/auth/pending");
+        return;
+      }
+      return;
+    }
 
     const userRoles = user.roles;
     const dashboardPath = getDashboardPathForRoles(userRoles);
-    console.log("dashboardPath", dashboardPath);
     router.replace(dashboardPath);
   }, [isLoading, isAuthenticated, user, router]);
 

@@ -2,6 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/fetcher";
 import { queryKeys } from "./keys";
 
+export interface PendingStatusResponse {
+  status: "PENDING" | "ACTIVE" | "REJECTED" | null;
+  message: string;
+}
+
 export function useProfileQuery() {
   return useQuery({
     queryKey: queryKeys.profile.me(),
@@ -12,7 +17,7 @@ export function useProfileQuery() {
 export function usePendingStatusQuery(userId: number | null) {
   return useQuery({
     queryKey: queryKeys.auth.pendingStatus(userId ?? 0),
-    queryFn: () => api<boolean>(`/api/auth/pending-status/${userId}`),
+    queryFn: () => api<PendingStatusResponse>(`/api/auth/pending-status/${userId}`),
     enabled: userId !== null && userId > 0,
   });
 }

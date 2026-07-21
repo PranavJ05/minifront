@@ -34,9 +34,14 @@ import { UserRole } from "@/types";
 
 const currentYear = new Date().getFullYear();
 
-const batchYears = Array.from(
-  { length: currentYear + 4 - 1991 + 1 },
-  (_, index) => String(1991 + index),
+const alumniBatchYears = Array.from(
+  { length: currentYear - 1990 + 1 },
+  (_, i) => String(1990 + i),
+);
+
+const studentBatchYears = Array.from(
+  { length: 4 },
+  (_, i) => String(currentYear + 1 + i),
 );
 
 const courseBranchMap: Record<string, { branches: string[]; auto: boolean }> = {
@@ -235,6 +240,8 @@ export default function SignupPage() {
     if (formData.role === "student") {
       if (!formData.rollNumber.trim()) {
         nextErrors.rollNumber = "Roll number is required";
+      } else if (!/^MDL\d{2}CS\d{3}$/i.test(formData.rollNumber.trim())) {
+        nextErrors.rollNumber = "Format: MDL23CS032";
       }
     }
     if (!formData.fullName.trim()) {
@@ -492,8 +499,12 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <p className="text-muted-foreground/60 text-xs relative z-10">
-          &copy; 2024 Alumni Network. Verified University Platform.
+        <p className="text-sm text-muted-foreground relative z-10 leading-relaxed">
+          Please reach out to{" "}
+          <a href="mailto:arc@mec.ac.in" className="text-foreground font-medium hover:text-foreground/80 underline underline-offset-2 transition-colors">
+            arc@mec.ac.in
+          </a>{" "}
+          if you have any queries or need further assistance.
         </p>
       </div>
 
@@ -619,7 +630,7 @@ export default function SignupPage() {
                         id="linkedinUrl"
                         type="url"
                         className="pl-8 h-9 text-xs"
-                        placeholder="https://linkedin.com/in/johndoe"
+                        placeholder="https://linkedin.com/in/your_name"
                         value={formData.linkedinUrl}
                         onChange={(e) => update("linkedinUrl", e.target.value)}
                       />
@@ -639,7 +650,7 @@ export default function SignupPage() {
                         id="portfolioUrl"
                         type="url"
                         className="pl-8 h-9 text-xs"
-                        placeholder="https://johndoe.dev"
+                        placeholder="https://your_name.com"
                         value={formData.portfolioUrl}
                         onChange={(e) => update("portfolioUrl", e.target.value)}
                       />
@@ -759,7 +770,11 @@ export default function SignupPage() {
                 }
                 departments={departments}
                 branches={filteredBranches}
-                batchYears={batchYears}
+                batchYears={
+                  formData.role === "student"
+                    ? studentBatchYears
+                    : alumniBatchYears
+                }
                 selectedDepartment={formData.department}
                 selectedBranch={formData.branch}
                 selectedBatchYear={formData.batchYear}

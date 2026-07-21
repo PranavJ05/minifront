@@ -1,94 +1,52 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { ChangeEvent, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
+  Award,
   Briefcase,
+  Building2,
+  BookOpen,
   Calendar,
   Camera,
+  CheckCircle2,
+  Clock,
   ExternalLink,
   GraduationCap,
   Loader2,
   Mail,
   MapPin,
   Pencil,
-  Plus,
-  RefreshCw,
+  Phone,
+  Sparkles,
   Trash2,
   UserCircle2,
   X,
 } from "lucide-react";
-import SkillsSection from "@/components/profile/SkillsSection";
-import AddSkillModal from "@/components/profile/AddSkillModal";
-import StudentProfile from "@/components/profile/StudentProfile";
-import FacultyProfile from "@/components/profile/FacultyProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { getAlumniSkillsSummary, getCourses } from "@/lib/api";
-import { UserRole, AlumniSkillSummary } from "@/types";
-import { hasRole, isStudent, isFaculty } from "@/lib/roleUtils";
-import { getErrorMessage } from "@/lib/get-error-message";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  useMyProfileQuery,
+  useUpdateProfileMutation,
+} from "@/hooks/queries/profile";
+import type { MyProfileResponse } from "@/lib/types/profile";
+import { api } from "@/lib/fetcher";
+import { cn } from "@/lib/utils";
 
-const API_BASE = "http://localhost:8080";
-const LOG = (...args: unknown[]) => console.log("[ProfilePage]", ...args);
-const ERR = (...args: unknown[]) => console.error("[ProfilePage]", ...args);
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type SidebarUser = {
-  role: UserRole;
-  name: string;
-  email: string;
+const resolveImageUrl = (url: string | null) => {
+  if (!url) return null;
+  return url.startsWith("http") ? url : `${BACKEND_URL}${url}`;
 };
-
-interface ProfileEventSummary {
-  id: number;
-  title: string;
-  eventDate: string;
-  location: string;
-}
-
-interface ProfileOpportunitySummary {
-  id: number;
-  title: string;
-  company: string;
-  location: string;
-  type: string;
-  postedAt: string;
-}
-
-interface ProfileResponse {
-  userId: number;
-  alumniId: number | null;
-  name: string;
-  email: string;
-  profileImageUrl: string | null;
-  batchYear: number | null;
-  department: string | null;
-  location: string | null;
-  profession: string | null;
-  gmail: string | null;
-  linkedinUrl: string | null;
-  courseId: number | null;
-  courseCode: string | null;
-  events: ProfileEventSummary[];
-  opportunities: ProfileOpportunitySummary[];
-}
-
-interface ProfileFormValues {
-  name: string;
-  gmail: string;
-  batchYear: string;
-  department: string;
-  location: string;
-  profession: string;
-  linkedinUrl: string;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatDateTime = (value: string) =>
   new Date(value).toLocaleString("en-IN", {
@@ -106,940 +64,914 @@ const formatDate = (value: string) =>
     year: "numeric",
   });
 
-const toFormValues = (profile: ProfileResponse): ProfileFormValues => ({
-  name: profile.name || "",
-  gmail: profile.gmail || "",
-  batchYear: profile.batchYear ? String(profile.batchYear) : "",
-  department: profile.department || "",
-  location: profile.location || "",
-  profession: profile.profession || "",
-  linkedinUrl: profile.linkedinUrl || "",
-});
-
-const resolveImageUrl = (value: string | null) => {
-  if (!value) return null;
-  return value.startsWith("http") ? value : `${API_BASE}${value}`;
+const ROLE_LABEL: Record<string, string> = {
+  ALUMNI: "Alumni",
+  STUDENT: "Student",
+  FACULTY: "Faculty",
 };
 
-const syncStoredUserName = (name: string) => {
-  const stored = localStorage.getItem("alumni_user");
-  if (!stored) return;
-
-  try {
-    const parsed = JSON.parse(stored);
-    parsed.fullName = name;
-    parsed.name = name;
-    localStorage.setItem("alumni_user", JSON.stringify(parsed));
-    window.dispatchEvent(new Event("storage"));
-  } catch (error) {
-    ERR("Failed to sync stored user name:", error);
-  }
-};
-
-// ─── Component ────────────────────────────────────────────────────────────────
+type SidebarTabKey = "skills" | "events" | "opportunities";
 
 export default function ProfilePage() {
-  const [userRoles, setUserRoles] = useState<string | string[] | null>(null);
-  const [roleChecked, setRoleChecked] = useState(false);
-
-  // Check role on mount and render appropriate component
-  useEffect(() => {
-    const storedUser = localStorage.getItem("alumni_user");
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        const roles = parsed?.roles || parsed?.role || null;
-        setUserRoles(roles);
-      } catch {
-        setUserRoles(null);
-      }
-    }
-    setRoleChecked(true);
-  }, []);
-
-  if (!roleChecked) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  // Student profile has highest priority for dual-role users (e.g. main admin + student)
-  if (isStudent(userRoles)) {
-    return <StudentProfile />;
-  }
-
-  // Faculty users
-  if (isFaculty(userRoles)) {
-    return <FacultyProfile />;
-  }
-
-  // Only explicit alumni role uses alumni profile
-  if (hasRole(userRoles, "alumni")) {
-    return <AlumniProfileContent />;
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-6">
-      <div className="max-w-md text-center">
-        <h2 className="text-xl font-semibold mb-2">Profile unavailable</h2>
-        <p className="text-muted-foreground">
-          This account does not have a direct profile endpoint. If this user
-          should have one, include an explicit `student`, `faculty`, or `alumni`
-          role in the login/profile payload.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// Alumni Profile Content (extracted from original component)
-function AlumniProfileContent() {
-  const router = useRouter();
+  const { data: profile, isLoading, isError, error: queryError } = useMyProfileQuery();
+  const updateProfile = useUpdateProfileMutation();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // General Profile State
-  const [profile, setProfile] = useState<ProfileResponse | null>(null);
-  const [sidebarUser, setSidebarUser] = useState<SidebarUser | null>(null);
-  const [formValues, setFormValues] = useState<ProfileFormValues>({
+  const [isEditing, setIsEditing] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [removingPhoto, setRemovingPhoto] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [sidebarTab, setSidebarTab] = useState<SidebarTabKey>("events");
+
+  // Form state — unified across roles
+  const [form, setForm] = useState({
     name: "",
-    gmail: "",
-    batchYear: "",
-    department: "",
-    location: "",
+    phone: "",
+    bio: "",
+    // alumni
     profession: "",
+    location: "",
     linkedinUrl: "",
+    gmail: "",
+    // student
+    fullName: "",
+    currentSemester: "",
+    cgpa: "",
+    githubUrl: "",
+    portfolioUrl: "",
+    // faculty
+    designation: "",
+    officeLocation: "",
+    googleScholarUrl: "",
   });
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [isRemovingPhoto, setIsRemovingPhoto] = useState(false);
+  const isSaving = updateProfile.isPending;
 
-  // Skills Specific State
-  const [resolvedCourseId, setResolvedCourseId] = useState<number | null>(null);
-  const [skillsData, setSkillsData] = useState<AlumniSkillSummary | null>(null);
-  const [skillsLoading, setSkillsLoading] = useState(false);
-  const [courseResolving, setCourseResolving] = useState(false);
-  const [skillsError, setSkillsError] = useState<string | null>(null);
-  const [isAddSkillModalOpen, setIsAddSkillModalOpen] = useState(false);
-
-  // ── Load profile & auth on mount ──────────────────────────────────────────
-
-  useEffect(() => {
-    LOG("Mounting and checking auth...");
-    const storedUser = localStorage.getItem("alumni_user");
-    const token = localStorage.getItem("token");
-
-    if (!storedUser || !token) {
-      LOG("Missing auth, redirecting to login");
-      router.push("/auth/login");
-      return;
-    }
-
-    try {
-      const parsedUser = JSON.parse(storedUser);
-      // Get all roles or single role
-      const userRoles = parsedUser?.roles || parsedUser?.role || "";
-
-      // Check if user has alumni access (alumni OR batch_admin)
-      const hasAlumniAccess = hasRole(userRoles, ["alumni", "batch_admin"]);
-
-      // Normalize role for display (batch_admin -> alumni)
-      const primaryRole = hasAlumniAccess ? "alumni" : userRoles[0] || "alumni";
-
-      LOG("Parsed user roles:", userRoles, "Primary role:", primaryRole);
-
-      setSidebarUser({
-        role: (primaryRole || "alumni") as UserRole,
-        name: parsedUser?.fullName || parsedUser?.name || "User",
-        email: parsedUser?.email || "",
-      });
-    } catch (err) {
-      ERR("Failed to parse stored user:", err);
-      router.push("/auth/login");
-      return;
-    }
-
-    loadProfile(token);
-  }, [router]);
-
-  // ── Resolve courseId after profile loads ──────────────────────────────────
-
-  useEffect(() => {
-    if (!profile) return;
-
-    if (profile.courseId) {
-      LOG("courseId present in profile:", profile.courseId);
-      setResolvedCourseId(profile.courseId);
-      return;
-    }
-
-    LOG("courseId missing in profile, attempting resolution via /api/courses");
-    resolveCourseId(profile);
-  }, [profile]);
-
-  // ── Load skills after courseId is resolved ────────────────────────────────
-
-  useEffect(() => {
-    if (profile?.alumniId && resolvedCourseId) {
-      LOG("Both alumniId and courseId ready — loading skills");
-      loadSkills(profile.alumniId);
-    }
-  }, [resolvedCourseId]);
-
-  // ─── API Functions ─────────────────────────────────────────────────────────
-
-  async function loadProfile(token: string) {
-    LOG("loadProfile() called");
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch(`${API_BASE}/api/profile/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.status === 401 || res.status === 403) {
-        LOG("Auth failed on profile fetch, redirecting");
-        router.push("/auth/login");
-        return;
-      }
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => "Unknown error");
-        throw new Error(`Failed to load profile (${res.status}): ${text}`);
-      }
-
-      const data: ProfileResponse = await res.json();
-      LOG("Profile loaded successfully:", {
-        alumniId: data.alumniId,
-        courseId: data.courseId,
-        courseCode: data.courseCode,
-      });
-
-      setProfile(data);
-      setFormValues(toFormValues(data));
-      syncStoredUserName(data.name);
-      setSidebarUser((current) =>
-        current
-          ? {
-              ...current,
-              name: data.name || current.name,
-              email: data.email || current.email,
-            }
-          : current,
-      );
-    } catch (err: unknown) {
-      ERR("Profile load error:", err);
-      setError(getErrorMessage(err, "Failed to load profile"));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function resolveCourseId(prof: ProfileResponse) {
-    LOG("resolveCourseId() called — courseCode:", prof.courseCode);
-    setCourseResolving(true);
-
-    try {
-      const courses = await getCourses();
-
-      if (prof.courseCode) {
-        const match = courses.find(
-          (c) => c.code.toLowerCase() === prof.courseCode!.toLowerCase(),
-        );
-        if (match) {
-          LOG("Resolved courseId via courseCode match:", match.id);
-          setResolvedCourseId(match.id);
-          return;
-        }
-      }
-
-      if (prof.department) {
-        const match = courses.find(
-          (c) =>
-            c.name.toLowerCase().includes(prof.department!.toLowerCase()) ||
-            c.department?.name
-              .toLowerCase()
-              .includes(prof.department!.toLowerCase()),
-        );
-        if (match) {
-          LOG("Resolved courseId via department match:", match.id);
-          setResolvedCourseId(match.id);
-          return;
-        }
-      }
-
-      setSkillsError(
-        "Your course could not be determined. Skills cannot be loaded. Please contact support.",
-      );
-    } catch (err: unknown) {
-      ERR("resolveCourseId error:", err);
-      setSkillsError("Failed to resolve course information: " + getErrorMessage(err, String(err)));
-    } finally {
-      setCourseResolving(false);
-    }
-  }
-
-  async function loadSkills(alumniId: number) {
-    LOG("loadSkills() called for alumniId:", alumniId);
-    setSkillsLoading(true);
-    setSkillsError(null);
-
-    try {
-      const data = await getAlumniSkillsSummary(alumniId);
-      LOG("Skills loaded:", data.skills.length, "skills found.");
-      setSkillsData(data);
-    } catch (err: unknown) {
-      ERR("loadSkills error:", err);
-      setSkillsError(getErrorMessage(err, "Failed to load skills"));
-    } finally {
-      setSkillsLoading(false);
-    }
-  }
-
-  function handleSkillsRefresh() {
-    if (profile?.alumniId) {
-      LOG("Manual skills refresh triggered");
-      loadSkills(profile.alumniId);
-    }
-  }
-
-  // ── Form Actions ──────────────────────────────────────────────────────────
-
-  const updateFormValue = (field: keyof ProfileFormValues, value: string) => {
-    setFormValues((current) => ({ ...current, [field]: value }));
+  // Initialize form when profile loads
+  const initForm = (p: MyProfileResponse) => {
+    const a = p.alumniProfile;
+    const s = p.studentProfile;
+    const f = p.facultyProfile;
+    setForm({
+      name: p.name || "",
+      phone: p.phone || "",
+      bio: a?.bio || s?.bio || f?.bio || "",
+      profession: a?.profession || "",
+      location: a?.location || "",
+      linkedinUrl: a?.linkedinUrl || s?.linkedinUrl || f?.linkedinUrl || "",
+      gmail: "",
+      fullName: s?.fullName || f?.fullName || "",
+      currentSemester: s?.currentSemester?.toString() || "",
+      cgpa: s?.cgpa?.toString() || "",
+      githubUrl: s?.githubUrl || "",
+      portfolioUrl: s?.portfolioUrl || "",
+      designation: f?.designation || "",
+      officeLocation: f?.officeLocation || "",
+      googleScholarUrl: f?.googleScholarUrl || "",
+    });
   };
 
-  const applyProfile = (nextProfile: ProfileResponse, message?: string) => {
-    setProfile(nextProfile);
-    setFormValues(toFormValues(nextProfile));
-    syncStoredUserName(nextProfile.name);
-    setSidebarUser((current) =>
-      current
-        ? {
-            ...current,
-            name: nextProfile.name || current.name,
-            email: nextProfile.email || current.email,
-          }
-        : current,
-    );
-    if (message) setSuccessMessage(message);
-  };
+  // Call initForm on first load only when not editing
+  const [initialized, setInitialized] = useState(false);
+  if (profile && !initialized && !isEditing) {
+    initForm(profile);
+    setInitialized(true);
+  }
 
-  const handleSaveProfile = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const token = localStorage.getItem("token");
-    if (!token || !profile) {
-      router.push("/auth/login");
-      return;
+  const handleSave = async () => {
+    const payload: Record<string, unknown> = {};
+    const role = profile?.primaryRole;
+
+    payload.name = form.name.trim();
+
+    if (form.phone.trim()) payload.phone = form.phone.trim();
+
+    if (role === "ALUMNI") {
+      if (form.bio.trim()) payload.bio = form.bio.trim();
+      if (form.profession.trim()) payload.profession = form.profession.trim();
+      if (form.location.trim()) payload.location = form.location.trim();
+      if (form.linkedinUrl.trim()) payload.linkedinUrl = form.linkedinUrl.trim();
     }
 
-    setIsSaving(true);
-    setError(null);
-    setSuccessMessage(null);
+    if (role === "STUDENT") {
+      payload.fullName = form.fullName.trim();
+      if (form.bio.trim()) payload.bio = form.bio.trim();
+      if (form.currentSemester) payload.currentSemester = parseInt(form.currentSemester);
+      if (form.cgpa) payload.cgpa = parseFloat(form.cgpa);
+      if (form.linkedinUrl.trim()) payload.linkedinUrl = form.linkedinUrl.trim();
+      if (form.githubUrl.trim()) payload.githubUrl = form.githubUrl.trim();
+      if (form.portfolioUrl.trim()) payload.portfolioUrl = form.portfolioUrl.trim();
+    }
+
+    if (role === "FACULTY") {
+      payload.fullName = form.fullName.trim();
+      if (form.bio.trim()) payload.bio = form.bio.trim();
+      if (form.designation.trim()) payload.designation = form.designation.trim();
+      if (form.officeLocation.trim()) payload.officeLocation = form.officeLocation.trim();
+      if (form.linkedinUrl.trim()) payload.linkedinUrl = form.linkedinUrl.trim();
+      if (form.googleScholarUrl.trim()) payload.googleScholarUrl = form.googleScholarUrl.trim();
+    }
 
     try {
-      const payload = {
-        name: formValues.name.trim(),
-        gmail: formValues.gmail.trim() || null,
-        batchYear: formValues.batchYear ? Number(formValues.batchYear) : null,
-        department: formValues.department.trim() || null,
-        location: formValues.location.trim() || null,
-        profession: formValues.profession.trim() || null,
-        linkedinUrl: formValues.linkedinUrl.trim() || null,
-      };
-
-      const res = await fetch(`${API_BASE}/api/profile/me`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errorBody = await res.json().catch(() => null);
-        throw new Error(errorBody?.message || "Failed to update profile");
-      }
-
-      const data: ProfileResponse = await res.json();
-      applyProfile(data, "Profile updated successfully.");
+      await updateProfile.mutateAsync(payload);
       setIsEditing(false);
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, "Failed to update profile"));
-    } finally {
-      setIsSaving(false);
+      setSuccessMessage("Profile updated successfully!");
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch {
+      // error is handled by the mutation
     }
   };
 
-  const handlePhotoSelected = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    const token = localStorage.getItem("token");
-
-    if (!file || !token || !profile) return;
-
-    setIsUploadingPhoto(true);
-    setError(null);
-    setSuccessMessage(null);
-
+  const handlePhotoSelected = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPhoto(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
-
-      const res = await fetch(`${API_BASE}/api/profile/me/photo`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-
-      const body = await res.json().catch(() => null);
-      if (!res.ok)
-        throw new Error(body?.message || "Failed to upload profile photo");
-
-      applyProfile(
-        {
-          ...profile,
-          profileImageUrl: body?.profileImageUrl ?? profile.profileImageUrl,
-        },
-        body?.message || "Profile photo updated successfully.",
-      );
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, "Failed to upload profile photo"));
+      await api("/api/profile/me/photo", { method: "PUT", body: formData });
+      window.location.reload();
+    } catch {
+      // handled
     } finally {
-      setIsUploadingPhoto(false);
-      if (event.target) event.target.value = "";
+      setUploadingPhoto(false);
+      if (e.target) e.target.value = "";
     }
   };
 
   const handleRemovePhoto = async () => {
-    const token = localStorage.getItem("token");
-    if (!token || !profile?.profileImageUrl) return;
-
-    setIsRemovingPhoto(true);
-    setError(null);
-    setSuccessMessage(null);
-
+    setRemovingPhoto(true);
     try {
-      const res = await fetch(`${API_BASE}/api/profile/me/photo`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const body = await res.json().catch(() => null);
-      if (!res.ok)
-        throw new Error(body?.message || "Failed to remove profile photo");
-
-      applyProfile(
-        { ...profile, profileImageUrl: null },
-        body?.message || "Profile photo removed successfully.",
-      );
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, "Failed to remove profile photo"));
+      await api("/api/profile/me/photo", { method: "DELETE" });
+      window.location.reload();
+    } catch {
+      // handled
     } finally {
-      setIsRemovingPhoto(false);
+      setRemovingPhoto(false);
     }
   };
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Loading state ────────────────────────────────────────────────
 
-  if (loading || !sidebarUser) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="w-full px-6 pb-6 space-y-6">
+        <Skeleton className="h-14 rounded-xl" />
+        <Skeleton className="h-44 rounded-2xl" />
+        <div className="grid xl:grid-cols-[1.6fr,1fr] gap-6">
+          <Skeleton className="h-80 rounded-2xl" />
+          <Skeleton className="h-80 rounded-2xl" />
+        </div>
       </div>
     );
   }
 
-  const profileImageSrc = resolveImageUrl(profile?.profileImageUrl || null);
-  const canUseSkills = !!(profile?.alumniId && resolvedCourseId);
-  const existingSkillIds = skillsData?.skills.map((s) => s.skillId) ?? [];
+  // ── Error state ──────────────────────────────────────────────────
+
+  if (isError || !profile) {
+    return (
+      <div className="w-full px-6 pb-6 space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {queryError instanceof Error ? queryError.message : "Failed to load profile"}
+          </AlertDescription>
+        </Alert>
+        <Button variant="outline" onClick={() => window.location.reload()} className="cursor-pointer">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  const role = profile.primaryRole;
+  const alumniData = profile.alumniProfile;
+  const studentData = profile.studentProfile;
+  const facultyData = profile.facultyProfile;
+  const profileImageSrc = resolveImageUrl(profile.profileImageUrl);
+
+  const contactMeta: { icon: typeof Mail; label: string; value: string | null }[] = [
+    { icon: Mail, label: "Email", value: profile.email },
+    { icon: Phone, label: "Phone", value: profile.phone },
+    {
+      icon: role === "FACULTY" ? Building2 : MapPin,
+      label: role === "FACULTY" ? "Office" : "Location",
+      value: (role === "FACULTY" ? facultyData?.officeLocation : alumniData?.location) || null,
+    },
+    {
+      icon: GraduationCap,
+      label: "Batch",
+      value: (alumniData?.batchYear || studentData?.batchYear || facultyData?.joinDate)?.toString() || null,
+    },
+  ];
+
+  const hasSkillsTab = role === "ALUMNI" && (profile.skills?.length ?? 0) > 0;
+  const sidebarTabs: { key: SidebarTabKey; label: string; icon: typeof Calendar }[] = [
+    ...(hasSkillsTab ? [{ key: "skills" as SidebarTabKey, label: "Skills", icon: Sparkles }] : []),
+    { key: "events", label: "Events", icon: Calendar },
+    { key: "opportunities", label: "Opportunities", icon: Briefcase },
+  ];
+  const activeTab = sidebarTabs.some((t) => t.key === sidebarTab) ? sidebarTab : sidebarTabs[0].key;
 
   return (
-    <main className="flex-1 overflow-auto">
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-sm font-medium text-primary uppercase tracking-wide">
+    <div className="w-full px-6 pb-6 space-y-6">
+      {/* Sticky header */}
+      <div className="sticky top-14 z-30 bg-background/95 backdrop-blur-md py-4 border-b border-border/40 -mx-6 px-6">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75">
               Profile
             </p>
-            <h1 className="font-serif text-3xl font-bold text-foreground mt-1">
-              My Profile
-            </h1>
-            <p className="text-muted-foreground mt-2 max-w-2xl">
-              Edit your public identity, update your contact details, and manage
-              your profile photo and skills.
-            </p>
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">My Profile</h1>
           </div>
-
-          {profile && (
-            <div className="flex items-center gap-3">
-              {isEditing ? (
+          <div className="flex items-center gap-2">
+            {isEditing ? (
+              <>
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setFormValues(toFormValues(profile));
                     setIsEditing(false);
-                    setSuccessMessage(null);
+                    if (profile) initForm(profile);
                   }}
+                  disabled={isSaving}
                   className="cursor-pointer"
                 >
-                  <X className="h-4 w-4" /> Cancel
+                  <X className="h-4 w-4" />
+                  Cancel
                 </Button>
-              ) : (
-                <Button
-                  onClick={() => {
-                    setIsEditing(true);
-                    setSuccessMessage(null);
-                  }}
-                  className="cursor-pointer"
-                >
-                  <Pencil className="h-4 w-4" /> Edit Profile
+                <Button onClick={handleSave} disabled={isSaving} className="cursor-pointer">
+                  {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Save Changes
                 </Button>
-              )}
-            </div>
-          )}
+              </>
+            ) : (
+              <Button onClick={() => setIsEditing(true)} className="cursor-pointer">
+                <Pencil className="h-4 w-4" />
+                Edit Profile
+              </Button>
+            )}
+          </div>
         </div>
+      </div>
 
-        {/* System Messages */}
-        {error && (
-          <Alert
-            variant="destructive"
-            className="bg-destructive/10 border-destructive/20 text-destructive"
-          >
-            <AlertCircle className="h-5 w-5" />
-            <div>
-              <AlertTitle>Something went wrong</AlertTitle>
-              <AlertDescription className="mt-1">{error}</AlertDescription>
-            </div>
-          </Alert>
-        )}
+      {successMessage && (
+        <Alert className="bg-green-500/10 border-green-500/20 text-green-600">
+          <CheckCircle2 className="h-4 w-4" />
+          <AlertTitle className="text-sm font-medium">{successMessage}</AlertTitle>
+        </Alert>
+      )}
 
-        {successMessage && (
-          <Alert className="bg-green-500/10 border-green-500/20 text-green-600">
-            <AlertTitle className="text-sm font-medium">
-              {successMessage}
-            </AlertTitle>
-          </Alert>
-        )}
-
-        {profile && (
-          <>
-            {/* Profile Card & Quick Links */}
-            <section className="grid xl:grid-cols-[1.2fr,0.8fr] gap-6">
-              <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm p-6">
-                <div className="flex flex-col sm:flex-row items-start gap-6">
-                  <div className="relative flex-shrink-0">
-                    <div className="w-32 h-32 rounded-full overflow-hidden bg-muted border-4 border-white shadow-lg flex items-center justify-center text-primary">
-                      {profileImageSrc ? (
-                        <img
-                          src={profileImageSrc}
-                          alt={profile.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <UserCircle2 className="h-20 w-20" />
-                      )}
-                    </div>
-
+      {/* Hero card */}
+      <Card>
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row gap-6">
+            {/* Avatar */}
+            <div className="relative shrink-0 mx-auto sm:mx-0">
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-muted ring-2 ring-border flex items-center justify-center">
+                {profileImageSrc ? (
+                  <img src={profileImageSrc} alt={profile.name} className="w-full h-full object-cover" />
+                ) : (
+                  <UserCircle2 className="h-12 w-12 text-muted-foreground/40" />
+                )}
+              </div>
+              {!isEditing && (
+                <>
+                  <Button
+                    variant="default"
+                    size="icon"
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                    className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full shadow-md cursor-pointer"
+                    aria-label="Update profile photo"
+                  >
+                    {uploadingPhoto ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Camera className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                  {profileImageSrc && (
                     <Button
-                      variant="default"
+                      variant="secondary"
                       size="icon"
                       type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploadingPhoto}
-                      className="absolute bottom-1 right-1 w-10 h-10 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/80 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-                      aria-label="Update profile photo"
+                      onClick={handleRemovePhoto}
+                      disabled={removingPhoto}
+                      className="absolute -top-1 -right-1 w-6 h-6 rounded-full shadow-md cursor-pointer"
+                      aria-label="Remove profile photo"
                     >
-                      {isUploadingPhoto ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                      {removingPhoto ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
                       ) : (
-                        <Camera className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3" />
                       )}
                     </Button>
+                  )}
+                </>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={handlePhotoSelected}
+              />
+            </div>
 
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp"
-                      className="hidden"
-                      onChange={handlePhotoSelected}
-                    />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <div>
-                        <h2 className="font-serif text-3xl font-bold text-foreground">
-                          {profile.name}
-                        </h2>
-                        <p className="text-primary font-semibold mt-1">
-                          {profile.profession || "Profession not added"}
-                        </p>
-                      </div>
-
-                      {profile.profileImageUrl && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          type="button"
-                          onClick={handleRemovePhoto}
-                          disabled={isRemovingPhoto}
-                          className="cursor-pointer"
-                        >
-                          {isRemovingPhoto ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                          Remove photo
-                        </Button>
-                      )}
+            {/* Identity + meta */}
+            <div className="flex-1 min-w-0 space-y-4">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="flex-1 min-w-[220px]">
+                  {isEditing ? (
+                    <div className="space-y-2 max-w-sm">
+                      <Label htmlFor="edit-name">Full Name</Label>
+                      <Input
+                        id="edit-name"
+                        value={form.name}
+                        onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                      />
                     </div>
-
-                    <div className="mt-5 grid sm:grid-cols-2 gap-3 text-sm text-muted-foreground">
-                      <p className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-3">
-                        <Mail className="h-4 w-4 text-primary" />
-                        <span className="truncate">{profile.email}</span>
-                      </p>
-                      <p className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-3">
-                        <MapPin className="h-4 w-4 text-primary" />
-                        <span>{profile.location || "Location not added"}</span>
-                      </p>
-                      <p className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-3">
-                        <GraduationCap className="h-4 w-4 text-primary" />
-                        <span>
-                          {profile.department || "Department not added"}
-                        </span>
-                      </p>
-                      <p className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-3">
-                        <Mail className="h-4 w-4 text-primary" />
-                        <span className="truncate">
-                          {profile.batchYear || "Year not added"}
-                        </span>
-                      </p>
+                  ) : (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-xl font-semibold tracking-tight text-foreground">
+                        {profile.name}
+                      </h2>
+                      <Badge variant="secondary" className="text-[10px]">
+                        {ROLE_LABEL[role] ?? role}
+                      </Badge>
                     </div>
-                  </div>
+                  )}
+                  {!isEditing && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {role === "ALUMNI" && (alumniData?.profession || "No profession listed")}
+                      {role === "STUDENT" &&
+                        `${studentData?.branchName || "Student"}${
+                          studentData?.currentSemester ? ` · Semester ${studentData.currentSemester}` : ""
+                        }`}
+                      {role === "FACULTY" && (facultyData?.designation || "No designation listed")}
+                    </p>
+                  )}
                 </div>
-              </div>
 
-              <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm p-6">
-                <h2 className="font-bold text-foreground mb-4">Quick Links</h2>
-                <div className="space-y-3 text-sm">
+                <div className="flex items-center gap-2">
                   <Link
                     href="/events"
-                    className="flex items-center justify-between rounded-xl border border-border px-4 py-3 text-primary hover:bg-muted"
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <span className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" /> My Events
-                    </span>
-                    <ExternalLink className="h-4 w-4" />
+                    <Calendar className="h-3.5 w-3.5" />
+                    Events
+                    <ExternalLink className="h-3 w-3" />
                   </Link>
                   <Link
                     href="/opportunities"
-                    className="flex items-center justify-between rounded-xl border border-border px-4 py-3 text-primary hover:bg-muted"
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <span className="flex items-center gap-2">
-                      <Briefcase className="h-4 w-4" /> My Opportunities
-                    </span>
-                    <ExternalLink className="h-4 w-4" />
+                    <Briefcase className="h-3.5 w-3.5" />
+                    Opportunities
+                    <ExternalLink className="h-3 w-3" />
                   </Link>
-                  {profile.linkedinUrl && (
-                    <a
-                      href={profile.linkedinUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between rounded-xl border border-border px-4 py-3 text-primary hover:bg-muted"
-                    >
-                      <span className="flex items-center gap-2">
-                        <ExternalLink className="h-4 w-4" /> LinkedIn
-                      </span>
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  )}
                 </div>
               </div>
-            </section>
 
-            {/* Edit Details Form & Skills & History */}
-            <section className="grid xl:grid-cols-[1fr,0.9fr] gap-6">
-              {/* Edit details form */}
-              <form
-                onSubmit={handleSaveProfile}
-                className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm p-6 h-fit space-y-5"
-              >
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div>
-                    <h2 className="font-bold text-foreground text-lg">
-                      Edit Details
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Update the fields that appear on your profile.
-                    </p>
-                  </div>
-                  {isEditing && (
-                    <Button
-                      type="submit"
-                      disabled={isSaving}
-                      className="cursor-pointer"
-                    >
-                      {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
-                      Save Changes
-                    </Button>
-                  )}
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <label className="text-sm font-medium text-foreground">
-                    Full Name
-                    <Input
-                      type="text"
-                      value={formValues.name}
-                      onChange={(e) => updateFormValue("name", e.target.value)}
-                      disabled={!isEditing || isSaving}
-                      className="mt-1.5"
-                    />
-                  </label>
-
-                  <label className="text-sm font-medium text-foreground">
-                    Personal Email (Optional)
-                    <Input
-                      type="email"
-                      value={formValues.gmail}
-                      onChange={(e) => updateFormValue("gmail", e.target.value)}
-                      disabled={!isEditing || isSaving}
-                      className="mt-1.5"
-                    />
-                  </label>
-
-                  <label className="text-sm font-medium text-foreground">
-                    Batch Year
-                    <Input
-                      type="number"
-                      value={formValues.batchYear}
-                      onChange={(e) =>
-                        updateFormValue("batchYear", e.target.value)
-                      }
-                      disabled={!isEditing || isSaving}
-                      className="mt-1.5"
-                    />
-                  </label>
-
-                  <label className="text-sm font-medium text-foreground">
-                    Department
-                    <Input
-                      type="text"
-                      value={formValues.department}
-                      onChange={(e) =>
-                        updateFormValue("department", e.target.value)
-                      }
-                      disabled={!isEditing || isSaving}
-                      className="mt-1.5"
-                    />
-                  </label>
-
-                  <label className="text-sm font-medium text-foreground sm:col-span-2">
-                    Location
-                    <Input
-                      type="text"
-                      value={formValues.location}
-                      onChange={(e) =>
-                        updateFormValue("location", e.target.value)
-                      }
-                      disabled={!isEditing || isSaving}
-                      className="mt-1.5"
-                    />
-                  </label>
-
-                  <label className="text-sm font-medium text-foreground sm:col-span-2">
-                    Profession
-                    <Input
-                      type="text"
-                      value={formValues.profession}
-                      onChange={(e) =>
-                        updateFormValue("profession", e.target.value)
-                      }
-                      disabled={!isEditing || isSaving}
-                      className="mt-1.5"
-                    />
-                  </label>
-
-                  <label className="text-sm font-medium text-foreground sm:col-span-2">
-                    LinkedIn URL
-                    <Input
-                      type="url"
-                      value={formValues.linkedinUrl}
-                      onChange={(e) =>
-                        updateFormValue("linkedinUrl", e.target.value)
-                      }
-                      disabled={!isEditing || isSaving}
-                      className="mt-1.5"
-                    />
-                  </label>
-                </div>
-              </form>
-
-              <div className="space-y-6">
-                {/* Robust Skills Section */}
-                <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="font-serif text-xl font-bold text-foreground">
-                      Skills & Expertise
-                    </h2>
-                  </div>
-
-                  {/* Diagnostics panel: No Alumni Record */}
-                  {!profile.alumniId && (
-                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-yellow-600">
-                            Alumni profile not linked
-                          </p>
-                          <p className="text-sm text-yellow-600 mt-1">
-                            Your account is not linked to an alumni record.
-                            Skills cannot be managed.
-                          </p>
-                        </div>
-                      </div>
+              {/* Compact meta grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {contactMeta.map(({ icon: Icon, label, value }) => (
+                  <div key={label} className="flex items-center gap-2.5">
+                    <div className="p-1.5 bg-muted rounded-lg text-foreground shrink-0">
+                      <Icon className="h-3.5 w-3.5" />
                     </div>
-                  )}
-
-                  {/* Diagnostics panel: Resolving Course */}
-                  {profile.alumniId && !resolvedCourseId && courseResolving && (
-                    <div className="bg-muted/50 rounded-xl border border-border/50 p-4 flex items-center gap-3">
-                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                      <p className="text-sm text-muted-foreground">
-                        Resolving course information…
-                      </p>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75">
+                        {label}
+                      </span>
+                      <span className="text-xs font-medium text-foreground truncate">
+                        {value || "—"}
+                      </span>
                     </div>
-                  )}
+                  </div>
+                ))}
+              </div>
 
-                  {/* Diagnostics panel: Course Missing */}
-                  {profile.alumniId &&
-                    !resolvedCourseId &&
-                    !courseResolving &&
-                    !skillsError && (
-                      <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
-                        <div className="flex items-start gap-3">
-                          <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="font-semibold text-yellow-600">
-                              Course not found in profile
-                            </p>
-                            <p className="text-sm text-yellow-600 mt-1">
-                              Your course could not be mapped. Skills cannot be
-                              added until your department is updated.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                  {/* Skills Component Integration */}
-                  <SkillsSection
-                    alumniId={profile.alumniId}
-                    resolvedCourseId={resolvedCourseId}
-                    skillsData={skillsData}
-                    isLoading={skillsLoading}
-                    isResolving={courseResolving}
-                    error={skillsError}
-                    canEdit={canUseSkills}
-                    onAddSkillClick={() => setIsAddSkillModalOpen(true)}
-                    onSkillRemoved={handleSkillsRefresh}
-                    onRetry={handleSkillsRefresh}
+              {/* Bio */}
+              {isEditing ? (
+                <div className="space-y-2 pt-1">
+                  <Label htmlFor="edit-bio">Bio</Label>
+                  <Textarea
+                    id="edit-bio"
+                    rows={3}
+                    value={form.bio}
+                    onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
+                    placeholder="Tell us about yourself..."
                   />
                 </div>
+              ) : (
+                (alumniData?.bio || studentData?.bio || facultyData?.bio) && (
+                  <p className="text-xs text-muted-foreground leading-relaxed pt-3 border-t border-border">
+                    {alumniData?.bio || studentData?.bio || facultyData?.bio}
+                  </p>
+                )
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-                {/* My Events */}
-                <section className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="font-bold text-foreground">My Events</h2>
-                    <Link
-                      href="/events"
-                      className="text-sm text-primary font-medium"
-                    >
-                      View all
-                    </Link>
-                  </div>
-                  {profile.events.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No event summaries available yet.
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {profile.events.map((eventItem) => (
-                        <div
-                          key={eventItem.id}
-                          className="rounded-xl border border-border p-4"
-                        >
-                          <p className="font-semibold text-foreground">
-                            {eventItem.title}
-                          </p>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {formatDateTime(eventItem.eventDate)}
-                          </p>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {eventItem.location}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </section>
+      {/* Main content */}
+      <div className="grid xl:grid-cols-[1.6fr,1fr] gap-6 items-start">
+        {/* Role-specific details */}
+        <Card>
+          <CardContent className="p-5 sm:p-6 space-y-5">
+            <div>
+              <h3 className="font-semibold text-sm text-foreground">
+                {role === "ALUMNI" && "Professional Details"}
+                {role === "STUDENT" && "Academic & Social Details"}
+                {role === "FACULTY" && "Academic & Professional Details"}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {role === "ALUMNI" && "Information visible to other alumni."}
+                {role === "STUDENT" && "Your academic record and online presence."}
+                {role === "FACULTY" && "Your faculty profile information."}
+              </p>
+            </div>
 
-                {/* My Opportunities */}
-                <section className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="font-bold text-foreground">
-                      My Opportunities
-                    </h2>
-                    <Link
-                      href="/opportunities"
-                      className="text-sm text-primary font-medium"
-                    >
-                      View all
-                    </Link>
-                  </div>
-                  {profile.opportunities.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No opportunity summaries available yet.
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {profile.opportunities.map((opportunity) => (
-                        <div
-                          key={opportunity.id}
-                          className="rounded-xl border border-border p-4"
-                        >
-                          <p className="font-semibold text-foreground">
-                            {opportunity.title}
-                          </p>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {opportunity.company} • {opportunity.location}
-                          </p>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {opportunity.type} • Posted{" "}
-                            {formatDate(opportunity.postedAt)}
-                          </p>
-                        </div>
-                      ))}
+            {/* ALUMNI */}
+            {role === "ALUMNI" && (
+              <>
+                {isEditing ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="profession">Profession</Label>
+                      <Input
+                        id="profession"
+                        value={form.profession}
+                        onChange={(e) => setForm((f) => ({ ...f, profession: e.target.value }))}
+                        placeholder="Software Engineer"
+                      />
                     </div>
-                  )}
-                </section>
-              </div>
-            </section>
-          </>
-        )}
+                    <div className="space-y-2">
+                      <Label htmlFor="alumni-location">Location</Label>
+                      <Input
+                        id="alumni-location"
+                        value={form.location}
+                        onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+                        placeholder="Bangalore, India"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="alumni-phone">Phone</Label>
+                      <Input
+                        id="alumni-phone"
+                        type="tel"
+                        value={form.phone}
+                        onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                        placeholder="+91 98765 43210"
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-3">
+                      <Label htmlFor="alumni-linkedin">LinkedIn URL</Label>
+                      <Input
+                        id="alumni-linkedin"
+                        type="url"
+                        value={form.linkedinUrl}
+                        onChange={(e) => setForm((f) => ({ ...f, linkedinUrl: e.target.value }))}
+                        placeholder="https://linkedin.com/in/yourname"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {alumniData?.profession && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Briefcase className="h-3 w-3 mr-1" />
+                        {alumniData.profession}
+                      </Badge>
+                    )}
+                    {alumniData?.location && (
+                      <Badge variant="secondary" className="text-xs">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {alumniData.location}
+                      </Badge>
+                    )}
+                    {alumniData?.batchYear && (
+                      <Badge variant="secondary" className="text-xs">
+                        <GraduationCap className="h-3 w-3 mr-1" />
+                        Batch of {alumniData.batchYear}
+                      </Badge>
+                    )}
+                    {alumniData?.linkedinUrl && (
+                      <a href={alumniData.linkedinUrl} target="_blank" rel="noopener noreferrer">
+                        <Badge variant="outline" className="text-xs hover:bg-muted cursor-pointer">
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          LinkedIn
+                        </Badge>
+                      </a>
+                    )}
+                    {!alumniData?.profession && !alumniData?.location && !alumniData?.linkedinUrl && (
+                      <p className="text-xs text-muted-foreground">No professional details added yet.</p>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* STUDENT */}
+            {role === "STUDENT" && (
+              <>
+                {!isEditing && (
+                  <div className="flex flex-wrap gap-2">
+                    {studentData?.rollNumber && (
+                      <Badge variant="secondary" className="text-xs">
+                        <GraduationCap className="h-3 w-3 mr-1" />
+                        {studentData.rollNumber}
+                      </Badge>
+                    )}
+                    {studentData?.branchName && (
+                      <Badge variant="secondary" className="text-xs">{studentData.branchName}</Badge>
+                    )}
+                    {studentData?.courseName && (
+                      <Badge variant="secondary" className="text-xs">{studentData.courseName}</Badge>
+                    )}
+                    {studentData?.batchYear && (
+                      <Badge variant="secondary" className="text-xs">Batch of {studentData.batchYear}</Badge>
+                    )}
+                    {studentData?.currentSemester && (
+                      <Badge variant="secondary" className="text-xs">Sem {studentData.currentSemester}</Badge>
+                    )}
+                    {studentData?.cgpa && (
+                      <Badge variant="secondary" className="text-xs">CGPA: {studentData.cgpa.toFixed(2)}</Badge>
+                    )}
+                    {studentData?.verified && (
+                      <Badge variant="default" className="text-xs">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Verified
+                      </Badge>
+                    )}
+                  </div>
+                )}
+
+                {isEditing && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2 md:col-span-3">
+                      <Label htmlFor="student-fullname">Full Name</Label>
+                      <Input
+                        id="student-fullname"
+                        value={form.fullName}
+                        onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="semester">Current Semester</Label>
+                      <Input
+                        id="semester"
+                        type="number"
+                        min={1}
+                        max={8}
+                        value={form.currentSemester}
+                        onChange={(e) => setForm((f) => ({ ...f, currentSemester: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cgpa">CGPA</Label>
+                      <Input
+                        id="cgpa"
+                        type="number"
+                        min={0}
+                        max={10}
+                        step={0.01}
+                        value={form.cgpa}
+                        onChange={(e) => setForm((f) => ({ ...f, cgpa: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="student-linkedin">LinkedIn URL</Label>
+                      <Input
+                        id="student-linkedin"
+                        type="url"
+                        value={form.linkedinUrl}
+                        onChange={(e) => setForm((f) => ({ ...f, linkedinUrl: e.target.value }))}
+                        placeholder="https://linkedin.com/in/yourname"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="github">GitHub URL</Label>
+                      <Input
+                        id="github"
+                        type="url"
+                        value={form.githubUrl}
+                        onChange={(e) => setForm((f) => ({ ...f, githubUrl: e.target.value }))}
+                        placeholder="https://github.com/yourname"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="portfolio">Portfolio URL</Label>
+                      <Input
+                        id="portfolio"
+                        type="url"
+                        value={form.portfolioUrl}
+                        onChange={(e) => setForm((f) => ({ ...f, portfolioUrl: e.target.value }))}
+                        placeholder="https://yourportfolio.dev"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {!isEditing && (
+                  <div className="flex flex-wrap gap-2 pt-3 border-t border-border">
+                    {studentData?.linkedinUrl && (
+                      <a href={studentData.linkedinUrl} target="_blank" rel="noopener noreferrer">
+                        <Badge variant="outline" className="text-xs hover:bg-muted cursor-pointer">
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          LinkedIn
+                        </Badge>
+                      </a>
+                    )}
+                    {studentData?.githubUrl && (
+                      <a href={studentData.githubUrl} target="_blank" rel="noopener noreferrer">
+                        <Badge variant="outline" className="text-xs hover:bg-muted cursor-pointer">
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          GitHub
+                        </Badge>
+                      </a>
+                    )}
+                    {studentData?.portfolioUrl && (
+                      <a href={studentData.portfolioUrl} target="_blank" rel="noopener noreferrer">
+                        <Badge variant="outline" className="text-xs hover:bg-muted cursor-pointer">
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Portfolio
+                        </Badge>
+                      </a>
+                    )}
+                    {!studentData?.linkedinUrl && !studentData?.githubUrl && !studentData?.portfolioUrl && (
+                      <p className="text-xs text-muted-foreground">No links added yet.</p>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* FACULTY */}
+            {role === "FACULTY" && (
+              <>
+                {!isEditing && (
+                  <div className="flex flex-wrap gap-2">
+                    {facultyData?.designation && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Briefcase className="h-3 w-3 mr-1" />
+                        {facultyData.designation}
+                      </Badge>
+                    )}
+                    {facultyData?.departmentName && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Building2 className="h-3 w-3 mr-1" />
+                        {facultyData.departmentName}
+                      </Badge>
+                    )}
+                    {facultyData?.officeLocation && (
+                      <Badge variant="secondary" className="text-xs">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {facultyData.officeLocation}
+                      </Badge>
+                    )}
+                    {facultyData?.totalExperienceYears != null && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {facultyData.totalExperienceYears} yrs exp
+                      </Badge>
+                    )}
+                    {facultyData?.linkedinUrl && (
+                      <a href={facultyData.linkedinUrl} target="_blank" rel="noopener noreferrer">
+                        <Badge variant="outline" className="text-xs hover:bg-muted cursor-pointer">
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          LinkedIn
+                        </Badge>
+                      </a>
+                    )}
+                    {facultyData?.googleScholarUrl && (
+                      <a href={facultyData.googleScholarUrl} target="_blank" rel="noopener noreferrer">
+                        <Badge variant="outline" className="text-xs hover:bg-muted cursor-pointer">
+                          <Award className="h-3 w-3 mr-1" />
+                          Google Scholar
+                        </Badge>
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {isEditing && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2 md:col-span-3">
+                      <Label htmlFor="faculty-fullname">Full Name</Label>
+                      <Input
+                        id="faculty-fullname"
+                        value={form.fullName}
+                        onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="designation">Designation</Label>
+                      <Input
+                        id="designation"
+                        value={form.designation}
+                        onChange={(e) => setForm((f) => ({ ...f, designation: e.target.value }))}
+                        placeholder="Associate Professor"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="office-location">Office Location</Label>
+                      <Input
+                        id="office-location"
+                        value={form.officeLocation}
+                        onChange={(e) => setForm((f) => ({ ...f, officeLocation: e.target.value }))}
+                        placeholder="Main Block, Room 204"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="faculty-linkedin">LinkedIn URL</Label>
+                      <Input
+                        id="faculty-linkedin"
+                        type="url"
+                        value={form.linkedinUrl}
+                        onChange={(e) => setForm((f) => ({ ...f, linkedinUrl: e.target.value }))}
+                        placeholder="https://linkedin.com/in/yourname"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="google-scholar">Google Scholar URL</Label>
+                      <Input
+                        id="google-scholar"
+                        type="url"
+                        value={form.googleScholarUrl}
+                        onChange={(e) => setForm((f) => ({ ...f, googleScholarUrl: e.target.value }))}
+                        placeholder="https://scholar.google.com/..."
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Qualifications + Subjects, side by side to use width efficiently */}
+                {!isEditing && (facultyData?.qualifications || facultyData?.subjectsTaught) && (
+                  <div className="grid sm:grid-cols-2 gap-5 pt-3 border-t border-border">
+                    {facultyData?.qualifications &&
+                      (() => {
+                        try {
+                          const quals = JSON.parse(facultyData.qualifications) as {
+                            degree: string;
+                            field: string;
+                            institution: string;
+                            year: number;
+                          }[];
+                          if (quals.length === 0) return null;
+                          return (
+                            <div className="space-y-2">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75">
+                                <GraduationCap className="h-3 w-3 inline mr-1" />
+                                Qualifications
+                              </p>
+                              <div className="space-y-2">
+                                {quals.map((q, i) => (
+                                  <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary/40 mt-1.5 shrink-0" />
+                                    <div>
+                                      <span className="font-medium text-foreground">{q.degree}</span>
+                                      {" — "}
+                                      {q.field}
+                                      <span className="text-muted-foreground/60"> at {q.institution} ({q.year})</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        } catch {
+                          return null;
+                        }
+                      })()}
+
+                    {facultyData?.subjectsTaught &&
+                      (() => {
+                        try {
+                          const subjects = JSON.parse(facultyData.subjectsTaught) as string[];
+                          if (subjects.length === 0) return null;
+                          return (
+                            <div className="space-y-2">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75">
+                                <BookOpen className="h-3 w-3 inline mr-1" />
+                                Subjects Taught
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {subjects.map((s, i) => (
+                                  <Badge key={i} variant="secondary" className="text-[10px]">
+                                    {s}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        } catch {
+                          return null;
+                        }
+                      })()}
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Sidebar — tabbed to avoid stacked empty cards */}
+        <Card>
+          <CardContent className="p-5 sm:p-6 space-y-4">
+            <Tabs value={activeTab} onValueChange={(v) => setSidebarTab(v as SidebarTabKey)}>
+              <TabsList
+                className={cn(
+                  "h-8 p-0.5 bg-muted w-full grid",
+                  sidebarTabs.length === 3 ? "grid-cols-3" : "grid-cols-2"
+                )}
+              >
+                {sidebarTabs.map(({ key, label, icon: Icon }) => (
+                  <TabsTrigger key={key} value={key} className="h-7 text-xs cursor-pointer">
+                    <Icon className="h-3.5 w-3.5 mr-1" />
+                    {label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              {hasSkillsTab && (
+                <TabsContent value="skills" className="mt-4 space-y-3">
+                  <div className="flex flex-wrap gap-1.5">
+                    {profile.skills!.map((skill) => (
+                      <Badge key={skill.skillId} variant="secondary" className="text-[10px]">
+                        {skill.skillName}
+                      </Badge>
+                    ))}
+                  </div>
+                </TabsContent>
+              )}
+
+              <TabsContent value="events" className="mt-4 space-y-3">
+                <div className="flex items-center justify-end">
+                  <Link
+                    href="/events"
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    View all
+                  </Link>
+                </div>
+                {profile.events.length === 0 ? (
+                  <div className="flex flex-col items-center py-8 text-center">
+                    <Calendar className="h-6 w-6 text-muted-foreground/60 mb-2" />
+                    <p className="text-xs text-muted-foreground">No event summaries yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {profile.events.map((eventItem) => (
+                      <div key={eventItem.id} className="rounded-lg border border-border p-3 space-y-1">
+                        <p className="text-xs font-medium text-foreground">{eventItem.title}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {formatDateTime(eventItem.eventDate)}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">{eventItem.location}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="opportunities" className="mt-4 space-y-3">
+                <div className="flex items-center justify-end">
+                  <Link
+                    href="/opportunities"
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    View all
+                  </Link>
+                </div>
+                {profile.opportunities.length === 0 ? (
+                  <div className="flex flex-col items-center py-8 text-center">
+                    <Briefcase className="h-6 w-6 text-muted-foreground/60 mb-2" />
+                    <p className="text-xs text-muted-foreground">No opportunity summaries yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {profile.opportunities.map((opp) => (
+                      <div key={opp.id} className="rounded-lg border border-border p-3 space-y-1">
+                        <p className="text-xs font-medium text-foreground">{opp.title}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {opp.company} &middot; {opp.location}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {opp.type} &middot; Posted {formatDate(opp.postedAt)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
-    </main>
+    </div>
   );
 }

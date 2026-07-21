@@ -74,7 +74,14 @@ export default function AcademicDetails({
           <label className="text-sm font-medium text-foreground">
             Branch {!branchDisabled && <span className="text-destructive">*</span>}
           </label>
-          {branchDisabled ? (
+          {branches.length === 0 ? (
+            <Input
+              value=""
+              disabled
+              placeholder="Select course first"
+              className="h-9 text-xs bg-muted/30"
+            />
+          ) : branchDisabled ? (
             <Input
               value={selectedBranch}
               disabled

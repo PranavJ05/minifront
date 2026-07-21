@@ -2,18 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/fetcher";
 import { queryKeys } from "./keys";
 
-export interface DashboardStats {
-  totalUsers: number;
-  mentorships: number;
-  students: number;
-  alumni: number;
-  faculty: number;
-  clubs: number;
-  clubEvents: number;
-  opportunities: number;
-  pendingAlumni: number;
-}
-
 export function usePendingUsersQuery() {
   return useQuery({
     queryKey: queryKeys.admin.pending,
@@ -40,13 +28,6 @@ export function useRejectUserMutation() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.admin.pending });
     },
-  });
-}
-
-export function useDashboardStatsQuery() {
-  return useQuery({
-    queryKey: queryKeys.admin.dashboardStats,
-    queryFn: () => api<DashboardStats>("/admin/dashboard/stats"),
   });
 }
 

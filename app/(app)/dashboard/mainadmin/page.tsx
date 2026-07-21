@@ -4,20 +4,12 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Users,
-  GraduationCap,
-  Building2,
-  Calendar,
-  Briefcase,
-  Handshake,
-  UserCheck,
   ArrowRight,
   Shield,
 } from "lucide-react";
 
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import { useAuth } from "@/contexts/auth-context";
-import { useDashboardStatsQuery } from "@/hooks/queries/admin";
 import {
   getPrimaryRole,
   normalizeRoleForDisplay,
@@ -28,7 +20,6 @@ import {
 export default function MainAdminDashboard() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { data: stats } = useDashboardStatsQuery();
 
   const userRole = getPrimaryRole(user?.roles) || "alumni";
   const normalizedRole = normalizeRoleForDisplay(userRole);
@@ -41,57 +32,6 @@ export default function MainAdminDashboard() {
       router.replace("/auth/login");
     }
   }, [authLoading, isAuthenticated, user, router]);
-
-  const cards = [
-    {
-      title: "Total Users",
-      value: stats?.totalUsers ?? 0,
-      icon: Users,
-      color: "bg-blue-100 text-blue-700",
-    },
-    {
-      title: "Students",
-      value: stats?.students ?? 0,
-      icon: GraduationCap,
-      color: "bg-green-100 text-green-700",
-    },
-    {
-      title: "Alumni",
-      value: stats?.alumni ?? 0,
-      icon: UserCheck,
-      color: "bg-yellow-100 text-yellow-700",
-    },
-    {
-      title: "Faculty",
-      value: stats?.faculty ?? 0,
-      icon: Users,
-      color: "bg-purple-100 text-purple-700",
-    },
-    {
-      title: "Clubs",
-      value: stats?.clubs ?? 0,
-      icon: Building2,
-      color: "bg-red-100 text-red-700",
-    },
-    {
-      title: "Club Events",
-      value: stats?.clubEvents ?? 0,
-      icon: Calendar,
-      color: "bg-indigo-100 text-indigo-700",
-    },
-    {
-      title: "Mentorships",
-      value: stats?.mentorships ?? 0,
-      icon: Handshake,
-      color: "bg-pink-100 text-pink-700",
-    },
-    {
-      title: "Jobs",
-      value: stats?.opportunities ?? 0,
-      icon: Briefcase,
-      color: "bg-orange-100 text-orange-700",
-    },
-  ];
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -111,31 +51,6 @@ export default function MainAdminDashboard() {
                 ? "Manage users, clubs and the overall alumni platform."
                 : "Manage alumni applications and batch-specific tasks."}
             </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-            {cards.map((card) => {
-              const Icon = card.icon;
-
-              return (
-                <div
-                  key={card.title}
-                  className="bg-white rounded-xl shadow p-6 border"
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-sm text-gray-500">{card.title}</p>
-
-                      <h2 className="text-3xl font-bold mt-2">{card.value}</h2>
-                    </div>
-
-                    <div className={`${card.color} p-3 rounded-xl`}>
-                      <Icon className="h-6 w-6" />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
           </div>
 
           {/* Admin Portal CTA - For both main admin and batch admin */}

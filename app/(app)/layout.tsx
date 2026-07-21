@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import Navbar from "@/components/layout/Navbar";
+import ProfileCompletionBar from "@/components/onboarding/ProfileCompletionBar";
+import WelcomeModal from "@/components/onboarding/WelcomeModal";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { getPrimaryRole, normalizeRoleForDisplay } from "@/lib/roleUtils";
 
@@ -17,7 +19,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (isLoading) return;
 
     if (!isAuthenticated) {
-      const target = pathname
+      const pendingRaw = typeof window !== "undefined" ? localStorage.getItem("pendingUserData") : null;
+      if (pendingRaw) {
+        router.replace("/auth/pending");
+        return;
+      }
+      const shouldRedirect = pathname && !pathname.startsWith("/dashboard/");
+      const target = shouldRedirect
         ? `/auth/login?next=${encodeURIComponent(pathname)}`
         : "/auth/login";
       router.replace(target);
@@ -36,7 +44,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <DashboardSidebar role={normalizedRole} />
       <SidebarInset>
         <Navbar />
+        <ProfileCompletionBar />
         <main className="flex-1 w-full">{children}</main>
+        <WelcomeModal />
       </SidebarInset>
     </div>
   );

@@ -1,12 +1,11 @@
 "use client";
 // app/dashboard/alumni/page.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
   Bell,
-  Calendar,
   Loader2,
   ArrowRight,
   AlertCircle,
@@ -15,12 +14,12 @@ import {
 } from "lucide-react";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import PendingModal from "@/components/main-admin/PendingModal";
-import SkillsOnboardingModal from "@/components/profile/SkillsOnboardingModal";
 import { useAuth } from "@/contexts/auth-context";
 import { useEventsQuery } from "@/hooks/queries/events";
 import { useMyOpportunitiesQuery } from "@/hooks/queries/opportunities";
 import { useAlumniSearchQuery } from "@/hooks/queries/alumni";
-import { hasRole, isAlumni } from "@/lib/roleUtils";
+import { useMyProfileQuery } from "@/hooks/queries/profile";
+import { hasRole } from "@/lib/roleUtils";
 import { BACKEND_URL } from "@/lib/config";
 import {
   formatDay,
@@ -45,10 +44,8 @@ export default function AlumniDashboard() {
   const router = useRouter();
   const {
     user,
-    token,
     isAuthenticated,
     isLoading: authLoading,
-    updateUser,
   } = useAuth();
   const {
     data: events = [],
@@ -65,7 +62,7 @@ export default function AlumniDashboard() {
     isLoading: directoryLoading,
     error: directoryError,
   } = useAlumniSearchQuery();
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  useMyProfileQuery();
 
   const directory = useMemo(() => {
     const data = Array.isArray(directoryData) ? directoryData : [];
@@ -94,28 +91,7 @@ export default function AlumniDashboard() {
       router.replace("/auth/login");
       return;
     }
-
-    const hasCompleted = localStorage.getItem("skills_onboarding_completed");
-    const hasSkipped = localStorage.getItem("skills_onboarding_skipped");
-
-    if (isAlumni(userRole) && !user.alumniId) {
-      fetch(`${BACKEND_URL}/api/profile/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.alumniId) {
-            updateUser({ alumniId: data.alumniId, courseId: data.courseId });
-            if (!hasCompleted && !hasSkipped) {
-              setShowOnboarding(true);
-            }
-          }
-        })
-        .catch(() => {});
-    } else if (isAlumni(userRole) && !hasCompleted && !hasSkipped) {
-      setShowOnboarding(true);
-    }
-  }, [authLoading, isAuthenticated, user, token, router, updateUser]);
+  }, [authLoading, isAuthenticated, user, router]);
 
   const upcomingEvents = useMemo(
     () => events.filter((event) => isUpcoming(event.eventDate)).slice(0, 2),
@@ -417,21 +393,6 @@ export default function AlumniDashboard() {
           </section>
         </div>
       </main>
-
-      {/* ✅ SKILLS ONBOARDING MODAL */}
-      {showOnboarding && user?.alumniId && (
-        <SkillsOnboardingModal
-          isOpen={showOnboarding}
-          onClose={() => setShowOnboarding(false)}
-          alumniId={user.alumniId ?? undefined}
-          courseId={user.courseId ?? undefined}
-          onComplete={() => {
-            // Backup save flag just in case they click outside or close via a non-standard route
-            localStorage.setItem("skills_onboarding_completed", "true");
-            setShowOnboarding(false);
-          }}
-        />
-      )}
     </div>
   );
 }

@@ -88,7 +88,6 @@ export default function StudentSignupForm({
             <Input
               id="fullName"
               className="pl-8"
-              placeholder="John Kumar Doe"
               value={formData.fullName}
               onChange={(e) => onChange("fullName", e.target.value)}
             />
@@ -108,7 +107,7 @@ export default function StudentSignupForm({
               id="email"
               type="email"
               className="pl-8"
-              placeholder="john@mec.ac.in"
+              placeholder="MDL26CS301@mec.ac.in"
               value={formData.email}
               onChange={(e) => onChange("email", e.target.value)}
             />

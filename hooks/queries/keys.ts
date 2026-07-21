@@ -5,6 +5,10 @@ export const queryKeys = {
   profile: {
     all: ["profile"] as const,
     me: () => ["profile", "me"] as const,
+    update: () => ["profile", "update"] as const,
+  },
+  onboarding: {
+    markWelcomeSeen: () => ["onboarding", "welcome-seen"] as const,
   },
   events: {
     all: ["events"] as const,
@@ -56,7 +60,6 @@ export const queryKeys = {
     users: (params?: Record<string, string>) =>
       ["admin", "users", params] as const,
     clubs: () => ["admin", "clubs"] as const,
-    dashboardStats: ["admin", "dashboard-stats"] as const,
   },
   location: {
     countries: ["location", "countries"] as const,

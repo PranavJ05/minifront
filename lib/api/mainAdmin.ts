@@ -32,10 +32,6 @@ export async function getClubs() {
   return api("/api/clubs");
 }
 
-export async function getDashboardStats() {
-  return api("/api/main-admin/dashboard");
-}
-
 export async function listBatchAdmins(): Promise<BatchAdminSummary[]> {
   return api("/api/admin/batch-admins");
 }
