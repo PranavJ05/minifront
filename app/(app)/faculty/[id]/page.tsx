@@ -122,7 +122,7 @@ export default function FacultyProfilePage() {
                 {profileImageSrc ? (
                   <Image
                     src={profileImageSrc}
-                    alt={profile.fullName}
+                    alt={profile.fullName || profile.name || "Faculty Member"}
                     width={128}
                     height={128}
                     className="w-full h-full object-cover"

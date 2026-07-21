@@ -153,7 +153,7 @@ export default function AlumniProfilePage() {
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">
                   {alumni.name}
                 </h1>
-                <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" title="Verified Alumni" />
+                <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
               </div>
               <p className="text-sm font-medium text-muted-foreground">
                 {alumni.profession || "Graduate Member"}
