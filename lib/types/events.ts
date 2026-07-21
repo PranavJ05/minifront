@@ -13,18 +13,34 @@ export interface EventVideo {
   videoUrl: string;
 }
 
+export interface CollaboratingClub {
+  id: number;
+  name: string;
+  description?: string;
+  logoUrl?: string;
+}
+
 export interface Event {
   id: number;
   title: string;
   description?: string;
+  category?: string;
+  mode?: string;
+  topicDomain?: string;
+  speakerName?: string;
+  speakerDetails?: string;
   eventDate: string;
+  endTime?: string;
   location: string;
   batchYear?: number;
+  maxParticipants?: number;
+  registrationCount?: number;
   createdBy?: number;
   createdByName?: string;
   createdAt?: string;
   registrationRequired?: boolean;
   registrationLink?: string;
+  collaboratingClubs?: CollaboratingClub[];
   photos?: EventPhoto[];
   videos?: EventVideo[];
   photoUrls?: string[];
@@ -34,11 +50,19 @@ export interface Event {
 export interface CreateEventPayload {
   title: string;
   description: string;
+  category?: string;
+  mode?: string;
+  topicDomain?: string;
+  speakerName?: string;
+  speakerDetails?: string;
   eventDate: string;
+  endTime?: string;
   location: string;
-  batchYear: number;
-  registrationRequired: boolean;
+  batchYear?: number;
+  maxParticipants?: number;
+  registrationRequired?: boolean;
   registrationLink?: string;
+  collaboratingClubIds?: number[];
 }
 
 export interface EventActionResponse {

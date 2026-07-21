@@ -37,9 +37,7 @@ const facultyLinks = [
   { href: "/network", label: "Network Hub", icon: Users },
   { href: "/network/alumni", label: "Alumni", icon: GraduationCap },
   { href: "/network/faculty", label: "Faculty", icon: Users },
-  { href: "/events", label: "Events", icon: Calendar },
-  { href: "/club-events", label: "Club Events", icon: Calendar },
-  { href: "/alumni-sessions", label: "Alumni Sessions", icon: Newspaper },
+  { href: "/events", label: "Events & Sessions", icon: Calendar },
   { href: "/opportunities", label: "Job Board", icon: Briefcase },
   { href: "/profile", label: "My Profile", icon: User },
 ];
@@ -50,9 +48,7 @@ const alumniLinks = [
   { href: "/network/alumni", label: "Alumni", icon: GraduationCap },
   { href: "/network/faculty", label: "Faculty", icon: Users },
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
-  { href: "/events", label: "Events", icon: Calendar },
-  { href: "/club-events", label: "Club Events", icon: Calendar },
-  { href: "/alumni-sessions", label: "Alumni Sessions", icon: Newspaper },
+  { href: "/events", label: "Events & Sessions", icon: Calendar },
   { href: "/profile", label: "My Profile", icon: User },
   { href: "/profile/privacy", label: "Privacy Settings", icon: Shield },
   { href: "/alumni-mentorship", label: "Mentorship", icon: Handshake },
@@ -64,24 +60,15 @@ const studentLinks = [
   { href: "/network/alumni", label: "Alumni", icon: GraduationCap },
   { href: "/network/faculty", label: "Faculty", icon: Users },
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
-  { href: "/events", label: "Events", icon: Calendar },
-  { href: "/club-events", label: "Club Events", icon: Calendar },
-  { href: "/alumni-sessions", label: "Alumni Sessions", icon: Newspaper },
+  { href: "/events", label: "Events & Sessions", icon: Calendar },
   { href: "/profile", label: "My Profile", icon: User },
   { href: "/alumni-mentorship", label: "Mentorship", icon: Handshake },
 ];
 
 const adminLinks = [
   { href: "/dashboard/mainadmin", label: "Dashboard", icon: Home },
-
-  { href: "/club-events", label: "Club Events", icon: Calendar },
-
-  { href: "/alumni-sessions", label: "Alumni Sessions", icon: Newspaper },
-
-  { href: "/events", label: "Events", icon: Calendar },
-
+  { href: "/events", label: "Events & Sessions", icon: Calendar },
   { href: "/opportunities", label: "Job Board", icon: Briefcase },
-
   { href: "/profile", label: "My Profile", icon: User },
 ];
 
