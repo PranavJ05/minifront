@@ -240,21 +240,7 @@ export default function EventDetailPage() {
               </div>
             )}
 
-            {/* Collaborating Clubs */}
-            {event.collaboratingClubs && event.collaboratingClubs.length > 0 && (
-              <div className="space-y-1.5 pt-1">
-                <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Building2 className="h-3.5 w-3.5 text-primary" /> Collaborating Student Clubs
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {event.collaboratingClubs.map((club) => (
-                    <Badge key={club.id} variant="secondary" className="text-xs font-medium px-2 py-0.5">
-                      {club.name}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+
             
             <hr className="border-border" />
             

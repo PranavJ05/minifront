@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Calendar, Clock, ExternalLink, Tag, User, Video, Building2, Sparkles } from "lucide-react";
+import { Calendar, Clock, ExternalLink, Tag, User, Video, Sparkles } from "lucide-react";
 import { Event } from "@/lib/types/events";
 import { formatEventDate, formatMonth, formatDay } from "@/lib/utils/dateUtils";
 import { Button } from "@/components/ui/button";
@@ -78,20 +78,6 @@ export default function EventCard({ event }: EventCardProps) {
           <div className="flex items-center gap-1.5 text-xs text-foreground font-medium bg-muted/40 p-2 rounded-lg border border-border/50">
             <User className="h-3.5 w-3.5 text-primary shrink-0" />
             <span className="truncate">Speaker: {event.speakerName}</span>
-          </div>
-        )}
-
-        {/* Collaborating Clubs */}
-        {event.collaboratingClubs && event.collaboratingClubs.length > 0 && (
-          <div className="flex items-center gap-1 flex-wrap pt-0.5">
-            <span className="text-[10px] text-muted-foreground mr-1 flex items-center gap-0.5">
-              <Building2 className="h-3 w-3 text-primary" /> Clubs:
-            </span>
-            {event.collaboratingClubs.map((club) => (
-              <Badge key={club.id} variant="secondary" className="text-[9px] font-medium px-1.5 py-0">
-                {club.name}
-              </Badge>
-            ))}
           </div>
         )}
 

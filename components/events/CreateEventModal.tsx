@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, CheckCircle2, CalendarPlus, AlertCircle, Calendar as CalendarIcon, Building2, User, Sparkles } from "lucide-react";
+import { Loader2, CheckCircle2, CalendarPlus, AlertCircle, Calendar as CalendarIcon, User, Sparkles } from "lucide-react";
 import { getErrorMessage } from "@/lib/get-error-message";
 import { createEvent } from "@/lib/api/events";
 import {
@@ -17,12 +17,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAllClubsQuery } from "@/hooks/queries/clubs";
 import { cn } from "@/lib/utils";
 
 interface CreateEventModalProps {
@@ -48,7 +46,6 @@ export default function CreateEventModal({
   const [speakerName, setSpeakerName] = useState("");
   const [topicDomain, setTopicDomain] = useState("");
   const [speakerDetails, setSpeakerDetails] = useState("");
-  const [selectedClubIds, setSelectedClubIds] = useState<number[]>([]);
   const [dateValue, setDateValue] = useState<Date | undefined>(undefined);
   const [timeHour, setTimeHour] = useState("10");
   const [timeMinute, setTimeMinute] = useState("00");
@@ -58,22 +55,12 @@ export default function CreateEventModal({
   const [registrationRequired, setRegistrationRequired] = useState(false);
   const [registrationLink, setRegistrationLink] = useState("");
 
-  const { data: clubs = [] } = useAllClubsQuery();
-
   const formatDateString = (date: Date) => {
     return date.toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
       year: "numeric",
     });
-  };
-
-  const toggleClubSelection = (clubId: number) => {
-    if (selectedClubIds.includes(clubId)) {
-      setSelectedClubIds(selectedClubIds.filter((id) => id !== clubId));
-    } else {
-      setSelectedClubIds([...selectedClubIds, clubId]);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -104,7 +91,6 @@ export default function CreateEventModal({
         batchYear: batchYear ? parseInt(batchYear) : 0,
         registrationRequired,
         registrationLink: registrationRequired ? registrationLink : undefined,
-        collaboratingClubIds: selectedClubIds.length > 0 ? selectedClubIds : undefined,
       } as any);
 
       if (!res.success) throw new Error(res.message);
@@ -124,7 +110,6 @@ export default function CreateEventModal({
     setSpeakerName("");
     setTopicDomain("");
     setSpeakerDetails("");
-    setSelectedClubIds([]);
     setDateValue(undefined);
     setTimeHour("10");
     setTimeMinute("00");
@@ -148,7 +133,7 @@ export default function CreateEventModal({
         <DialogHeader>
           <DialogTitle className="text-lg font-bold">Publish Event / Session / Talk</DialogTitle>
           <DialogDescription className="text-xs">
-            Create a campus event, alumni keynote session, or club-collaborated workshop.
+            Create a campus event, alumni keynote session, or workshop.
           </DialogDescription>
         </DialogHeader>
 
@@ -221,36 +206,6 @@ export default function CreateEventModal({
                     <SelectItem value="ONLINE">Online (Virtual Webinar)</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-
-            {/* Collaborating Clubs Section */}
-            <div className="space-y-1.5 p-3 rounded-lg bg-muted/30 border border-border/60">
-              <Label className="text-xs font-semibold flex items-center gap-1.5">
-                <Building2 className="h-3.5 w-3.5 text-primary" /> Collaborating Student Clubs
-              </Label>
-              <p className="text-[11px] text-muted-foreground">
-                Select clubs collaborating or co-hosting this event:
-              </p>
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {clubs.length === 0 ? (
-                  <span className="text-[11px] text-muted-foreground italic">No clubs registered yet</span>
-                ) : (
-                  clubs.map((club) => {
-                    const isSelected = selectedClubIds.includes(club.id);
-                    return (
-                      <Badge
-                        key={club.id}
-                        variant={isSelected ? "default" : "outline"}
-                        onClick={() => toggleClubSelection(club.id)}
-                        className="cursor-pointer text-xs font-normal transition-all"
-                      >
-                        {isSelected ? "✓ " : "+ "}
-                        {club.name}
-                      </Badge>
-                    );
-                  })
-                )}
               </div>
             </div>
 

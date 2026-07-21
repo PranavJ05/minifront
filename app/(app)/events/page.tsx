@@ -12,13 +12,11 @@ import {
   ExternalLink,
   Sparkles,
   Users,
-  Building2,
-  Video,
 } from "lucide-react";
 import EventCard from "@/components/events/EventCard";
 import CreateEventModal from "@/components/events/CreateEventModal";
 import { isAnyAdmin, isAlumni, isFaculty } from "@/lib/roleUtils";
-import { isUpcoming, isPast, formatEventDate } from "@/lib/utils/dateUtils";
+import { formatEventDate } from "@/lib/utils/dateUtils";
 import { useAuth } from "@/contexts/auth-context";
 import { useEventsQuery, useMyEventsQuery } from "@/hooks/queries/events";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
-const TABS = ["All Events", "Alumni Sessions", "Club Collaborations", "My Events"] as const;
+const TABS = ["All Events", "Alumni Sessions", "My Events"] as const;
 export type UnifiedEventTab = (typeof TABS)[number];
 
 export default function UnifiedEventsPage() {
@@ -45,8 +43,6 @@ export default function UnifiedEventsPage() {
   useEffect(() => {
     if (initialTabParam === "alumni-sessions") {
       setActiveTab("Alumni Sessions");
-    } else if (initialTabParam === "club-events") {
-      setActiveTab("Club Collaborations");
     }
   }, [initialTabParam]);
 
@@ -66,8 +62,6 @@ export default function UnifiedEventsPage() {
 
     if (activeTab === "Alumni Sessions") {
       dataset = allEvents.filter((e) => e.category === "ALUMNI_SESSION");
-    } else if (activeTab === "Club Collaborations") {
-      dataset = allEvents.filter((e) => e.collaboratingClubs && e.collaboratingClubs.length > 0);
     } else if (activeTab === "My Events") {
       dataset = myEvents;
     }
@@ -98,7 +92,7 @@ export default function UnifiedEventsPage() {
               <Calendar className="h-5 w-5 text-primary" /> Events &amp; Sessions Hub
             </h1>
             <p className="text-xs text-muted-foreground">
-              Discover campus activities, alumni keynote talks, club collaborations, and webinars.
+              Discover campus activities, alumni keynote talks, workshops, and webinars.
             </p>
           </div>
           {canCreateEvent && (
@@ -211,9 +205,7 @@ export default function UnifiedEventsPage() {
                 ? "Try adjusting your search keywords."
                 : activeTab === "Alumni Sessions"
                   ? "No alumni keynote sessions or webinars posted yet."
-                  : activeTab === "Club Collaborations"
-                    ? "No club collaborated events posted yet."
-                    : "Check back soon for new announcements."}
+                  : "Check back soon for new announcements."}
             </p>
             {searchQuery && (
               <Button
@@ -248,7 +240,7 @@ export default function UnifiedEventsPage() {
                     <th className="p-3 pl-4">Title &amp; Type</th>
                     <th className="p-3">Date</th>
                     <th className="p-3">Location / Mode</th>
-                    <th className="p-3">Speaker / Clubs</th>
+                    <th className="p-3">Speaker</th>
                     <th className="p-3 text-right pr-4">Actions</th>
                   </tr>
                 </thead>
@@ -273,8 +265,6 @@ export default function UnifiedEventsPage() {
                       <td className="p-3 text-muted-foreground">
                         {event.speakerName ? (
                           <span className="font-medium text-foreground">{event.speakerName}</span>
-                        ) : event.collaboratingClubs && event.collaboratingClubs.length > 0 ? (
-                          <span>{event.collaboratingClubs.map((c) => c.name).join(", ")}</span>
                         ) : (
                           <span className="text-muted-foreground/40">&mdash;</span>
                         )}

@@ -3,10 +3,9 @@ import { api } from "@/lib/fetcher";
 import { queryKeys } from "./keys";
 import type { Event, EventActionResponse, CreateEventPayload } from "@/lib/types/events";
 
-export function useEventsQuery(params?: { category?: string; clubId?: number }) {
+export function useEventsQuery(params?: { category?: string }) {
   const searchParams = new URLSearchParams();
   if (params?.category) searchParams.set("category", params.category);
-  if (params?.clubId) searchParams.set("clubId", params.clubId.toString());
   const queryStr = searchParams.toString();
 
   return useQuery({
@@ -37,20 +36,6 @@ export function useCreateEventMutation() {
       api<EventActionResponse>("/api/events/create", {
         method: "POST",
         body: payload,
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.events.all });
-    },
-  });
-}
-
-export function useAssignCollaboratingClubsMutation() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ eventId, clubIds }: { eventId: number; clubIds: number[] }) =>
-      api<EventActionResponse>(`/api/events/${eventId}/collaborating-clubs`, {
-        method: "POST",
-        body: clubIds,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.events.all });

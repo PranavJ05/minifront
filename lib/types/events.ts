@@ -13,13 +13,6 @@ export interface EventVideo {
   videoUrl: string;
 }
 
-export interface CollaboratingClub {
-  id: number;
-  name: string;
-  description?: string;
-  logoUrl?: string;
-}
-
 export interface Event {
   id: number;
   title: string;
@@ -40,7 +33,6 @@ export interface Event {
   createdAt?: string;
   registrationRequired?: boolean;
   registrationLink?: string;
-  collaboratingClubs?: CollaboratingClub[];
   photos?: EventPhoto[];
   videos?: EventVideo[];
   photoUrls?: string[];
@@ -62,7 +54,6 @@ export interface CreateEventPayload {
   maxParticipants?: number;
   registrationRequired?: boolean;
   registrationLink?: string;
-  collaboratingClubIds?: number[];
 }
 
 export interface EventActionResponse {
