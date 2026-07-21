@@ -53,7 +53,7 @@ export default function AdminPage() {
     setIsBatchAdminUser(batchAdmin);
 
     if (!hasAdminAccess) {
-      router.replace("/dashboard/mainadmin");
+      router.replace("/dashboard/alumni");
     }
   }, [authLoading, isAuthenticated, user, router]);
 
