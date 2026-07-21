@@ -13,6 +13,10 @@ import {
   Tag,
   Plus,
   Camera,
+  User,
+  Sparkles,
+  Video,
+  Building2,
 } from "lucide-react";
 import EventMediaCarousel from "@/components/events/EventMediaCarousel";
 import OrganizerPanel from "@/components/events/OrganizerPanel";
@@ -57,39 +61,23 @@ export default function EventDetailPage() {
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Back Link Skeleton */}
         <Skeleton className="h-4 w-28 rounded-md" />
-        
-        {/* Split Card Skeleton */}
         <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm flex flex-col md:flex-row p-3 gap-4">
-          {/* Left Column Poster Skeleton */}
           <Skeleton className="aspect-square md:aspect-[4/5] w-full md:w-[35%] rounded-xl shrink-0" />
-          
-          {/* Right Column Details Skeleton */}
           <div className="flex-1 space-y-6 py-2 flex flex-col justify-between">
             <div className="space-y-3">
               <Skeleton className="h-4 w-24 rounded" />
               <Skeleton className="h-8 w-5/6 rounded-lg" />
               <Skeleton className="h-4 w-1/3 rounded" />
             </div>
-            
             <Skeleton className="h-px w-full" />
-            
             <div className="space-y-3">
               <Skeleton className="h-4 w-2/3 rounded" />
               <Skeleton className="h-4 w-1/2 rounded" />
             </div>
-            
             <Skeleton className="h-px w-full" />
-            
             <Skeleton className="h-8 w-28 rounded-lg" />
           </div>
-        </div>
-
-        {/* Tabs Card Skeleton */}
-        <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm p-5 space-y-4">
-          <Skeleton className="h-8 w-64 rounded-lg" />
-          <Skeleton className="h-32 w-full rounded-lg" />
         </div>
       </div>
     );
@@ -152,7 +140,7 @@ export default function EventDetailPage() {
       </div>
 
       {/* Main Split Flyer Card */}
-      <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm flex flex-col md:flex-row p-3 gap-4">
+      <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm flex flex-col md:flex-row p-4 gap-6">
         {/* Left Column: Instagram Portrait Flyer/Poster */}
         <div className="relative aspect-square md:aspect-[4/5] w-full md:w-[35%] rounded-xl overflow-hidden bg-muted shrink-0 border border-border">
           {coverImage ? (
@@ -164,7 +152,9 @@ export default function EventDetailPage() {
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5 flex flex-col justify-between p-5 text-foreground select-none">
               <div className="flex items-center justify-between border-b border-border/40 pb-3">
-                <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">Alumni Event</span>
+                <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+                  {event.category || "Campus Event"}
+                </span>
                 <Calendar className="h-4 w-4 text-muted-foreground/50" />
               </div>
               <div className="my-auto space-y-1">
@@ -182,7 +172,7 @@ export default function EventDetailPage() {
           )}
         </div>
 
-        {/* Right Column: Editorial Typography & Details */}
+        {/* Right Column: Details & Speaker Box */}
         <div className="flex-1 flex flex-col justify-between gap-5 min-w-0 py-1.5 px-1">
           {/* Header section */}
           <div className="space-y-4">
@@ -191,6 +181,20 @@ export default function EventDetailPage() {
                 <Badge variant="destructive" className="h-5 text-[10px] px-1.5 font-semibold rounded shrink-0">Past Event</Badge>
               ) : (
                 <Badge variant="default" className="h-5 text-[10px] px-1.5 font-semibold rounded shrink-0">Upcoming</Badge>
+              )}
+              {event.category === "ALUMNI_SESSION" ? (
+                <Badge variant="secondary" className="h-5 text-[10px] px-1.5 font-semibold bg-purple-500/10 text-purple-600 border border-purple-500/20 shrink-0">
+                  <Sparkles className="h-3 w-3 mr-1" /> Alumni Session
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="h-5 text-[10px] px-1.5 font-semibold rounded shrink-0">
+                  {event.category || "General"}
+                </Badge>
+              )}
+              {event.mode === "ONLINE" && (
+                <Badge variant="outline" className="h-5 text-[10px] px-1.5 font-semibold rounded shrink-0">
+                  <Video className="h-3 w-3 mr-1 text-blue-500" /> Online Webinar
+                </Badge>
               )}
               {event.batchYear && (
                 <Badge variant="outline" className="h-5 text-[10px] px-1.5 font-semibold rounded shrink-0">Batch {event.batchYear}</Badge>
@@ -204,13 +208,53 @@ export default function EventDetailPage() {
               
               {event.createdByName && (
                 <p className="text-xs text-muted-foreground">
-                  Hosted by <span className="font-semibold text-foreground">{event.createdByName}</span>
+                  Organized by <span className="font-semibold text-foreground">{event.createdByName}</span>
                   {isOrganizer && (
                     <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded bg-primary/5 text-primary border border-primary/10 text-[9px] font-bold uppercase">You</span>
                   )}
                 </p>
               )}
             </div>
+
+            {/* Speaker Information Box */}
+            {(event.speakerName || event.topicDomain || event.speakerDetails) && (
+              <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/20 space-y-2">
+                <div className="flex items-center gap-2 text-purple-600 font-bold text-xs uppercase tracking-wider">
+                  <User className="h-4 w-4" /> Guest Speaker &amp; Session Info
+                </div>
+                {event.speakerName && (
+                  <p className="text-sm font-semibold text-foreground">
+                    {event.speakerName}
+                  </p>
+                )}
+                {event.topicDomain && (
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">Domain / Topic:</span> {event.topicDomain}
+                  </p>
+                )}
+                {event.speakerDetails && (
+                  <p className="text-xs text-muted-foreground italic leading-relaxed pt-1 border-t border-purple-500/10">
+                    &ldquo;{event.speakerDetails}&rdquo;
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Collaborating Clubs */}
+            {event.collaboratingClubs && event.collaboratingClubs.length > 0 && (
+              <div className="space-y-1.5 pt-1">
+                <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Building2 className="h-3.5 w-3.5 text-primary" /> Collaborating Student Clubs
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {event.collaboratingClubs.map((club) => (
+                    <Badge key={club.id} variant="secondary" className="text-xs font-medium px-2 py-0.5">
+                      {club.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
             
             <hr className="border-border" />
             
@@ -218,7 +262,7 @@ export default function EventDetailPage() {
             <div className="flex flex-col gap-3.5 py-1">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-muted rounded-xl text-foreground shrink-0">
-                  <Calendar className="h-4 w-4" />
+                  <Calendar className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75 leading-none mb-1">Date & Time</span>
@@ -229,10 +273,10 @@ export default function EventDetailPage() {
               {event.location && (
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-muted rounded-xl text-foreground shrink-0">
-                    <MapPin className="h-4 w-4" />
+                    <MapPin className="h-4 w-4 text-primary" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75 leading-none mb-1">Location</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75 leading-none mb-1">Location / Platform</span>
                     <span className="text-sm font-medium text-foreground truncate" title={event.location}>{event.location}</span>
                   </div>
                 </div>
@@ -240,7 +284,7 @@ export default function EventDetailPage() {
 
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-muted rounded-xl text-foreground shrink-0">
-                  <Users className="h-4 w-4" />
+                  <Users className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75 leading-none mb-1">Access</span>
@@ -269,7 +313,7 @@ export default function EventDetailPage() {
                 </a>
               ) : (
                 <p className="text-xs text-muted-foreground font-medium py-1">
-                  ✨ No registration required. Open admission.
+                  ✨ Open admission. No prior registration required.
                 </p>
               )
             ) : (
@@ -279,12 +323,11 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      {/* Single Card containing Description & Media Carousel */}
+      {/* Description & Media Carousel */}
       <div className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm p-5 space-y-6">
-        {/* Top: Description */}
         <div className="space-y-2">
           <h3 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-            <Tag className="h-4 w-4 text-muted-foreground" />
+            <Tag className="h-4 w-4 text-primary" />
             About the Event
           </h3>
           <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
@@ -292,14 +335,13 @@ export default function EventDetailPage() {
           </p>
         </div>
 
-        {/* Bottom: Custom Parallax Media Carousel */}
         {((event.photos?.length ?? 0) > 0 || (event.videos?.length ?? 0) > 0 || isOrganizer) && (
           <>
             <hr className="border-border" />
             <div className="space-y-4">
               <h3 className="font-semibold text-foreground flex items-center gap-2 text-sm">
-                <Camera className="h-4 w-4 text-muted-foreground" />
-                Event Gallery & Videos
+                <Camera className="h-4 w-4 text-primary" />
+                Event Gallery &amp; Recordings
               </h3>
               
               <EventMediaCarousel

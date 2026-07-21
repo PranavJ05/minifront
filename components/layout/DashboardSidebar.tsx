@@ -78,56 +78,54 @@ export default function DashboardSidebar({ role }: SidebarProps) {
       <SidebarContent className="p-2">
         <SidebarMenu>
           {/* Home */}
-          <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
+          <SidebarMenuItem>
             <SidebarMenuButton
               isActive={pathname === homeHref}
               tooltip="Home"
               className={cn(
-                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer group-data-[collapsible=icon]:!w-auto",
+                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
                 pathname === homeHref
                   ? "!bg-primary !text-primary-foreground shadow-sm"
                   : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
               )}
-              render={<Link href={homeHref} className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center" />}
+              render={<Link href={homeHref} className="flex items-center gap-2.5" />}
             >
               <Home className="h-5 w-5 shrink-0" />
               <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">Home</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
-          {/* Network Hub Collapsible Item with Sub-menu */}
-          <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
-            <div className="flex items-center w-full">
-              <SidebarMenuButton
-                isActive={isNetworkActive}
-                tooltip="Network Hub"
-                className={cn(
-                  "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer flex-1 group-data-[collapsible=icon]:!w-auto",
-                  isNetworkActive
-                    ? "!bg-primary !text-primary-foreground shadow-sm"
-                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                )}
-                render={<Link href="/network" className="flex items-center justify-between w-full" />}
+          {/* Network Hub */}
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive={isNetworkActive}
+              tooltip="Network Hub"
+              className={cn(
+                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer justify-between",
+                isNetworkActive
+                  ? "!bg-primary !text-primary-foreground shadow-sm"
+                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              )}
+              render={<Link href="/network" className="flex items-center justify-between w-full" />}
+            >
+              <div className="flex items-center gap-2.5">
+                <Users className="h-5 w-5 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">Network Hub</span>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setNetworkOpen(!networkOpen);
+                }}
+                className="group-data-[collapsible=icon]:hidden p-1 text-inherit opacity-70 hover:opacity-100 cursor-pointer"
               >
-                <div className="flex items-center gap-2.5">
-                  <Users className="h-5 w-5 shrink-0" />
-                  <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">Network Hub</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setNetworkOpen(!networkOpen);
-                  }}
-                  className="group-data-[collapsible=icon]:hidden p-1 text-inherit opacity-70 hover:opacity-100 cursor-pointer"
-                >
-                  {networkOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                </button>
-              </SidebarMenuButton>
-            </div>
+                {networkOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+              </button>
+            </SidebarMenuButton>
 
-            {/* Sub-menu for Alumni & Faculty */}
+            {/* Sub-menu (Hidden when sidebar is collapsed to icon view) */}
             {networkOpen && (
               <SidebarMenuSub className="mt-1 space-y-0.5 group-data-[collapsible=icon]:hidden">
                 <SidebarMenuSubItem>
@@ -166,17 +164,17 @@ export default function DashboardSidebar({ role }: SidebarProps) {
           </SidebarMenuItem>
 
           {/* Opportunities */}
-          <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
+          <SidebarMenuItem>
             <SidebarMenuButton
               isActive={pathname.startsWith("/opportunities")}
               tooltip="Opportunities"
               className={cn(
-                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer group-data-[collapsible=icon]:!w-auto",
+                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
                 pathname.startsWith("/opportunities")
                   ? "!bg-primary !text-primary-foreground shadow-sm"
                   : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
               )}
-              render={<Link href="/opportunities" className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center" />}
+              render={<Link href="/opportunities" className="flex items-center gap-2.5" />}
             >
               <Briefcase className="h-5 w-5 shrink-0" />
               <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">Opportunities</span>
@@ -184,17 +182,17 @@ export default function DashboardSidebar({ role }: SidebarProps) {
           </SidebarMenuItem>
 
           {/* Unified Events */}
-          <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
+          <SidebarMenuItem>
             <SidebarMenuButton
               isActive={pathname.startsWith("/events")}
               tooltip="Events"
               className={cn(
-                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer group-data-[collapsible=icon]:!w-auto",
+                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
                 pathname.startsWith("/events")
                   ? "!bg-primary !text-primary-foreground shadow-sm"
                   : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
               )}
-              render={<Link href="/events" className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center" />}
+              render={<Link href="/events" className="flex items-center gap-2.5" />}
             >
               <Calendar className="h-5 w-5 shrink-0" />
               <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">Events</span>
@@ -202,17 +200,17 @@ export default function DashboardSidebar({ role }: SidebarProps) {
           </SidebarMenuItem>
 
           {/* My Profile */}
-          <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
+          <SidebarMenuItem>
             <SidebarMenuButton
               isActive={pathname === "/profile"}
               tooltip="My Profile"
               className={cn(
-                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer group-data-[collapsible=icon]:!w-auto",
+                "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
                 pathname === "/profile"
                   ? "!bg-primary !text-primary-foreground shadow-sm"
                   : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
               )}
-              render={<Link href="/profile" className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center" />}
+              render={<Link href="/profile" className="flex items-center gap-2.5" />}
             >
               <User className="h-5 w-5 shrink-0" />
               <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">My Profile</span>
@@ -221,17 +219,17 @@ export default function DashboardSidebar({ role }: SidebarProps) {
 
           {/* Privacy Settings (Alumni only) */}
           {role === "alumni" && (
-            <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
+            <SidebarMenuItem>
               <SidebarMenuButton
                 isActive={pathname === "/profile/privacy"}
                 tooltip="Privacy Settings"
                 className={cn(
-                  "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer group-data-[collapsible=icon]:!w-auto",
+                  "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
                   pathname === "/profile/privacy"
                     ? "!bg-primary !text-primary-foreground shadow-sm"
                     : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
                 )}
-                render={<Link href="/profile/privacy" className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center" />}
+                render={<Link href="/profile/privacy" className="flex items-center gap-2.5" />}
               >
                 <Shield className="h-5 w-5 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">Privacy Settings</span>
@@ -241,17 +239,17 @@ export default function DashboardSidebar({ role }: SidebarProps) {
 
           {/* Mentorship (Alumni & Student) */}
           {(role === "alumni" || role === "student") && (
-            <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
+            <SidebarMenuItem>
               <SidebarMenuButton
                 isActive={pathname.startsWith("/alumni-mentorship")}
                 tooltip="Mentorship"
                 className={cn(
-                  "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer group-data-[collapsible=icon]:!w-auto",
+                  "h-9 px-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
                   pathname.startsWith("/alumni-mentorship")
                     ? "!bg-primary !text-primary-foreground shadow-sm"
                     : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
                 )}
-                render={<Link href="/alumni-mentorship" className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center" />}
+                render={<Link href="/alumni-mentorship" className="flex items-center gap-2.5" />}
               >
                 <Handshake className="h-5 w-5 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden whitespace-nowrap">Mentorship</span>
