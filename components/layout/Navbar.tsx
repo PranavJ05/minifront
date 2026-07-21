@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { GraduationCap, Bell, LogOut, Sun, Moon, User } from "lucide-react";
+import { GraduationCap, Bell, LogOut, Sun, Moon, User, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import Logo from "@/components/layout/Logo";
 import PendingModal from "@/components/main-admin/PendingModal";
-import { isAnyAdmin } from "@/lib/roleUtils";
+import { isAnyAdmin, isAlumni } from "@/lib/roleUtils";
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -295,6 +295,20 @@ export default function Navbar({
                           </Link>
                         }
                       />
+                      {isAlumni(storedUser?.roles) && (
+                        <DropdownMenuItem
+                          className="cursor-pointer"
+                          render={
+                            <Link
+                              href="/profile/privacy"
+                              className="flex items-center gap-2"
+                            >
+                              <Shield className="h-4 w-4" />
+                              <span>Privacy Settings</span>
+                            </Link>
+                          }
+                        />
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={handleLogout}

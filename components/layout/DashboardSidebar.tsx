@@ -34,8 +34,9 @@ interface SidebarProps {
 }
 const facultyLinks = [
   { href: "/dashboard/faculty", label: "Overview", icon: Home },
-  { href: "/alumni", label: "Alumni", icon: GraduationCap },
-  { href: "/faculty", label: "Faculty", icon: Users },
+  { href: "/network", label: "Network Hub", icon: Users },
+  { href: "/network/alumni", label: "Alumni", icon: GraduationCap },
+  { href: "/network/faculty", label: "Faculty", icon: Users },
   { href: "/events", label: "Events", icon: Calendar },
   { href: "/club-events", label: "Club Events", icon: Calendar },
   { href: "/alumni-sessions", label: "Alumni Sessions", icon: Newspaper },
@@ -45,20 +46,23 @@ const facultyLinks = [
 
 const alumniLinks = [
   { href: "/dashboard/alumni", label: "Home", icon: Home },
-  { href: "/alumni", label: "My Network", icon: Users },
-  { href: "/faculty", label: "Faculty", icon: GraduationCap },
+  { href: "/network", label: "Network Hub", icon: Users },
+  { href: "/network/alumni", label: "Alumni", icon: GraduationCap },
+  { href: "/network/faculty", label: "Faculty", icon: Users },
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/events", label: "Events", icon: Calendar },
   { href: "/club-events", label: "Club Events", icon: Calendar },
   { href: "/alumni-sessions", label: "Alumni Sessions", icon: Newspaper },
   { href: "/profile", label: "My Profile", icon: User },
+  { href: "/profile/privacy", label: "Privacy Settings", icon: Shield },
   { href: "/alumni-mentorship", label: "Mentorship", icon: Handshake },
 ];
 
 const studentLinks = [
   { href: "/dashboard/student", label: "Home", icon: Home },
-  { href: "/alumni", label: "Find Alumni", icon: Users },
-  { href: "/faculty", label: "Faculty", icon: GraduationCap },
+  { href: "/network", label: "Network Hub", icon: Users },
+  { href: "/network/alumni", label: "Alumni", icon: GraduationCap },
+  { href: "/network/faculty", label: "Faculty", icon: Users },
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/events", label: "Events", icon: Calendar },
   { href: "/club-events", label: "Club Events", icon: Calendar },

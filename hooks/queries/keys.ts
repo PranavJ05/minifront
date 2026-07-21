@@ -84,4 +84,7 @@ export const queryKeys = {
     pending: () => ["alumni-applications", "pending"] as const,
     detail: (id: number) => ["alumni-applications", id] as const,
   },
+  privacy: {
+    settings: () => ["privacy", "settings"] as const,
+  },
 };
