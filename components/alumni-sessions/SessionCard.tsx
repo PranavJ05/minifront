@@ -1,85 +1,80 @@
 "use client";
 
 import Link from "next/link";
+import { MapPin, Users, Calendar, Video, ArrowRight } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { AlumniSession } from "@/lib/types/alumniSession";
 
 interface Props {
   session: AlumniSession;
 }
 
-export default function SessionCard({
-  session,
-}: Props) {
+export default function SessionCard({ session }: Props) {
+  const isOpen = session.status === "OPEN";
 
   return (
-    <div className="card p-6">
+    <Card className="p-4 flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+      <div className="space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-1">
+            <Badge variant="secondary" className="text-[10px]">
+              {session.topicDomain || "Alumni Session"}
+            </Badge>
+            <h2 className="font-semibold text-sm leading-snug text-foreground">
+              {session.title}
+            </h2>
+          </div>
 
-      <div className="flex justify-between items-start">
-
-        <div>
-          <h2 className="font-bold text-xl text-navy-900">
-            {session.title}
-          </h2>
-
-          <p className="text-sm text-gray-500 mt-1">
-            {session.topicDomain}
-          </p>
+          <Badge variant={isOpen ? "default" : "secondary"} className="text-[10px] shrink-0">
+            {session.status}
+          </Badge>
         </div>
 
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            session.status === "OPEN"
-              ? "bg-green-100 text-green-700"
-              : "bg-red-100 text-red-700"
-          }`}
-        >
-          {session.status}
-        </span>
+        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+          {session.description}
+        </p>
+
+        <div className="space-y-1 text-xs text-muted-foreground/80 pt-1">
+          {session.venue && (
+            <div className="flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+              <span className="truncate">{session.venue}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-4">
+            {session.mode && (
+              <div className="flex items-center gap-1.5">
+                <Video className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+                <span>{session.mode}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+              <span>
+                {session.registrationCount} / {session.maxParticipants} Registered
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <p className="mt-4 text-gray-600">
-        {session.description}
-      </p>
-
-      <div className="mt-4 space-y-1 text-sm text-gray-500">
-        <p>
-          Venue: {session.venue}
-        </p>
-
-        <p>
-          Mode: {session.mode}
-        </p>
-
-        <p>
-          Seats:
-          {" "}
-          {session.registrationCount}
-          /
-          {session.maxParticipants}
-        </p>
-      </div>
-
-      <div className="mt-5 flex gap-3">
-
-        <Link
-          href={`/alumni-sessions/${session.id}`}
-        >
-          <button className="btn-outline">
-            View Details
-          </button>
-        </Link>
+      <div className="flex items-center gap-2 pt-2 border-t border-border/40">
+        <Button variant="outline" size="xs" asChild className="flex-1 cursor-pointer">
+          <Link href={`/alumni-sessions/${session.id}`}>
+            View Details <ArrowRight className="h-3 w-3 ml-1" />
+          </Link>
+        </Button>
 
         {session.mediaAvailable && (
-          <Link
-             href={`/alumni-sessions/${session.id}/media`}
-          >
-            <button className="btn-primary">
-              View Media
-            </button>
-          </Link>
+          <Button variant="secondary" size="xs" asChild className="cursor-pointer">
+            <Link href={`/alumni-sessions/${session.id}/media`}>
+              Media
+            </Link>
+          </Button>
         )}
-
       </div>
-    </div>
+    </Card>
   );
 }

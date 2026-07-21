@@ -1,11 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/fetcher";
 import { queryKeys } from "./keys";
+import { isCurrentAdmin, isCurrentMainAdmin } from "@/lib/auth";
 
-export function usePendingUsersQuery() {
+export function usePendingUsersQuery(options?: { enabled?: boolean }) {
+  const isAuthorized = isCurrentAdmin();
   return useQuery({
     queryKey: queryKeys.admin.pending,
     queryFn: () => api<{ id: number; name: string; email: string }[]>("/admin/pending"),
+    enabled: (options?.enabled ?? true) && isAuthorized,
   });
 }
 
@@ -31,7 +34,8 @@ export function useRejectUserMutation() {
   });
 }
 
-export function useUsersQuery(params?: Record<string, string>) {
+export function useUsersQuery(params?: Record<string, string>, options?: { enabled?: boolean }) {
+  const isAuthorized = isCurrentMainAdmin();
   const searchParams = new URLSearchParams(params).toString();
   return useQuery({
     queryKey: queryKeys.admin.users(params),
@@ -39,14 +43,16 @@ export function useUsersQuery(params?: Record<string, string>) {
       api<{ id: number; name: string; email: string; roles: string[] }[]>(
         `/admin/users${searchParams ? `?${searchParams}` : ""}`,
       ),
+    enabled: (options?.enabled ?? true) && isAuthorized,
   });
 }
 
-export function useUserClubsQuery(userId: number) {
+export function useUserClubsQuery(userId: number, options?: { enabled?: boolean }) {
+  const isAuthorized = isCurrentMainAdmin();
   return useQuery({
     queryKey: [...queryKeys.admin.users(), "clubs", userId],
     queryFn: () => api<{ id: number; name: string }[]>(`/admin/users/${userId}/clubs`),
-    enabled: !!userId,
+    enabled: (options?.enabled ?? true) && isAuthorized && !!userId,
   });
 }
 
@@ -77,9 +83,11 @@ export function useRemoveClubMutation() {
   });
 }
 
-export function useClubsQuery() {
+export function useClubsQuery(options?: { enabled?: boolean }) {
+  const isAuthorized = isCurrentMainAdmin();
   return useQuery({
     queryKey: queryKeys.admin.clubs(),
     queryFn: () => api<{ id: number; name: string }[]>("/admin/clubs"),
+    enabled: (options?.enabled ?? true) && isAuthorized,
   });
 }

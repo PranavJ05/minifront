@@ -1,5 +1,5 @@
-// app/alumni/[id]/page.tsx
 "use client";
+
 import { notFound, useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,31 +10,30 @@ import {
   Briefcase,
   GraduationCap,
   Mail,
-  UserPlus,
-  Shield,
-  Building,
+  ShieldCheck,
   Calendar,
   Globe,
   Award,
   Users,
   TrendingUp,
   ExternalLink,
-  Bookmark,
   Clock,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
-import Footer from "@/components/layout/Footer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getInitials } from "@/lib/utils";
 import { useAlumniProfileQuery } from "@/hooks/queries/alumni";
 
-// Skill object from backend
 interface Skill {
   skillId: number;
   skillName: string;
   isStarter: boolean;
 }
 
-// Event object from backend
 interface Event {
   eventId: number;
   title: string;
@@ -44,18 +43,16 @@ interface Event {
   registrationLink: string | null;
 }
 
-// Opportunity object from backend
 interface Opportunity {
   opportunityId: number;
   title: string;
   description: string;
-  type: "JOB" | "INTERNSHIP" | "MENTORSHIP" | string;
+  type: string;
   company: string | null;
   location: string | null;
   postedAt: string;
 }
 
-// Define the shape of the data coming from your Spring Boot backend
 interface AlumniProfile {
   id: number;
   name: string;
@@ -94,14 +91,11 @@ export default function AlumniProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <div className="animate-spin h-8 w-8 border-4 border-navy-800 border-t-transparent rounded-full mx-auto mb-4" />
-            <p className="text-gray-600">Loading profile...</p>
-          </div>
+      <div className="w-full px-4 sm:px-6 pb-6 space-y-6">
+        <div className="py-6">
+          <Skeleton className="h-8 w-40 rounded-lg mb-6" />
+          <Skeleton className="h-48 w-full rounded-2xl" />
         </div>
-        <Footer />
       </div>
     );
   }
@@ -110,391 +104,271 @@ export default function AlumniProfilePage() {
     notFound();
   }
 
-  // Format date for display
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-IN", {
+    return new Date(dateString).toLocaleDateString("en-IN", {
       year: "numeric",
       month: "short",
       day: "numeric",
     });
   };
 
-  // Get opportunity type badge color
-  const getTypeBadgeColor = (type: string) => {
-    switch (type.toUpperCase()) {
-      case "JOB":
-        return "bg-green-100 text-green-700 border-green-200";
-      case "INTERNSHIP":
-        return "bg-blue-100 text-blue-700 border-blue-200";
-      case "MENTORSHIP":
-        return "bg-purple-100 text-purple-700 border-purple-200";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800 text-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {/* Back */}
-          <Link
-            href="/alumni"
-            className="inline-flex items-center gap-2 text-gray-300 hover:text-white transition-colors mb-8 text-sm"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Directory
-          </Link>
-
-          <div className="flex flex-col md:flex-row items-start gap-6">
-            {/* Profile Image */}
-            <div className="flex-shrink-0">
-              <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-white/20 shadow-2xl bg-white/10">
-                {alumni.profileImageUrl ? (
-                  <Image
-                    src={alumni.profileImageUrl}
-                    alt={alumni.name}
-                    width={128}
-                    height={128}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white font-bold text-4xl">
-                    {getInitials(alumni.name)}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Profile Info */}
-            <div className="flex-1">
-              <div className="flex items-start gap-3 mb-2">
-                <h1 className="text-3xl font-bold font-serif">{alumni.name}</h1>
-                <Shield
-                  className="h-5 w-5 text-blue-400 flex-shrink-0 mt-1"
-                  aria-label="Verified Alumni"
-                />
-              </div>
-
-              <p className="text-gold-400 font-medium text-lg mb-2">
-                {alumni.profession || "Professional"}
-              </p>
-
-              <div className="flex flex-wrap gap-4 text-sm text-gray-300 mb-4">
-                {alumni.fullLocation && (
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-4 w-4" />
-                    <span>{alumni.fullLocation}</span>
-                  </div>
-                )}
-                {alumni.batchYear && (
-                  <div className="flex items-center gap-1.5">
-                    <GraduationCap className="h-4 w-4" />
-                    <span>Class of {alumni.batchYear}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap gap-3">
-                {alumni.linkedinUrl && (
-                  <a
-                    href={alumni.linkedinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-[#0077b5] hover:bg-[#006097] text-white font-semibold py-2.5 px-5 rounded-lg transition-colors"
-                  >
-                    <FaLinkedin className="h-4 w-4" />
-                    View LinkedIn Profile
-                  </a>
-                )}
-              </div>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="flex gap-6 md:border-l md:border-white/10 md:pl-6">
-              <div className="text-center">
-                <div className="flex items-center gap-1.5 text-gold-400 mb-1">
-                  <Award className="h-5 w-5" />
-                  <span className="text-2xl font-bold">
-                    {alumni.totalSkills}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400">Skills</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center gap-1.5 text-gold-400 mb-1">
-                  <Users className="h-5 w-5" />
-                  <span className="text-2xl font-bold">
-                    {alumni.totalEvents}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400">Events</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center gap-1.5 text-gold-400 mb-1">
-                  <TrendingUp className="h-5 w-5" />
-                  <span className="text-2xl font-bold">
-                    {alumni.totalOpportunities}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400">Opportunities</p>
-              </div>
-            </div>
-          </div>
+    <div className="w-full px-4 sm:px-6 pb-6 space-y-6">
+      {/* Sticky Top Bar */}
+      <div className="sticky top-14 z-30 bg-background/95 backdrop-blur-md py-4 border-b border-border/40 -mx-4 sm:-mx-6 px-4 sm:px-6">
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" size="xs" asChild className="cursor-pointer">
+            <Link href="/alumni">
+              <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back to Directory
+            </Link>
+          </Button>
+          {alumni.linkedinUrl && (
+            <Button size="xs" asChild className="cursor-pointer bg-[#0077b5] hover:bg-[#006097] text-white">
+              <a href={alumni.linkedinUrl} target="_blank" rel="noopener noreferrer">
+                <FaLinkedin className="h-3.5 w-3.5 mr-1" /> LinkedIn Profile
+              </a>
+            </Button>
+          )}
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left Column - Info Cards */}
-          <div className="lg:col-span-1 space-y-4">
-            {/* Academic Info */}
-            <div className="card p-5">
-              <h3 className="font-bold text-navy-900 mb-4 flex items-center gap-2">
-                <GraduationCap className="h-4 w-4 text-gold-500" />
-                Academic Information
-              </h3>
-              <div className="space-y-3 text-sm">
-                {alumni.branchName && (
-                  <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wide">
-                      Branch
-                    </p>
-                    <p className="font-medium text-navy-900">
-                      {alumni.branchName}
-                    </p>
-                  </div>
-                )}
-                {alumni.courseName && (
-                  <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wide">
-                      Department
-                    </p>
-                    <p className="font-medium text-navy-900">
-                      {alumni.courseName}
-                    </p>
-                  </div>
-                )}
-                {alumni.batchYear && (
-                  <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wide">
-                      Batch
-                    </p>
-                    <p className="font-medium text-navy-900">
-                      {alumni.batchYear}
-                    </p>
-                  </div>
-                )}
-              </div>
+      {/* Main Profile Header Card */}
+      <Card className="p-6 bg-card border-border shadow-xs">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            <div className="w-24 h-24 rounded-2xl overflow-hidden bg-muted border border-border shrink-0 flex items-center justify-center">
+              {alumni.profileImageUrl ? (
+                <Image
+                  src={alumni.profileImageUrl}
+                  alt={alumni.name}
+                  width={96}
+                  height={96}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="font-bold text-2xl text-muted-foreground">
+                  {getInitials(alumni.name)}
+                </span>
+              )}
             </div>
 
-            {/* Contact Info */}
-            <div className="card p-5">
-              <h3 className="font-bold text-navy-900 mb-4 flex items-center gap-2">
-                <Mail className="h-4 w-4 text-gold-500" />
-                Contact Information
-              </h3>
-              <div className="space-y-3 text-sm">
-                {alumni.email && (
-                  <div className="flex items-center gap-2.5 text-gray-600">
-                    <Mail className="h-4 w-4 flex-shrink-0 text-navy-600" />
-                    <span className="truncate">{alumni.email}</span>
-                  </div>
-                )}
+            <div className="space-y-1.5 min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                  {alumni.name}
+                </h1>
+                <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" title="Verified Alumni" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">
+                {alumni.profession || "Graduate Member"}
+              </p>
+              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground/80 pt-1">
                 {alumni.fullLocation && (
-                  <div className="flex items-center gap-2.5 text-gray-600">
-                    <MapPin className="h-4 w-4 flex-shrink-0 text-navy-600" />
-                    <span className="truncate">{alumni.fullLocation}</span>
-                  </div>
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5 shrink-0" />
+                    {alumni.fullLocation}
+                  </span>
+                )}
+                {alumni.batchYear && (
+                  <span className="flex items-center gap-1">
+                    <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+                    Class of {alumni.batchYear}
+                  </span>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Right Column - Main Content */}
-          <div className="lg:col-span-2 space-y-5">
-            {/* Skills */}
-            {alumni.skills && alumni.skills.length > 0 && (
-              <div className="card p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-bold text-navy-900 text-lg font-serif flex items-center gap-2">
-                    <Globe className="h-5 w-5 text-gold-500" />
-                    Skills & Expertise
-                  </h2>
-                  <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    {alumni.totalSkills} skills
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {alumni.skills.map((skill) => (
-                    <span
-                      key={skill.skillId}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                        skill.isStarter
-                          ? "bg-navy-50 text-navy-700 border-navy-200"
-                          : "bg-gold-50 text-gold-700 border-gold-200"
-                      }`}
-                    >
-                      {skill.isStarter && <Award className="h-3 w-3" />}
-                      {skill.skillName}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+          {/* Quick Metrics */}
+          <div className="flex items-center gap-6 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6 w-full md:w-auto">
+            <div className="text-center">
+              <div className="text-xl font-bold text-foreground">{alumni.totalSkills}</div>
+              <div className="text-[10px] text-muted-foreground font-medium">Skills</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xl font-bold text-foreground">{alumni.totalEvents}</div>
+              <div className="text-[10px] text-muted-foreground font-medium">Events</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xl font-bold text-foreground">{alumni.totalOpportunities}</div>
+              <div className="text-[10px] text-muted-foreground font-medium">Postings</div>
+            </div>
+          </div>
+        </div>
+      </Card>
 
-            {/* Events */}
-            {alumni.events && alumni.events.length > 0 && (
-              <div className="card p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-bold text-navy-900 text-lg font-serif flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-gold-500" />
-                    Events
-                  </h2>
-                  <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    {alumni.totalEvents} events
-                  </span>
-                </div>
-                <div className="space-y-4">
-                  {alumni.events.map((event) => (
-                    <div
-                      key={event.eventId}
-                      className="border border-gray-200 rounded-xl p-4 hover:border-navy-300 hover:shadow-md transition-all"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-navy-900">
-                            {event.title}
-                          </h4>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {event.description}
-                          </p>
-                          <div className="flex flex-wrap gap-3 mt-3 text-xs text-gray-500">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3.5 w-3.5" />
-                              <span>{formatDate(event.eventDate)}</span>
-                            </div>
-                            {event.location && (
-                              <div className="flex items-center gap-1">
-                                <MapPin className="h-3.5 w-3.5" />
-                                <span>{event.location}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {event.registrationLink && (
-                          <a
-                            href={event.registrationLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-shrink-0 inline-flex items-center gap-1 bg-navy-800 hover:bg-navy-700 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors"
-                          >
-                            Register
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Opportunities */}
-            {alumni.opportunities && alumni.opportunities.length > 0 && (
-              <div className="card p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-bold text-navy-900 text-lg font-serif flex items-center gap-2">
-                    <Briefcase className="h-5 w-5 text-gold-500" />
-                    Opportunities
-                  </h2>
-                  <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    {alumni.totalOpportunities} posted
-                  </span>
-                </div>
-                <div className="space-y-4">
-                  {alumni.opportunities.map((opp) => (
-                    <div
-                      key={opp.opportunityId}
-                      className="border border-gray-200 rounded-xl p-4 hover:border-navy-300 hover:shadow-md transition-all"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getTypeBadgeColor(
-                                opp.type,
-                              )}`}
-                            >
-                              {opp.type}
-                            </span>
-                            {opp.company && (
-                              <span className="text-xs text-gray-500 flex items-center gap-1">
-                                <Building className="h-3 w-3" />
-                                {opp.company}
-                              </span>
-                            )}
-                          </div>
-                          <h4 className="font-semibold text-navy-900">
-                            {opp.title}
-                          </h4>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {opp.description}
-                          </p>
-                          <div className="flex flex-wrap gap-3 mt-3 text-xs text-gray-500">
-                            {opp.location && (
-                              <div className="flex items-center gap-1">
-                                <MapPin className="h-3.5 w-3.5" />
-                                <span>{opp.location}</span>
-                              </div>
-                            )}
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3.5 w-3.5" />
-                              <span>Posted {formatDate(opp.postedAt)}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <button className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gold-500 hover:bg-gold-50 transition-colors">
-                          <Bookmark className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Empty State */}
-            {!alumni.skills?.length &&
-              !alumni.events?.length &&
-              !alumni.opportunities?.length && (
-                <div className="card p-8 text-center">
-                  <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                    <UserPlus className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <h3 className="font-semibold text-navy-900 text-lg">
-                    Profile Incomplete
-                  </h3>
-                  <p className="text-gray-500 text-sm mt-1">
-                    This alumni member hasn't added their skills, events, or
-                    opportunities yet.
-                  </p>
-                  <Link
-                    href="/alumni"
-                    className="inline-flex items-center gap-1 text-gold-600 font-medium text-sm mt-4 hover:text-gold-700"
-                  >
-                    Browse other profiles <ChevronRight className="h-4 w-4" />
-                  </Link>
+      {/* Details Grid */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Left Column: Academics & Contact */}
+        <div className="space-y-4">
+          <Card className="p-4">
+            <h3 className="font-semibold text-xs text-foreground mb-3 flex items-center gap-2">
+              <GraduationCap className="h-4 w-4 text-muted-foreground" />
+              Academic Info
+            </h3>
+            <div className="space-y-2.5 text-xs">
+              {alumni.branchName && (
+                <div>
+                  <span className="text-[10px] text-muted-foreground/75 block">Branch</span>
+                  <span className="font-medium text-foreground">{alumni.branchName}</span>
                 </div>
               )}
-          </div>
+              {alumni.courseName && (
+                <div>
+                  <span className="text-[10px] text-muted-foreground/75 block">Department</span>
+                  <span className="font-medium text-foreground">{alumni.courseName}</span>
+                </div>
+              )}
+              {alumni.batchYear && (
+                <div>
+                  <span className="text-[10px] text-muted-foreground/75 block">Graduation Year</span>
+                  <span className="font-medium text-foreground">{alumni.batchYear}</span>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <h3 className="font-semibold text-xs text-foreground mb-3 flex items-center gap-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              Contact Details
+            </h3>
+            <div className="space-y-2.5 text-xs text-muted-foreground">
+              {alumni.email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{alumni.email}</span>
+                </div>
+              )}
+              {alumni.fullLocation && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{alumni.fullLocation}</span>
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* Right Column: Skills, Events, Opportunities */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Skills */}
+          {alumni.skills && alumni.skills.length > 0 && (
+            <Card className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                  Skills &amp; Expertise
+                </h3>
+                <Badge variant="secondary" className="text-[10px]">
+                  {alumni.totalSkills} skills
+                </Badge>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {alumni.skills.map((skill) => (
+                  <Badge
+                    key={skill.skillId}
+                    variant={skill.isStarter ? "default" : "outline"}
+                    className="text-xs font-normal"
+                  >
+                    {skill.isStarter && <Award className="h-3 w-3 mr-1" />}
+                    {skill.skillName}
+                  </Badge>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Events */}
+          {alumni.events && alumni.events.length > 0 && (
+            <Card className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  Associated Events
+                </h3>
+                <Badge variant="secondary" className="text-[10px]">
+                  {alumni.totalEvents} events
+                </Badge>
+              </div>
+              <div className="space-y-3">
+                {alumni.events.map((event) => (
+                  <div key={event.eventId} className="p-3 rounded-lg border border-border bg-card space-y-1.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-semibold text-xs text-foreground">{event.title}</h4>
+                      {event.registrationLink && (
+                        <Button size="xs" variant="outline" asChild className="cursor-pointer shrink-0">
+                          <a href={event.registrationLink} target="_blank" rel="noopener noreferrer">
+                            Register <ExternalLink className="h-3 w-3 ml-1" />
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{event.description}</p>
+                    <div className="flex items-center gap-3 text-[10px] text-muted-foreground/80 pt-1">
+                      <span>{formatDate(event.eventDate)}</span>
+                      {event.location && <span>&middot; {event.location}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Opportunities */}
+          {alumni.opportunities && alumni.opportunities.length > 0 && (
+            <Card className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-muted-foreground" />
+                  Opportunity Postings
+                </h3>
+                <Badge variant="secondary" className="text-[10px]">
+                  {alumni.totalOpportunities} posted
+                </Badge>
+              </div>
+              <div className="space-y-3">
+                {alumni.opportunities.map((opp) => (
+                  <div key={opp.opportunityId} className="p-3 rounded-lg border border-border bg-card space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-[9px]">
+                        {opp.type}
+                      </Badge>
+                      {opp.company && (
+                        <span className="text-[10px] text-muted-foreground font-medium">
+                          {opp.company}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="font-semibold text-xs text-foreground">{opp.title}</h4>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{opp.description}</p>
+                    <div className="flex items-center gap-3 text-[10px] text-muted-foreground/80 pt-1">
+                      {opp.location && <span><MapPin className="h-2.5 w-2.5 inline mr-1" />{opp.location}</span>}
+                      <span>Posted {formatDate(opp.postedAt)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Empty Profile Case */}
+          {!alumni.skills?.length && !alumni.events?.length && !alumni.opportunities?.length && (
+            <Card className="p-8 text-center">
+              <CardContent className="p-0 flex flex-col items-center gap-2">
+                <Users className="h-8 w-8 text-muted-foreground/40" />
+                <p className="font-semibold text-sm text-foreground">Profile Overview</p>
+                <p className="text-xs text-muted-foreground max-w-sm">
+                  This alumni profile doesn&apos;t have added skills, events, or posted opportunities yet.
+                </p>
+                <Button variant="outline" size="sm" asChild className="mt-2 cursor-pointer">
+                  <Link href="/alumni">Browse other profiles</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

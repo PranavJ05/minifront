@@ -24,6 +24,8 @@ import RoleSelector from "@/components/auth/RoleSelector";
 import StudentSignupForm from "@/components/auth/StudentSignupForm";
 import AlumniSignupForm from "@/components/auth/AlumniSignupForm";
 import FacultySignupForm from "@/components/auth/FacultySignupForm";
+import Logo from "@/components/layout/Logo";
+import ThemeToggle from "@/components/layout/ThemeToggle";
 import AcademicDetails from "@/components/auth/AcademicDetails";
 import LocationSelector from "@/components/auth/LocationSelector";
 import { useCountriesQuery, useStatesQuery, useCitiesQuery } from "@/hooks/queries/location";
@@ -165,6 +167,15 @@ export default function SignupPage() {
   const safeStates = states ?? [];
   const safeCities = cities ?? [];
 
+  const updateRole = (newRole: UserRole) => {
+    setFormData((prev) => ({
+      ...prev,
+      role: newRole,
+      country: newRole === "student" ? "India" : prev.country,
+      state: newRole === "student" ? "Kerala" : prev.state,
+    }));
+  };
+
   const courseInfo = useMemo(
     () => (formData.department ? courseBranchMap[formData.department] : null),
     [formData.department],
@@ -193,15 +204,16 @@ export default function SignupPage() {
     }
   };
 
-  const handleCountryChange = (countryCode: string) => {
-    const country = safeCountries.find((item) => item.iso2 === countryCode);
+  const handleCountryChange = (countryName: string, countryObj?: any) => {
     setFormData((prev) => ({
       ...prev,
-      countryCode,
-      country: country?.name || "",
-      stateCode: "",
+      country: countryName,
+      countryCode: countryObj?.iso2 || prev.countryCode,
       state: "",
+      stateCode: "",
       city: "",
+      latitude: countryObj?.latitude || prev.latitude,
+      longitude: countryObj?.longitude || prev.longitude,
     }));
     setErrors((prev) => ({
       ...prev,
@@ -212,13 +224,14 @@ export default function SignupPage() {
     }));
   };
 
-  const handleStateChange = (stateCode: string) => {
-    const state = safeStates.find((item) => item.iso2 === stateCode);
+  const handleStateChange = (stateName: string, stateObj?: any) => {
     setFormData((prev) => ({
       ...prev,
-      stateCode,
-      state: state?.name || "",
+      state: stateName,
+      stateCode: stateObj?.iso2 || prev.stateCode,
       city: "",
+      latitude: stateObj?.latitude || prev.latitude,
+      longitude: stateObj?.longitude || prev.longitude,
     }));
     setErrors((prev) => ({
       ...prev,
@@ -227,8 +240,13 @@ export default function SignupPage() {
     }));
   };
 
-  const handleCityChange = (city: string) => {
-    setFormData((prev) => ({ ...prev, city }));
+  const handleCityChange = (cityName: string, cityObj?: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      city: cityName,
+      latitude: cityObj?.latitude || prev.latitude,
+      longitude: cityObj?.longitude || prev.longitude,
+    }));
     if (errors.city) {
       setErrors((prev) => ({ ...prev, city: "" }));
     }
@@ -240,15 +258,17 @@ export default function SignupPage() {
     if (formData.role === "student") {
       if (!formData.rollNumber.trim()) {
         nextErrors.rollNumber = "Roll number is required";
-      } else if (!/^MDL\d{2}CS\d{3}$/i.test(formData.rollNumber.trim())) {
-        nextErrors.rollNumber = "Format: MDL23CS032";
+      } else if (!/^[A-Z]{3}\d{2}[A-Z]{1,6}\d{3}$/i.test(formData.rollNumber.trim())) {
+        nextErrors.rollNumber = "Format: MEC28CS501";
       }
     }
     if (!formData.fullName.trim()) {
       nextErrors.fullName = "Full name is required";
     }
 
-    if (!formData.email.includes("@")) {
+    if (formData.role === "student" && !formData.email.endsWith("@mec.ac.in")) {
+      nextErrors.email = "Student email must be @mec.ac.in";
+    } else if (!formData.email.includes("@")) {
       nextErrors.email = "Valid email required";
     }
 
@@ -445,27 +465,19 @@ export default function SignupPage() {
   const selectedCity = safeCities.find((city) => city.name === formData.city);
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left Panel — Desktop (fixed) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-card border-r border-border flex-col justify-between p-12 sticky top-0 self-start h-screen">
-        <Link href="/" className="flex items-center gap-2.5 relative z-10">
-          <div className="bg-primary p-1.5 rounded-lg">
-            <GraduationCap className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="font-bold text-lg text-foreground leading-tight">
-            Alumni Relations Cell
-          </span>
-        </Link>
+    <div className="min-h-screen bg-background flex w-full overflow-x-hidden">
+      {/* Left Panel — Desktop */}
+      <div className="hidden lg:flex lg:w-1/2 bg-card border-r border-border flex-col justify-between p-12 min-h-screen">
+        <Logo size="lg" className="relative z-10" />
 
         <div className="relative z-10">
-          <h1 className="text-4xl font-bold text-foreground leading-tight mb-6">
-            Join 35,000+
+          <h1 className="text-3xl font-bold text-foreground leading-tight mb-4">
+            Join the MEC
             <br />
-            alumni worldwide
+            Alumni Network
           </h1>
-          <p className="text-muted-foreground text-lg leading-relaxed mb-10">
-            Create your account to access the full suite of alumni resources,
-            connections, and opportunities.
+          <p className="text-muted-foreground text-sm leading-relaxed mb-8">
+            Create your account to connect with fellow graduates, access network opportunities, and stay engaged with college events.
           </p>
 
           <div className="space-y-3">
@@ -509,14 +521,15 @@ export default function SignupPage() {
       </div>
 
       {/* Right Panel — Form */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex flex-col justify-between px-4 py-8 min-h-screen">
+        <div className="flex items-center justify-end w-full max-w-md mx-auto">
+          <ThemeToggle />
+        </div>
+
+        <div className="w-full max-w-md mx-auto my-auto py-4">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="bg-primary p-1.5 rounded-lg">
-              <GraduationCap className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-foreground text-lg">ARC</span>
+            <Logo size="sm" shortTextOnMobile />
           </div>
 
           {/* Progress Indicator */}
@@ -552,7 +565,7 @@ export default function SignupPage() {
             <div className="space-y-4">
               <RoleSelector
                 selectedRole={formData.role}
-                onSelectRole={(role) => update("role", role)}
+                onSelectRole={(role) => updateRole(role)}
               />
 
               {formData.role === "student" ? (
@@ -788,13 +801,9 @@ export default function SignupPage() {
               <Separator />
 
               <LocationSelector
-                countries={safeCountries}
-                states={safeStates}
-                cities={safeCities}
-                selectedCountryCode={formData.countryCode}
-                selectedStateCode={formData.stateCode}
-                selectedCity={formData.city}
-                loading={locationLoading}
+                country={formData.country}
+                state={formData.state}
+                city={formData.city}
                 errors={errors}
                 onCountryChange={handleCountryChange}
                 onStateChange={handleStateChange}

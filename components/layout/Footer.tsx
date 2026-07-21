@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { FaLinkedin, FaFacebook, FaYoutube } from "react-icons/fa";
 
+import Logo from "@/components/layout/Logo";
+
 export default function Footer() {
   const router = useRouter();
 
@@ -26,7 +28,6 @@ export default function Footer() {
     { Icon: FaYoutube, href: "https://www.youtube.com/@ModelEngineeringCollege" },
   ];
 
-  // Map the labels to their specific local routes
   const quickLinks = [
     { label: "Alumni Directory", path: "/alumni" },
     { label: "Events & News", path: "/events" },
@@ -34,55 +35,47 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-navy-950 text-gray-300 border-t border-navy-900">
-      <div className="max-w-7xl mx-auto px-6 py-16">
-        {/* GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-          {/* BRAND */}
-          <div className="space-y-5">
-            <div className="flex items-center gap-3">
-              <div className="bg-gold-500 p-2.5 rounded-lg">
-                <GraduationCap className="h-5 w-5 text-navy-950" />
-              </div>
-              <h2 className="text-xl font-bold text-white uppercase tracking-wide">
-                Alumni
-              </h2>
-            </div>
+    <footer className="bg-card text-card-foreground border-t border-border mt-auto">
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          {/* Brand */}
+          <div className="space-y-4">
+            <Logo href="/" size="md" />
 
-            <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
+            <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
               The official platform for university alumni to network, mentor,
               and explore career opportunities. Connecting students with alumni
               across generations.
             </p>
 
-            {/* SOCIAL */}
-            <div className="flex gap-3 pt-2">
+            {/* Social */}
+            <div className="flex gap-2 pt-1">
               {socialLinks.map(({ Icon, href }, i) => (
                 <a
                   key={i}
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 flex items-center justify-center rounded-md bg-navy-900 border border-navy-800 hover:border-gold-500 hover:bg-navy-800 transition"
+                  className="w-8 h-8 flex items-center justify-center rounded-md bg-muted border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 >
-                  <Icon className="h-4 w-4 hover:text-gold-400 transition" />
+                  <Icon className="h-3.5 w-3.5" />
                 </a>
               ))}
             </div>
           </div>
 
-          {/* QUICK LINKS */}
-          <div className="space-y-5">
-            <h3 className="text-white font-semibold text-base border-b border-gold-500/40 pb-1 inline-block">
+          {/* Quick Links */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">
               Quick Links
             </h3>
 
-            <ul className="space-y-3 text-sm">
+            <ul className="space-y-2 text-xs">
               {quickLinks.map((item, i) => (
                 <li key={i}>
                   <button
                     onClick={() => router.push(item.path)}
-                    className="text-gray-400 hover:text-gold-400 transition text-left"
+                    className="text-muted-foreground hover:text-foreground transition-colors text-left cursor-pointer"
                   >
                     {item.label}
                   </button>
@@ -91,21 +84,20 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* CONTACT */}
-          <div className="space-y-5">
-            <h3 className="text-white font-semibold text-base border-b border-gold-500/40 pb-1 inline-block">
+          {/* Contact */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">
               Contact
             </h3>
 
-            <div className="space-y-4 text-sm">
-              {/* ADDRESS */}
-              <div className="flex items-start gap-3">
-                <MapPin className="h-4 w-4 text-gold-500 mt-1" />
+            <div className="space-y-2.5 text-xs text-muted-foreground">
+              <div className="flex items-start gap-2.5">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-white font-medium">
+                  <p className="text-foreground font-medium">
                     Office of Alumni Relations
                   </p>
-                  <p className="text-gray-400">
+                  <p className="text-muted-foreground">
                     Model Engineering College
                     <br />
                     Thrikkakkara, Kochi, Kerala 682021
@@ -113,23 +105,21 @@ export default function Footer() {
                 </div>
               </div>
 
-              {/* PHONE */}
-              <div className="flex items-center gap-3">
-                <Phone className="h-4 w-4 text-gold-500" />
+              <div className="flex items-center gap-2.5">
+                <Phone className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
                 <a
                   href="tel:04842577379"
-                  className="text-gray-400 hover:text-gold-400 transition"
+                  className="hover:text-foreground transition-colors"
                 >
                   0484 257 7379
                 </a>
               </div>
 
-              {/* EMAIL */}
-              <div className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-gold-500" />
+              <div className="flex items-center gap-2.5">
+                <Mail className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
                 <a
                   href="mailto:mecalumni@gmail.com"
-                  className="text-gray-400 hover:text-gold-400 transition"
+                  className="hover:text-foreground transition-colors"
                 >
                   mecalumni@gmail.com
                 </a>
@@ -138,21 +128,18 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* BOTTOM */}
-        <div className="mt-12 pt-6 border-t border-navy-900 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-gray-500 text-center md:text-left">
-            © 2026 MECCONNECT. All rights reserved.
-            <span className="block md:inline md:ml-2">
-              Access restricted to verified members.
-            </span>
+        {/* Bottom */}
+        <div className="mt-10 pt-6 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-muted-foreground text-center md:text-left">
+            © {new Date().getFullYear()} Alumni Network. All rights reserved.
           </p>
 
-          <div className="flex gap-6 text-xs uppercase tracking-wide">
-            {["Privacy", "Terms", "Security"].map((item) => (
+          <div className="flex gap-4 text-xs text-muted-foreground">
+            {["Privacy Policy", "Terms of Service", "Security"].map((item) => (
               <a
                 key={item}
                 href="#"
-                className="text-gray-500 hover:text-gold-400 transition"
+                className="hover:text-foreground transition-colors"
               >
                 {item}
               </a>

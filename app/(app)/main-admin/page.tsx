@@ -13,6 +13,10 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/auth-context";
 import { isMainAdmin, isBatchAdmin, isAnyAdmin } from "@/lib/roleUtils";
 
@@ -60,7 +64,7 @@ export default function AdminPage() {
       href: "/main-admin/skills",
       icon: GraduationCap,
       adminOnly: true,
-      badge: "Admin Only",
+      badge: "Super Admin",
     },
     {
       title: "Batch Admin Promotion",
@@ -68,18 +72,18 @@ export default function AdminPage() {
       href: "/main-admin/manage-batch-admin",
       icon: Shield,
       adminOnly: true,
-      badge: "Admin Only",
+      badge: "Super Admin",
     },
     {
       title: "Users Management",
-      description: "View users and assign club managers for club purposes",
+      description: "View users and assign club managers for club operations",
       href: "/main-admin/users",
       icon: Users,
       adminOnly: true,
-      badge: "Admin Only",
+      badge: "Super Admin",
     },
     {
-      title: "Alumni Approval",
+      title: "Alumni Application Review",
       description: "Review and approve pending alumni membership applications",
       href: "/main-admin/alumni-applications",
       icon: CheckCircle,
@@ -89,8 +93,8 @@ export default function AdminPage() {
 
   if (authLoading || !isAuthorized) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-navy-800" />
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -100,85 +104,83 @@ export default function AdminPage() {
     : adminTasks.filter((task) => !task.adminOnly);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-xl bg-navy-900 flex items-center justify-center">
-              <Shield className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-navy-900">Admin Portal</h1>
-              <p className="text-gray-600 text-sm mt-1">
-                {isAdmin
-                  ? "Main Administrator - Full access to all admin functions"
-                  : "Batch Administrator - Limited admin access"}
-              </p>
-            </div>
-          </div>
-
-          {!isAdmin && isBatchAdminUser && (
-            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
-              <Lock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-amber-800">
-                  Batch Admin Access
-                </p>
-                <p className="text-sm text-amber-700 mt-1">
-                  As a batch admin, you have access to alumni approval only.
-                  Contact the main administrator for additional permissions.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Admin Tasks Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredTasks.map((task) => {
-            const Icon = task.icon;
-            return (
-              <Link
-                key={task.href}
-                href={task.href}
-                className="bg-white border rounded-xl shadow-sm hover:shadow-md transition-all p-6 group"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-navy-100 flex items-center justify-center group-hover:bg-navy-200 transition-colors">
-                    <Icon className="h-6 w-6 text-navy-900" />
-                  </div>
-                  {task.adminOnly && (
-                    <span className="px-2 py-1 bg-navy-100 text-navy-700 text-xs font-medium rounded-full">
-                      {task.badge}
-                    </span>
-                  )}
-                </div>
-                <h3 className="text-lg font-semibold text-navy-900 mb-2">
-                  {task.title}
-                </h3>
-                <p className="text-gray-600 text-sm mb-4">{task.description}</p>
-                <div className="flex items-center text-navy-700 text-sm font-medium group-hover:text-navy-800">
-                  <span>Access</span>
-                  <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-
-        {filteredTasks.length === 0 && (
-          <div className="text-center py-12">
-            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              No Admin Tasks Available
-            </h3>
-            <p className="text-gray-500">
-              You don't have access to any admin tasks at this time.
+    <div className="w-full px-4 sm:px-6 pb-6 space-y-6">
+      {/* Sticky Header */}
+      <div className="sticky top-14 z-30 bg-background/95 backdrop-blur-md py-4 border-b border-border/40 -mx-4 sm:-mx-6 px-4 sm:px-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground flex items-center gap-2">
+              <Shield className="h-5 w-5 text-muted-foreground" /> Admin Portal
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              {isAdmin
+                ? "Full access to administrative management operations."
+                : "Batch Administrator access portal."}
             </p>
           </div>
-        )}
+          <Badge variant="secondary" className="text-xs font-normal">
+            {isAdmin ? "Super Admin" : "Batch Admin"}
+          </Badge>
+        </div>
       </div>
+
+      {!isAdmin && isBatchAdminUser && (
+        <Alert className="border-amber-500/30 bg-amber-500/10 text-amber-700">
+          <Lock className="h-4 w-4" />
+          <AlertDescription className="text-xs">
+            As a batch administrator, you have access to alumni approval. Contact the super administrator for higher-level permissions.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Admin Tasks Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filteredTasks.map((task) => {
+          const Icon = task.icon;
+          return (
+            <Card key={task.href} className="p-5 flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-2.5 rounded-xl bg-muted text-foreground">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  {task.adminOnly && (
+                    <Badge variant="outline" className="text-[10px]">
+                      {task.badge}
+                    </Badge>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-foreground">
+                    {task.title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    {task.description}
+                  </p>
+                </div>
+              </div>
+
+              <Button variant="outline" size="sm" asChild className="w-full justify-between cursor-pointer text-xs">
+                <Link href={task.href}>
+                  Access Module <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            </Card>
+          );
+        })}
+      </div>
+
+      {filteredTasks.length === 0 && (
+        <Card className="p-8 text-center">
+          <CardContent className="p-0 flex flex-col items-center gap-2">
+            <AlertCircle className="h-8 w-8 text-muted-foreground/40" />
+            <p className="font-semibold text-sm text-foreground">No Admin Tasks Available</p>
+            <p className="text-xs text-muted-foreground">
+              You do not have active administrative assignments at this time.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

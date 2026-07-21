@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/fetcher";
 import { queryKeys } from "./keys";
+import { hasAuthToken, isCurrentAlumni } from "@/lib/auth";
 
 export interface Opportunity {
   id: number;
@@ -21,17 +22,20 @@ export interface CreateOpportunityInput {
   allowReferrals: boolean;
 }
 
-export function useOpportunitiesQuery() {
+export function useOpportunitiesQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.opportunities.all,
     queryFn: () => api<Opportunity[]>("/api/opportunities/all"),
+    enabled: (options?.enabled ?? true) && hasAuthToken(),
   });
 }
 
-export function useMyOpportunitiesQuery() {
+export function useMyOpportunitiesQuery(options?: { enabled?: boolean }) {
+  const isAuthorized = isCurrentAlumni();
   return useQuery({
     queryKey: queryKeys.opportunities.mine(),
     queryFn: () => api<Opportunity[]>("/api/opportunities/mine"),
+    enabled: (options?.enabled ?? true) && isAuthorized,
   });
 }
 

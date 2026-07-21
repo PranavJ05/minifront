@@ -3,12 +3,10 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Shield,
-} from "lucide-react";
-
-import DashboardSidebar from "@/components/layout/DashboardSidebar";
+import { ArrowRight, Shield, Activity } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/auth-context";
 import {
   getPrimaryRole,
@@ -33,78 +31,87 @@ export default function MainAdminDashboard() {
     }
   }, [authLoading, isAuthenticated, user, router]);
 
+  if (!user) return null;
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <DashboardSidebar role={normalizedRole} />
-
-      <main className="flex-1 overflow-auto">
-        <div className="p-6 max-w-7xl mx-auto space-y-10">
-          <div>
-            <h1 className="text-4xl font-bold text-navy-900">
+    <div className="w-full px-4 sm:px-6 pb-6 space-y-6">
+      {/* Sticky Header */}
+      <div className="sticky top-14 z-30 bg-background/95 backdrop-blur-md py-4 border-b border-border/40 -mx-4 sm:-mx-6 px-4 sm:px-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">
+                {normalizedRole === "admin"
+                  ? "Main Administrator"
+                  : "Batch Administrator"}
+              </h1>
+              <Badge variant="secondary" className="text-[10px]">
+                {isMain ? "Super Admin" : "Batch Admin"}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
               {normalizedRole === "admin"
-                ? "Main Administrator"
-                : "Batch Administrator"}
-            </h1>
-
-            <p className="text-gray-600 mt-2">
-              {normalizedRole === "admin"
-                ? "Manage users, clubs and the overall alumni platform."
+                ? "Manage users, skills, applications and platform operations."
                 : "Manage alumni applications and batch-specific tasks."}
             </p>
           </div>
-
-          {/* Admin Portal CTA - For both main admin and batch admin */}
           {(isMain || isBatch) && (
-            <div
-              className={`rounded-xl shadow-lg p-8 text-white ${
-                isMain
-                  ? "bg-gradient-to-r from-navy-900 to-navy-800"
-                  : "bg-gradient-to-r from-amber-600 to-amber-700"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">Admin Portal</h2>
-                  <p
-                    className={`${isMain ? "text-gray-300" : "text-gray-100"} mb-4`}
-                  >
-                    {isMain
-                      ? "Access all admin powers and actions from one central location"
-                      : "Access batch admin functions including alumni approval"}
-                  </p>
-                  <Link
-                    href="/main-admin"
-                    className={`inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-lg transition-colors ${
-                      isMain
-                        ? "bg-gold-500 hover:bg-gold-600 text-navy-900"
-                        : "bg-white hover:bg-gray-100 text-amber-700"
-                    }`}
-                  >
-                    <Shield className="h-5 w-5" />
-                    Go to Admin Portal
-                    <ArrowRight className="h-5 w-5" />
-                  </Link>
-                </div>
-                <div className="hidden md:block">
-                  <div className="w-20 h-20 bg-white/10 rounded-xl flex items-center justify-center">
-                    <Shield
-                      className={`h-10 w-10 ${isMain ? "text-gold-500" : "text-white"}`}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <Button size="sm" asChild className="cursor-pointer">
+              <Link href="/main-admin">
+                <Shield className="h-4 w-4 mr-1" />
+                Admin Portal
+              </Link>
+            </Button>
           )}
-
-          <div className="bg-white rounded-xl border shadow p-6">
-            <h2 className="text-2xl font-bold">Recent Activity</h2>
-
-            <p className="text-gray-500 mt-6">
-              Recent platform activities will appear here.
-            </p>
-          </div>
         </div>
-      </main>
+      </div>
+
+      {/* Admin Portal Banner */}
+      {(isMain || isBatch) && (
+        <Card className="p-6 bg-card border-border shadow-xs">
+          <CardContent className="p-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-2 max-w-xl">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Shield className="h-5 w-5" />
+                </div>
+                <h2 className="text-base font-semibold text-foreground">
+                  Administrative Control Portal
+                </h2>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {isMain
+                  ? "Manage alumni applications, user roles, batch administrators, and custom skills moderation."
+                  : "Review pending alumni applications and perform batch administrator tasks."}
+              </p>
+            </div>
+
+            <Button asChild className="cursor-pointer shrink-0">
+              <Link href="/main-admin">
+                Open Admin Portal <ArrowRight className="h-4 w-4 ml-1" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent Activity Card */}
+      <Card className="p-4">
+        <CardContent className="p-0 space-y-3">
+          <div className="flex items-center justify-between border-b border-border/40 pb-3">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Activity className="h-4 w-4 text-muted-foreground" />
+              Platform Activity Stream
+            </h2>
+            <Badge variant="outline" className="text-[10px]">
+              Live Feed
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground py-8 text-center">
+            Platform audit logs and recent activities will stream here automatically.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

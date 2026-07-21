@@ -20,10 +20,18 @@ export const api = ofetch.create({
     }
   },
   onResponseError({ response }) {
-    throw new ApiError(
-      response.statusText || "Request failed",
-      response.status,
-      response._data,
-    );
+    const data = response._data as
+      | { message?: string; error?: string; errors?: Record<string, string> }
+      | string
+      | undefined;
+
+    const message =
+      typeof data === "object" && data !== null
+        ? data.message || data.error || response.statusText || "Request failed"
+        : typeof data === "string" && data.trim()
+          ? data
+          : response.statusText || "Request failed";
+
+    throw new ApiError(message, response.status, response._data);
   },
 });

@@ -1,6 +1,7 @@
-// components/auth/AuthInput.tsx
-import { forwardRef } from 'react';
-import { cn } from '@/lib/utils';
+import { forwardRef } from "react";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface AuthInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -10,34 +11,40 @@ interface AuthInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
-  ({ label, icon: Icon, error, rightElement, className, ...props }, ref) => {
+  ({ label, icon: Icon, error, rightElement, className, id, ...props }, ref) => {
+    const inputId = id || label.toLowerCase().replace(/\s+/g, "-");
     return (
-      <div>
-        <label className="block text-sm font-medium text-navy-800 mb-1.5 font-sans">{label}</label>
+      <div className="space-y-1.5">
+        <Label htmlFor={inputId} className="text-xs font-medium text-foreground">
+          {label}
+        </Label>
         <div className="relative">
           {Icon && (
-            <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60 pointer-events-none" />
           )}
-          <input
+          <Input
+            id={inputId}
             ref={ref}
             className={cn(
-              'input-field',
-              Icon && 'pl-10',
-              rightElement && 'pr-10',
-              error && 'border-red-300 focus:ring-red-500',
+              "h-9 text-xs bg-muted/30 border-border focus-visible:ring-1",
+              Icon && "pl-9",
+              rightElement && "pr-9",
+              error && "border-destructive focus-visible:ring-destructive",
               className
             )}
             {...props}
           />
           {rightElement && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">{rightElement}</div>
+            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">
+              {rightElement}
+            </div>
           )}
         </div>
-        {error && <p className="mt-1 text-sm text-red-600 font-sans">{error}</p>}
+        {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
     );
   }
 );
 
-AuthInput.displayName = 'AuthInput';
+AuthInput.displayName = "AuthInput";
 export default AuthInput;

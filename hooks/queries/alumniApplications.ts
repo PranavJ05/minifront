@@ -1,16 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/fetcher";
 import { queryKeys } from "./keys";
+import { isCurrentAdmin } from "@/lib/auth";
 import type {
   AlumniApplication,
   ApplicationActionResponse,
 } from "@/lib/types/alumniApplications";
 
-export function usePendingAlumniApplicationsQuery() {
+export function usePendingAlumniApplicationsQuery(options?: { enabled?: boolean }) {
+  const isAuthorized = isCurrentAdmin();
   return useQuery({
     queryKey: queryKeys.alumniApplications.pending(),
     queryFn: () =>
       api<AlumniApplication[]>("/api/main-admin/alumni-applications/pending"),
+    enabled: (options?.enabled ?? true) && isAuthorized,
   });
 }
 

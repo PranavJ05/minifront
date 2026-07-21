@@ -15,6 +15,7 @@ import {
   Shield,
 } from "lucide-react";
 
+import Logo from "@/components/layout/Logo";
 import { cn } from "@/lib/utils";
 import { UserRole } from "@/types";
 import {
@@ -116,17 +117,7 @@ export default function DashboardSidebar({ role }: SidebarProps) {
       className={cn(state === "collapsed" && "cursor-pointer")}
     >
       <SidebarHeader className="p-2 border-b border-sidebar-border group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-3">
-        <Link
-          href={homeHref}
-          className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-sidebar-accent transition-colors group"
-        >
-          <div className="bg-primary/10 p-1.5 rounded-lg text-primary group-hover:bg-primary/20 transition-colors shrink-0 group-data-[collapsible=icon]:p-2">
-            <GraduationCap className="h-5 w-5" />
-          </div>
-          <span className="font-semibold text-sm tracking-wide text-foreground group-data-[collapsible=icon]:hidden whitespace-nowrap">
-            ALUMNI
-          </span>
-        </Link>
+        <Logo href={homeHref} size="sm" textClassName="group-data-[collapsible=icon]:hidden font-semibold" />
       </SidebarHeader>
 
       <SidebarContent className="p-2">

@@ -3,10 +3,10 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useState,
+  useEffect,
   useCallback,
-  type ReactNode,
+  ReactNode,
 } from "react";
 import { BACKEND_URL } from "@/lib/config";
 
@@ -16,7 +16,7 @@ export interface StoredUser {
   courseId: number | null;
   email: string;
   roles: string[];
-  fullName: string;
+  fullName?: string;
 }
 
 interface LoginParams {
@@ -51,30 +51,31 @@ interface AuthContextType {
   updateUser: (updates: Partial<StoredUser>) => void;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
-
-function getStoredUser(): StoredUser | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem("alumni_user");
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function getStoredToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("token");
 }
 
-function extractRoles(data: LoginResponse, fallbackRole: string): string[] {
+function getStoredUser(): StoredUser | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem("alumni_user");
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function extractRoles(data: LoginResponse, fallbackRole = "ALUMNI"): string[] {
   const extracted: string[] = [];
 
   if (Array.isArray(data.roles)) {
-    extracted.push(
-      ...data.roles.filter((role): role is string => typeof role === "string"),
-    );
+    data.roles.forEach((r) => {
+      if (typeof r === "string") extracted.push(r);
+    });
   } else if (typeof data.roles === "string") {
     extracted.push(data.roles);
   }
@@ -125,21 +126,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (params: LoginParams): Promise<LoginResponse> => {
-      const loginUrl =
-        params.role === "faculty"
-          ? `${BACKEND_URL}/api/auth/faculty/login`
-          : `${BACKEND_URL}/api/auth/login`;
-
-      const res = await fetch(loginUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: params.email.trim(),
-          password: params.password,
-        }),
+      const body = JSON.stringify({
+        email: params.email.trim(),
+        password: params.password,
       });
 
-      const data: LoginResponse = await res.json().catch(() => ({}));
+      let res: Response;
+      let data: LoginResponse = {};
+
+      if (params.role === "faculty") {
+        res = await fetch(`${BACKEND_URL}/api/auth/faculty/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+        });
+        data = await res.json().catch(() => ({}));
+      } else {
+        res = await fetch(`${BACKEND_URL}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+        });
+        data = await res.json().catch(() => ({}));
+
+        if (!res.ok && (res.status === 401 || res.status === 404)) {
+          const facultyRes = await fetch(`${BACKEND_URL}/api/auth/faculty/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body,
+          }).catch(() => null);
+
+          if (facultyRes && facultyRes.ok) {
+            res = facultyRes;
+            data = await facultyRes.json().catch(() => ({}));
+          }
+        }
+      }
 
       if (!res.ok) {
         throw new Error(data.message || "Login failed");
@@ -161,12 +183,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
 
         localStorage.setItem("token", data.token);
-        localStorage.setItem("email", storedUser.email);
         localStorage.setItem("alumni_user", JSON.stringify(storedUser));
-        window.dispatchEvent(new Event("storage"));
 
-        setToken(data.token);
         setUser(storedUser);
+        setToken(data.token);
+        window.dispatchEvent(new Event("storage"));
       }
 
       return data;
@@ -176,19 +197,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     localStorage.removeItem("token");
-    localStorage.removeItem("email");
     localStorage.removeItem("alumni_user");
-    localStorage.removeItem("role");
-    window.dispatchEvent(new Event("storage"));
-    setToken(null);
     setUser(null);
+    setToken(null);
+    window.dispatchEvent(new Event("storage"));
   }, []);
 
   const updateUser = useCallback((updates: Partial<StoredUser>) => {
     setUser((prev) => {
-      if (!prev) return prev;
+      if (!prev) return null;
       const updated = { ...prev, ...updates };
       localStorage.setItem("alumni_user", JSON.stringify(updated));
+      window.dispatchEvent(new Event("storage"));
       return updated;
     });
   }, []);
@@ -198,7 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         token,
-        isAuthenticated: !!user && !!token,
+        isAuthenticated: !!token && !!user,
         isLoading,
         login,
         logout,
@@ -211,7 +231,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth(): AuthContextType {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 }

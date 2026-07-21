@@ -10,10 +10,14 @@ import {
   Eye,
   EyeOff,
   GraduationCap,
-  KeyRound,
   Lock,
+  Sparkles,
 } from "lucide-react";
 import AuthInput from "@/components/auth/AuthInput";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { BACKEND_URL } from "@/lib/config";
 
 export default function ResetPasswordPage() {
@@ -72,8 +76,9 @@ export default function ResetPasswordPage() {
       }, 1200);
     } catch (err: unknown) {
       setError(
-        err instanceof Error ? err.message :
-          "This reset link is invalid or expired. Request a new password reset email.",
+        err instanceof Error
+          ? err.message
+          : "This reset link is invalid or expired. Request a new password reset email.",
       );
     } finally {
       setLoading(false);
@@ -81,78 +86,85 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <div className="hidden lg:flex lg:w-1/2 bg-navy-950 relative overflow-hidden flex-col justify-between p-12">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gold-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-navy-700/50 rounded-full blur-3xl" />
-
-        <Link href="/" className="flex items-center gap-2.5 relative z-10">
-          <div className="bg-gold-500 p-1.5 rounded-lg">
-            <GraduationCap className="h-5 w-5 text-navy-950" />
+    <div className="min-h-screen bg-background flex">
+      {/* Left Banner */}
+      <div className="hidden lg:flex lg:w-1/2 bg-card border-r border-border flex-col justify-between p-12 sticky top-0 self-start h-screen">
+        <Link href="/" className="flex items-center gap-2.5">
+          <div className="bg-primary p-2 rounded-lg text-primary-foreground">
+            <GraduationCap className="h-5 w-5" />
           </div>
-          <span className="font-serif font-bold text-white text-xl">ALUMNI</span>
+          <span className="font-bold text-base tracking-tight text-foreground">
+            Alumni Relations Cell
+          </span>
         </Link>
 
-        <div className="relative z-10 max-w-lg">
-          <p className="text-gold-400 text-sm font-medium tracking-wide uppercase mb-4">
-            Secure Reset
-          </p>
-          <h1 className="font-serif text-4xl font-bold text-white leading-tight mb-6">
+        <div className="space-y-4 max-w-md">
+          <Badge variant="secondary" className="text-xs font-normal">
+            <Sparkles className="h-3 w-3 mr-1" />
+            Secure Verification
+          </Badge>
+          <h1 className="text-3xl font-bold text-foreground leading-tight tracking-tight">
             Choose a new password
-            <br />
-            and get back in.
           </h1>
-          <p className="text-gray-300 text-lg leading-relaxed">
-            Use a strong password you haven&apos;t used elsewhere. The reset token from your email is validated on submit.
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Create a strong password to protect your account. The reset token from your email link will be validated upon submission.
           </p>
         </div>
 
-        <p className="text-gray-500 text-xs relative z-10">
-          If this link has expired, request a fresh reset email.
+        <p className="text-xs text-muted-foreground">
+          If this link has expired, request a new password reset email.
         </p>
       </div>
 
+      {/* Right Form */}
       <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md space-y-6">
           <Link
             href="/forgot-password"
-            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-navy-900 mb-8"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to forgot password
+            <ArrowLeft className="h-3.5 w-3.5" /> Back to forgot password
           </Link>
 
-          <div className="mb-8">
-            <h2 className="font-serif text-3xl font-bold text-navy-900 mb-2">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">
               Reset Password
             </h2>
-            <p className="text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Enter your new password below.
             </p>
           </div>
 
           {success ? (
-            <div className="card p-6 text-center">
-              <div className="w-14 h-14 mx-auto rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-4">
-                <CheckCircle2 className="h-7 w-7" />
-              </div>
-              <h3 className="font-semibold text-navy-900 text-lg mb-2">Password reset successful</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Redirecting you to the login page.
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="card p-6 space-y-5">
-              {!token && (
-                <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-                  No reset token was found in this link. Request a new password reset email.
+            <Card>
+              <CardContent className="flex flex-col items-center py-8 text-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                  <CheckCircle2 className="h-6 w-6" />
                 </div>
+                <h3 className="font-semibold text-foreground text-sm">
+                  Password reset successful
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Redirecting you to the login page...
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {!token && (
+                <Alert className="border-amber-500/30 bg-amber-500/10 text-amber-700">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    No reset token was found in this link. Request a new password reset email.
+                  </AlertDescription>
+                </Alert>
               )}
 
               {error && (
-                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                  <span>{error}</span>
-                </div>
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">{error}</AlertDescription>
+                </Alert>
               )}
 
               <AuthInput
@@ -165,8 +177,8 @@ export default function ResetPasswordPage() {
                 rightElement={
                   <button
                     type="button"
-                    onClick={() => setShowPassword((current) => !current)}
-                    className="text-gray-400 hover:text-gray-600"
+                    onClick={() => setShowPassword((c) => !c)}
+                    className="text-muted-foreground/60 hover:text-foreground cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -177,15 +189,15 @@ export default function ResetPasswordPage() {
               <AuthInput
                 label="Confirm Password"
                 type={showConfirmPassword ? "text" : "password"}
-                icon={KeyRound}
+                icon={Lock}
                 placeholder="Confirm your new password"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 rightElement={
                   <button
                     type="button"
-                    onClick={() => setShowConfirmPassword((current) => !current)}
-                    className="text-gray-400 hover:text-gray-600"
+                    onClick={() => setShowConfirmPassword((c) => !c)}
+                    className="text-muted-foreground/60 hover:text-foreground cursor-pointer"
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -193,17 +205,13 @@ export default function ResetPasswordPage() {
                 required
               />
 
-              <button
+              <Button
                 type="submit"
                 disabled={loading || !token}
-                className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full cursor-pointer"
               >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  "Reset Password"
-                )}
-              </button>
+                {loading ? "Resetting..." : "Reset Password"}
+              </Button>
             </form>
           )}
         </div>

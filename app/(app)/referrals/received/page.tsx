@@ -16,12 +16,14 @@ import {
   ThumbsUp,
   ThumbsDown,
   Loader2,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import Link from "next/link";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/auth-context";
 import { useReceivedReferralsQuery } from "@/hooks/queries/referrals";
 import type { ReferralRequest } from "@/hooks/queries/referrals";
@@ -34,23 +36,14 @@ const STATUS_CONFIG = {
   PENDING: {
     label: "Pending",
     icon: Clock,
-    bg: "bg-amber-50",
-    text: "text-amber-700",
-    border: "border-amber-200",
   },
   APPROVED: {
     label: "Approved",
     icon: CheckCircle2,
-    bg: "bg-green-50",
-    text: "text-green-700",
-    border: "border-green-200",
   },
   REJECTED: {
     label: "Rejected",
     icon: XCircle,
-    bg: "bg-red-50",
-    text: "text-red-600",
-    border: "border-red-200",
   },
 };
 
@@ -58,12 +51,10 @@ function StatusBadge({ status }: { status: ReferralRequest["status"] }) {
   const cfg = STATUS_CONFIG[status];
   const Icon = cfg.icon;
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${cfg.bg} ${cfg.text} ${cfg.border}`}
-    >
+    <Badge variant={status === "APPROVED" ? "default" : status === "REJECTED" ? "destructive" : "secondary"} className="text-[10px] gap-1">
       <Icon className="h-3 w-3" />
       {cfg.label}
-    </span>
+    </Badge>
   );
 }
 
@@ -97,140 +88,125 @@ function RespondPanel({ referralId, onResponded }: RespondPanelProps) {
 
     try {
       if (!token) {
-        setError(
-          "Authentication required. Please sign in to respond to requests.",
-        );
+        setError("You must be logged in to respond.");
         setSubmitting(false);
         return;
       }
 
-      const res = await fetch(
-        `${BACKEND_URL}/api/referrals/respond/${referralId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            approved: action === "approve",
-            responseMessage: responseMessage.trim() || undefined,
-          }),
+      const endpoint =
+        action === "approve"
+          ? `${BACKEND_URL}/api/referrals/${referralId}/approve`
+          : `${BACKEND_URL}/api/referrals/${referralId}/reject`;
+
+      const res = await fetch(endpoint, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ message: responseMessage }),
+      });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.message || `Error ${res.status}`);
+        const text = await res.text();
+        throw new Error(text || `Failed to ${action} referral.`);
       }
 
       onResponded(referralId, action === "approve", responseMessage);
+      setOpen(false);
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Failed to submit response."));
+      setError(getErrorMessage(err, `Failed to ${action} referral.`));
+    } finally {
       setSubmitting(false);
     }
   };
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="mt-4 flex items-center gap-1.5 text-sm text-navy-600 font-medium hover:text-navy-800 transition-colors"
-      >
-        Respond to Request <ChevronDown className="h-4 w-4" />
-      </button>
+      <div className="flex items-center gap-2 pt-3 border-t border-border/40">
+        <Button
+          size="xs"
+          onClick={() => {
+            setAction("approve");
+            setOpen(true);
+          }}
+          className="cursor-pointer"
+        >
+          <ThumbsUp className="h-3 w-3 mr-1" /> Approve Referral
+        </Button>
+        <Button
+          variant="outline"
+          size="xs"
+          onClick={() => {
+            setAction("reject");
+            setOpen(true);
+          }}
+          className="cursor-pointer text-destructive hover:text-destructive"
+        >
+          <ThumbsDown className="h-3 w-3 mr-1" /> Decline Request
+        </Button>
+      </div>
     );
   }
 
   return (
-    <div className="mt-4 border-t border-gray-100 pt-4 space-y-4">
-      {/* Action toggle */}
-      <div className="flex gap-3">
-        <button
-          onClick={() => setAction("approve")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${
-            action === "approve"
-              ? "bg-green-600 border-green-600 text-white"
-              : "border-gray-200 text-gray-600 hover:border-green-400 hover:text-green-600"
-          }`}
-        >
-          <ThumbsUp className="h-4 w-4" />
-          Approve
-        </button>
-        <button
-          onClick={() => setAction("reject")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${
-            action === "reject"
-              ? "bg-red-500 border-red-500 text-white"
-              : "border-gray-200 text-gray-600 hover:border-red-400 hover:text-red-500"
-          }`}
-        >
-          <ThumbsDown className="h-4 w-4" />
-          Reject
-        </button>
-      </div>
+    <div className="pt-3 border-t border-border/40 space-y-3">
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription className="text-xs">{error}</AlertDescription>
+        </Alert>
+      )}
 
-      {/* Response Message */}
-      <div>
-        <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
-          Response Message{" "}
-          <span className="normal-case font-normal">(optional)</span>
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-foreground">
+          {action === "approve" ? "Approval Message (Optional)" : "Reason / Message (Optional)"}
         </label>
-        <textarea
-          value={responseMessage}
-          onChange={(e) => setResponseMessage(e.target.value)}
-          rows={2}
+        <Textarea
           placeholder={
             action === "approve"
-              ? "I've submitted your referral! Best of luck..."
-              : "I'm unable to provide a referral at this time..."
+              ? "Add a note or next steps for the applicant..."
+              : "Explain why you are unable to provide a referral..."
           }
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent resize-none transition-all"
-          disabled={submitting}
+          value={responseMessage}
+          onChange={(e) => setResponseMessage(e.target.value)}
+          className="text-xs min-h-[70px]"
         />
       </div>
 
-      {error && (
-        <p className="text-red-500 text-xs flex items-center gap-1">
-          <XCircle className="h-3.5 w-3.5" /> {error}
-        </p>
-      )}
-
-      {/* Actions */}
-      <div className="flex gap-2">
-        <button
+      <div className="flex items-center gap-2">
+        <Button
+          size="xs"
           onClick={handleSubmit}
-          disabled={!action || submitting}
-          className="btn-primary flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          disabled={submitting}
+          className="cursor-pointer"
         >
           {submitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Submitting…
-            </>
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : action === "approve" ? (
+            "Confirm Approval"
           ) : (
-            "Confirm"
+            "Confirm Decline"
           )}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="outline"
+          size="xs"
           onClick={() => {
             setOpen(false);
             setAction(null);
-            setResponseMessage("");
             setError(null);
           }}
-          className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
           disabled={submitting}
+          className="cursor-pointer"
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </div>
   );
 }
 
 export default function ReceivedReferralsPage() {
-  const { user } = useAuth();
   const {
     data: referrals = [],
     isLoading,
@@ -238,23 +214,13 @@ export default function ReceivedReferralsPage() {
     refetch,
     isRefetching,
   } = useReceivedReferralsQuery();
-  const [activeFilter, setActiveFilter] = useState<
-    "ALL" | ReferralRequest["status"]
-  >("ALL");
+  const [activeFilter, setActiveFilter] = useState<"ALL" | ReferralRequest["status"]>("ALL");
 
-  const error = queryError
-    ? queryError instanceof Error
-      ? queryError.message
-      : "Failed to load referral requests."
-    : null;
+  const error = queryError ? (queryError instanceof Error ? queryError.message : "Failed to load referral requests.") : null;
 
   const queryClient = useQueryClient();
 
-  const handleResponded = (
-    id: number,
-    approved: boolean,
-    responseMsg: string,
-  ) => {
+  const handleResponded = (id: number, approved: boolean, responseMsg: string) => {
     queryClient.setQueryData<ReferralRequest[]>(
       queryKeys.referrals.received(),
       (prev) =>
@@ -266,15 +232,14 @@ export default function ReceivedReferralsPage() {
                 responseMessage: responseMsg,
                 reviewedAt: new Date().toISOString(),
               }
-            : r,
-        ) ?? [],
+            : r
+        ) ?? []
     );
   };
 
-  const filtered =
-    activeFilter === "ALL"
-      ? referrals
-      : referrals.filter((r) => r.status === activeFilter);
+  const filtered = activeFilter === "ALL"
+    ? referrals
+    : referrals.filter((r) => r.status === activeFilter);
 
   const counts = {
     ALL: referrals.length,
@@ -284,224 +249,157 @@ export default function ReceivedReferralsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Page Header */}
-      <div className="bg-navy-950 py-10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link
-            href="/opportunities"
-            className="inline-flex items-center gap-1.5 text-navy-400 hover:text-white text-sm mb-4 transition-colors"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to Opportunities
-          </Link>
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <h1 className="font-serif text-3xl font-bold text-white mb-1">
-                Referral Requests
-              </h1>
-              <p className="text-navy-400 text-sm">
-                Review and respond to referral requests from fellow alumni and
-                students
-              </p>
-            </div>
-            <button
-              onClick={() => refetch()}
-              disabled={isRefetching}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-navy-800 hover:bg-navy-700 text-white text-sm font-medium transition-colors disabled:opacity-60"
+    <div className="w-full px-4 sm:px-6 pb-6 space-y-6">
+      {/* Header */}
+      <div className="sticky top-14 z-30 bg-background/95 backdrop-blur-md py-4 border-b border-border/40 -mx-4 sm:-mx-6 px-4 sm:px-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <Link
+              href="/opportunities"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mb-1"
             >
-              <RefreshCw
-                className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`}
-              />
-              Refresh
-            </button>
+              <ArrowLeft className="h-3 w-3" /> Back to Opportunities
+            </Link>
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">
+              Received Referral Requests
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Review and respond to referral applications from students and alumni.
+            </p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            className="cursor-pointer"
+          >
+            <RefreshCw className={`h-4 w-4 mr-1.5 ${isRefetching ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          {(["ALL", "PENDING", "APPROVED", "REJECTED"] as const).map((s) => {
-            const cfg = s === "ALL" ? null : STATUS_CONFIG[s];
-            return (
-              <button
-                key={s}
-                onClick={() => setActiveFilter(s)}
-                className={`rounded-xl p-4 text-left border-2 transition-all shadow-sm ${
-                  activeFilter === s
-                    ? s === "ALL"
-                      ? "border-navy-700 bg-navy-50"
-                      : `${cfg!.border} ${cfg!.bg}`
-                    : "border-transparent bg-white hover:border-gray-200"
-                }`}
-              >
-                <p
-                  className={`text-2xl font-bold mb-0.5 ${
-                    s !== "ALL" && activeFilter === s
-                      ? cfg!.text
-                      : "text-navy-900"
-                  }`}
-                >
-                  {counts[s]}
-                </p>
-                <p className="text-xs text-gray-500 font-medium">
-                  {s === "ALL"
-                    ? "Total"
-                    : s.charAt(0) + s.slice(1).toLowerCase()}
-                </p>
-              </button>
-            );
-          })}
+      {/* Filter Tabs */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {(["ALL", "PENDING", "APPROVED", "REJECTED"] as const).map((s) => (
+          <button
+            key={s}
+            onClick={() => setActiveFilter(s)}
+            className={`rounded-xl p-3.5 text-left border transition-all cursor-pointer ${
+              activeFilter === s
+                ? "border-primary bg-primary/5 text-foreground"
+                : "border-border bg-card hover:border-border/80 text-muted-foreground"
+            } shadow-xs`}
+          >
+            <div className="text-xl font-bold text-foreground mb-0.5">{counts[s]}</div>
+            <div className="text-xs font-medium capitalize">
+              {s === "ALL" ? "Total" : s.charAt(0) + s.slice(1).toLowerCase()}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-36 rounded-xl" />
+          ))}
         </div>
+      )}
 
-        {/* Content */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-24">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 border-4 border-navy-200 border-t-navy-700 rounded-full animate-spin" />
-              <p className="text-gray-400 text-sm">
-                Loading referral requests…
-              </p>
-            </div>
-          </div>
-        ) : error ? (
-          <div className="rounded-2xl bg-red-50 border border-red-200 p-8 text-center">
-            <XCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-            <p className="text-red-700 font-medium">{error}</p>
-            <button onClick={() => refetch()} className="mt-4 btn-primary px-6">
-              Retry
-            </button>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-navy-50 flex items-center justify-center">
-              <Inbox className="h-8 w-8 text-navy-300" />
-            </div>
-            <div>
-              <p className="text-navy-900 font-semibold text-lg">
-                {activeFilter === "ALL"
-                  ? "No referral requests yet"
-                  : `No ${activeFilter.toLowerCase()} requests`}
-              </p>
-              <p className="text-gray-400 text-sm mt-1">
-                {activeFilter === "ALL"
-                  ? "When someone requests a referral through your posted opportunities, they'll appear here."
-                  : `You have no ${activeFilter.toLowerCase()} referral requests.`}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filtered.map((referral) => {
-              const cfg = STATUS_CONFIG[referral.status];
-              return (
-                <div
-                  key={referral.id}
-                  className={`bg-white rounded-2xl border-l-4 ${cfg.border} shadow-sm overflow-hidden`}
-                >
-                  <div className="p-5 sm:p-6">
-                    <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Building2 className="h-4 w-4 text-gray-400" />
-                          <span className="text-xs text-gray-400">
-                            Opportunity #{referral.opportunityId}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-navy-100 flex items-center justify-center">
-                            <User className="h-4 w-4 text-navy-500" />
-                          </div>
-                          <div>
-                            <p className="text-navy-900 font-semibold text-sm leading-tight">
-                              User #{referral.requesterUserId}
-                            </p>
-                            <p className="text-gray-400 text-xs">
-                              Requesting a referral
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <StatusBadge status={referral.status} />
+      {/* Error */}
+      {!isLoading && error && (
+        <Alert variant="destructive">
+          <AlertDescription className="text-xs">{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && !error && filtered.length === 0 && (
+        <Card className="rounded-xl border border-border bg-card">
+          <CardContent className="flex flex-col items-center py-16 text-center">
+            <Inbox className="h-8 w-8 text-muted-foreground/60 mb-3" />
+            <p className="font-semibold text-foreground text-sm">
+              {activeFilter === "ALL" ? "No referral requests received" : `No ${activeFilter.toLowerCase()} requests`}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              When members apply for referrals on your opportunity postings, they will appear here.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Referrals List */}
+      {!isLoading && !error && filtered.length > 0 && (
+        <div className="space-y-3">
+          {filtered.map((referral) => (
+            <Card key={referral.id} className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Building2 className="h-3.5 w-3.5" />
+                    <span>Opportunity #{referral.opportunityId}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-muted border border-border flex items-center justify-center">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
-
-                    <div className="grid sm:grid-cols-2 gap-3 text-sm mb-3">
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-                        <span>
-                          <span className="font-medium text-gray-700">
-                            Requested:
-                          </span>{" "}
-                          {formatDate(referral.requestedAt)}
-                        </span>
-                      </div>
-                      {referral.reviewedAt && (
-                        <div className="flex items-center gap-2 text-gray-500">
-                          <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-                          <span>
-                            <span className="font-medium text-gray-700">
-                              Reviewed:
-                            </span>{" "}
-                            {formatDate(referral.reviewedAt)}
-                          </span>
-                        </div>
-                      )}
-                      {referral.resumeLink && (
-                        <div className="flex items-center gap-2 text-gray-500">
-                          <FileText className="h-3.5 w-3.5 shrink-0" />
-                          <a
-                            href={referral.resumeLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-navy-600 hover:underline"
-                          >
-                            View Resume →
-                          </a>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Requester message */}
-                    {referral.message && (
-                      <div className="p-3 bg-gray-50 rounded-xl text-sm text-gray-600 border border-gray-100">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
-                          <MessageSquare className="h-3 w-3" /> Their Message
-                        </p>
-                        <p>{referral.message}</p>
-                      </div>
-                    )}
-
-                    {/* Your prior response */}
-                    {referral.responseMessage && (
-                      <div
-                        className={`mt-3 p-3 rounded-xl text-sm border ${cfg.bg} ${cfg.border}`}
-                      >
-                        <p
-                          className={`text-xs font-semibold uppercase tracking-wide mb-1 flex items-center gap-1 ${cfg.text}`}
-                        >
-                          <MessageSquare className="h-3 w-3" /> Your Response
-                        </p>
-                        <p className={cfg.text}>{referral.responseMessage}</p>
-                      </div>
-                    )}
-
-                    {/* Respond Panel (only for PENDING) */}
-                    {referral.status === "PENDING" && (
-                      <RespondPanel
-                        referralId={referral.id}
-                        onResponded={handleResponded}
-                      />
-                    )}
+                    <span className="font-semibold text-xs text-foreground">
+                      User #{referral.requesterUserId}
+                    </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                <StatusBadge status={referral.status} />
+              </div>
 
-      <Footer />
+              <div className="flex flex-wrap gap-4 text-xs text-muted-foreground pt-1">
+                <span className="flex items-center gap-1">
+                  <CalendarDays className="h-3.5 w-3.5" /> Requested: {formatDate(referral.requestedAt)}
+                </span>
+                {referral.reviewedAt && (
+                  <span className="flex items-center gap-1">
+                    <CalendarDays className="h-3.5 w-3.5" /> Reviewed: {formatDate(referral.reviewedAt)}
+                  </span>
+                )}
+                {referral.resumeLink && (
+                  <a
+                    href={referral.resumeLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-primary hover:underline font-medium"
+                  >
+                    <FileText className="h-3.5 w-3.5" /> View Resume
+                  </a>
+                )}
+              </div>
+
+              {referral.message && (
+                <div className="p-3 bg-muted/40 rounded-lg text-xs space-y-1 border border-border/40">
+                  <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
+                    <MessageSquare className="h-3 w-3" /> Requester Message
+                  </span>
+                  <p className="text-foreground leading-relaxed">{referral.message}</p>
+                </div>
+              )}
+
+              {referral.responseMessage && (
+                <div className="p-3 bg-muted/20 rounded-lg text-xs space-y-1 border border-border/40">
+                  <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
+                    <MessageSquare className="h-3 w-3" /> Your Response
+                  </span>
+                  <p className="text-foreground leading-relaxed">{referral.responseMessage}</p>
+                </div>
+              )}
+
+              {referral.status === "PENDING" && (
+                <RespondPanel referralId={referral.id} onResponded={handleResponded} />
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

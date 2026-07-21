@@ -193,7 +193,7 @@ export default function MyReferralsPage() {
             return (
               <div
                 key={referral.id}
-                className={`bg-card text-card-foreground rounded-2xl border border-border border-l-4 ${cfg.border} shadow-sm p-5`}
+                className="bg-card text-card-foreground rounded-2xl border border-border shadow-sm p-5 space-y-4"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                   <div>

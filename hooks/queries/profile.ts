@@ -1,14 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/fetcher";
 import { queryKeys } from "./keys";
+import { hasAuthToken } from "@/lib/auth";
 import type { MyProfileResponse } from "@/lib/types/profile";
 
-export function useMyProfileQuery() {
+export function useMyProfileQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.profile.me(),
     queryFn: () => api<MyProfileResponse>("/api/profile/me"),
     staleTime: 5 * 60 * 1000,
     retry: 1,
+    enabled: (options?.enabled ?? true) && hasAuthToken(),
   });
 }
 
