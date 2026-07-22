@@ -31,8 +31,13 @@ export const queryKeys = {
     applicants: (id: number) => ["mentorships", id, "applicants"] as const,
     finalMentees: (id: number) => ["mentorships", id, "final-mentees"] as const,
     my: () => ["mentorships", "mine"] as const,
+    myApplications: () => ["mentorships", "my-applications"] as const,
     applicationStatus: (id: number) =>
       ["mentorships", id, "application-status"] as const,
+    updates: (applicationId: number) =>
+      ["mentorships", "applications", applicationId, "updates"] as const,
+    feedbackExists: (applicationId: number) =>
+      ["mentorships", "applications", applicationId, "feedback"] as const,
   },
   sessions: {
     all: ["sessions"] as const,

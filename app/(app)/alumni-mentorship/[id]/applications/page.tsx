@@ -1,26 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-
+import Link from "next/link";
 import {
-  finalSubmitMentorship,
-  forceCloseMentorshipApplications,
-  getApplicants,
-  getMentorship,
-  updateApplicationStatus,
-} from "@/lib/api/mentorship";
-
-import { getErrorMessage } from "@/lib/get-error-message";
-
+  useMentorshipQuery,
+  useGetApplicantsQuery,
+  useUpdateApplicationStatusMutation,
+  useForceCloseApplicationsMutation,
+  useFinalSubmitMentorshipMutation,
+} from "@/hooks/queries/mentorships";
+import { StatusBadge } from "@/components/mentorship/StatusBadge";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { ReviewableMentorshipApplicationStatus } from "@/lib/types/mentorship";
 import {
-  Mentorship,
-  MentorshipApplication,
-  ReviewableMentorshipApplicationStatus,
-} from "@/lib/types/mentorship";
+  Loader2,
+  AlertCircle,
+  ArrowLeft,
+  Lock,
+  CheckCheck,
+  Users,
+  ExternalLink,
+} from "lucide-react";
 
 const REVIEW_STATUSES: ReviewableMentorshipApplicationStatus[] = [
   "PROVISIONAL_SELECTED",
@@ -31,229 +35,174 @@ export default function ApplicationsPage() {
   const params = useParams();
   const mentorshipId = Number(params.id);
 
-  const [applications, setApplications] = useState<MentorshipApplication[]>([]);
-  const [mentorship, setMentorship] = useState<Mentorship | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [updatingApplicationId, setUpdatingApplicationId] = useState<
-    number | null
-  >(null);
-  const [submittingFinal, setSubmittingFinal] = useState(false);
-  const [forceClosing, setForceClosing] = useState(false);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const [applicationsData, mentorshipData] = await Promise.all([
-          getApplicants(mentorshipId),
-          getMentorship(mentorshipId),
-        ]);
-
-        setApplications(applicationsData);
-        setMentorship(mentorshipData);
-      } catch (error) {
-        alert(getErrorMessage(error, "Failed to load applications"));
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, [mentorshipId]);
-
-  async function handleStatusUpdate(
-    applicationId: number,
-    status: ReviewableMentorshipApplicationStatus,
-  ) {
-    try {
-      setUpdatingApplicationId(applicationId);
-
-      const updated = await updateApplicationStatus(
-        mentorshipId,
-        applicationId,
-        { status },
-      );
-
-      setApplications((prev) =>
-        prev.map((item) =>
-          item.applicationId === applicationId ? updated : item,
-        ),
-      );
-    } catch (error) {
-      alert(getErrorMessage(error, "Failed to update status"));
-    } finally {
-      setUpdatingApplicationId(null);
-    }
-  }
-
-  async function handleForceCloseApplications() {
-    if (
-      !confirm(
-        "This will immediately close applications for testing. Continue?",
-      )
-    ) {
-      return;
-    }
-
-    try {
-      setForceClosing(true);
-      const updatedMentorship = await forceCloseMentorshipApplications(
-        mentorshipId,
-      );
-      setMentorship(updatedMentorship);
-
-      const refreshedApplications = await getApplicants(mentorshipId);
-      setApplications(refreshedApplications);
-
-      alert("Applications closed for this mentorship.");
-    } catch (error) {
-      alert(getErrorMessage(error, "Failed to force close"));
-    } finally {
-      setForceClosing(false);
-    }
-  }
-
-  async function handleFinalSubmit() {
-    if (!confirm("Final submit will publish results to mentor. Continue?")) {
-      return;
-    }
-
-    try {
-      setSubmittingFinal(true);
-      const updatedMentorship = await finalSubmitMentorship(
-        mentorshipId,
-      );
-      setMentorship(updatedMentorship);
-
-      const refreshedApplications = await getApplicants(mentorshipId);
-      setApplications(refreshedApplications);
-
-      alert("Final submit completed and published.");
-    } catch (error) {
-      alert(getErrorMessage(error, "Final submit failed"));
-    } finally {
-      setSubmittingFinal(false);
-    }
-  }
+  const { data: mentorship, isLoading: mentorshipLoading } = useMentorshipQuery(mentorshipId);
+  const { data: applications, isLoading: appsLoading, isError } = useGetApplicantsQuery(mentorshipId);
+  const updateStatus = useUpdateApplicationStatusMutation();
+  const forceClose = useForceCloseApplicationsMutation();
+  const finalSubmit = useFinalSubmitMentorshipMutation();
 
   const isPublished = mentorship?.finalListVisibleToMentor === true;
 
+  if (mentorshipLoading || appsLoading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-64 rounded-xl" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>Failed to load applications.</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <div className="max-w-7xl mx-auto py-10 px-6">
-        <h1 className="text-4xl font-bold mb-3">Applications</h1>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <Link
+        href={`/alumni-mentorship/${mentorshipId}`}
+        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Back to Mentorship
+      </Link>
 
+      <div className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          Applications
+        </h1>
         {mentorship && (
-          <div className="mb-8 flex flex-wrap gap-4 items-center">
-            <span
-              className={`px-3 py-1 rounded text-sm font-semibold ${
-                isPublished
-                  ? "bg-green-100 text-green-700"
-                  : "bg-yellow-100 text-yellow-700"
-              }`}
-            >
-              {isPublished ? "Final list published" : "Review in progress"}
-            </span>
-
-            <button
-              onClick={handleForceCloseApplications}
-              disabled={forceClosing || isPublished}
-              className="bg-orange-600 text-white px-4 py-2 rounded disabled:opacity-60"
-            >
-              {forceClosing
-                ? "Force Closing..."
-                : isPublished
-                  ? "Testing Utility Disabled"
-                  : "Force Close Applications (Testing)"}
-            </button>
-
-            <button
-              onClick={handleFinalSubmit}
-              disabled={submittingFinal || isPublished}
-              className="bg-indigo-600 text-white px-4 py-2 rounded disabled:opacity-60"
-            >
-              {submittingFinal
-                ? "Submitting..."
-                : isPublished
-                  ? "Already Published"
-                  : "Final Submit"}
-            </button>
-          </div>
+          <p className="text-xs text-muted-foreground">{mentorship.title}</p>
         )}
+      </div>
 
-        {loading ? (
-          <div>Loading...</div>
-        ) : applications.length === 0 ? (
-          <div className="text-gray-600">No applications yet.</div>
-        ) : (
-          <div className="overflow-auto">
-            <table className="min-w-full border">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border p-3">Student</th>
-                  <th className="border p-3">Email</th>
-                  <th className="border p-3">Branch</th>
-                  <th className="border p-3">Batch</th>
-                  <th className="border p-3">Motivation</th>
-                  <th className="border p-3">Resume</th>
-                  <th className="border p-3">Status</th>
-                  <th className="border p-3">Actions</th>
-                </tr>
-              </thead>
+      {/* Admin Controls */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <Badge
+          variant={isPublished ? "default" : "secondary"}
+          className="text-[10px] font-semibold"
+        >
+          {isPublished ? "Final list published" : "Review in progress"}
+        </Badge>
 
-              <tbody>
-                {applications.map((app) => (
-                  <tr key={app.applicationId}>
-                    <td className="border p-3">{app.fullName}</td>
-                    <td className="border p-3">{app.email}</td>
-                    <td className="border p-3">{app.branch}</td>
-                    <td className="border p-3">{app.batchYear}</td>
-                    <td className="border p-3 max-w-md whitespace-pre-wrap">
-                      {app.motivation}
-                    </td>
-                    <td className="border p-3">
-                      {app.resumeUrl ? (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            if (!confirm("Force close applications for testing? Continue?")) return;
+            forceClose.mutate(mentorshipId);
+          }}
+          disabled={forceClose.isPending || isPublished}
+          className="cursor-pointer text-xs"
+        >
+          {forceClose.isPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Lock className="h-3.5 w-3.5" />
+          )}
+          {isPublished ? "Testing Disabled" : "Force Close"}
+        </Button>
+
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => {
+            if (!confirm("Final submit will publish results to mentor. Continue?")) return;
+            finalSubmit.mutate(mentorshipId);
+          }}
+          disabled={finalSubmit.isPending || isPublished}
+          className="cursor-pointer text-xs"
+        >
+          {finalSubmit.isPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <CheckCheck className="h-3.5 w-3.5" />
+          )}
+          {isPublished ? "Already Published" : "Final Submit"}
+        </Button>
+      </div>
+
+      {/* Applications Table */}
+      {!applications || applications.length === 0 ? (
+        <Card className="rounded-xl border border-border bg-card">
+          <CardContent className="flex flex-col items-center py-16 text-center">
+            <Users className="h-8 w-8 text-muted-foreground/60 mb-3" />
+            <p className="font-semibold text-foreground text-sm">No applications yet</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Applications will appear here once students apply.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
+          <table className="w-full border-collapse text-left text-xs text-foreground min-w-[700px]">
+            <thead>
+              <tr className="border-b border-border bg-muted/40 text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
+                <th className="p-3 pl-4">Student</th>
+                <th className="p-3 hidden md:table-cell">Email</th>
+                <th className="p-3 hidden lg:table-cell">Branch</th>
+                <th className="p-3 hidden lg:table-cell">Batch</th>
+                <th className="p-3">CGPA</th>
+                <th className="p-3">Status</th>
+                <th className="p-3 pr-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {applications.map((app) => (
+                <tr key={app.applicationId} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                  <td className="p-3 pl-4">
+                    <div>
+                      <p className="font-semibold text-foreground">{app.fullName}</p>
+                      <p className="text-xs text-muted-foreground">{app.rollNumber}</p>
+                    </div>
+                  </td>
+                  <td className="p-3 text-muted-foreground hidden md:table-cell">{app.email}</td>
+                  <td className="p-3 text-muted-foreground hidden lg:table-cell">{app.branch}</td>
+                  <td className="p-3 text-muted-foreground hidden lg:table-cell">{app.batchYear}</td>
+                  <td className="p-3"><span className="font-medium tabular-nums">{app.cgpaAtApplication.toFixed(2)}</span></td>
+                  <td className="p-3"><StatusBadge status={app.status} /></td>
+                  <td className="p-3 pr-4 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      {REVIEW_STATUSES.map((status) => (
+                        <Button
+                          key={status}
+                          size="xs"
+                          variant="outline"
+                          disabled={isPublished || updateStatus.isPending || app.status === status}
+                          onClick={() =>
+                            updateStatus.mutate({ mentorshipId, applicationId: app.applicationId, status })
+                          }
+                          className="cursor-pointer"
+                        >
+                          {status === "PROVISIONAL_SELECTED" ? "Select" : "Drop"}
+                        </Button>
+                      ))}
+                      {app.resumeUrl && (
                         <a
                           href={app.resumeUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-blue-600 underline"
                         >
-                          View Resume
+                          <Button size="xs" variant="ghost" className="cursor-pointer">
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
                         </a>
-                      ) : (
-                        "No Resume"
                       )}
-                    </td>
-                    <td className="border p-3 font-semibold">{app.status}</td>
-                    <td className="border p-3">
-                      <div className="flex flex-wrap gap-2">
-                        {REVIEW_STATUSES.map((status) => (
-                          <button
-                            key={status}
-                            disabled={
-                              isPublished ||
-                              updatingApplicationId === app.applicationId ||
-                              app.status === status
-                            }
-                            onClick={() =>
-                              handleStatusUpdate(app.applicationId, status)
-                            }
-                            className="px-3 py-1 rounded border text-sm hover:bg-gray-50 disabled:opacity-60"
-                          >
-                            {status}
-                          </button>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      <Footer />
-    </>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 }

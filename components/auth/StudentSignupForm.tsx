@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, EyeOff, User } from "lucide-react";
+import { Eye, EyeOff, Phone, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 interface StudentFormData {
   fullName: string;
   rollNumber: string;
+  phone: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -98,8 +99,25 @@ export default function StudentSignupForm({
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="phone">
+            Phone <span className="text-muted-foreground/60">(optional)</span>
+          </Label>
+          <div className="relative">
+            <Phone className={inputIconClass} />
+            <Input
+              id="phone"
+              type="tel"
+              className="pl-8"
+              placeholder="+91 98765 43210"
+              value={formData.phone}
+              onChange={(e) => onChange("phone", e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="email">
-            Email Address <span className="text-destructive">*</span>
+            Email Address (.mec mail) <span className="text-destructive">*</span>
           </Label>
           <div className="relative">
             <User className={inputIconClass} />
@@ -107,7 +125,7 @@ export default function StudentSignupForm({
               id="email"
               type="email"
               className="pl-8"
-              placeholder="rollno.mec@gmail.com"
+              placeholder="name.mec@gmail.com"
               value={formData.email}
               onChange={(e) => onChange("email", e.target.value)}
             />

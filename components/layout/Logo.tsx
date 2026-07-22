@@ -51,20 +51,20 @@ export default function Logo({
         <GraduationCap className={iconSize} />
       </div>
       {showText && (
-        <span
-          className={cn(
-            "text-foreground leading-tight whitespace-nowrap",
-            textSize,
-            textClassName
-          )}
-        >
+        <span className={cn("leading-tight", textClassName)}>
           {shortTextOnMobile ? (
             <>
-              <span className="sm:hidden font-bold">ARC</span>
-              <span className="hidden sm:inline">Alumni Relations Cell</span>
+              <span className="sm:hidden font-bold text-foreground" style={{ fontSize: size === "sm" ? "0.875rem" : size === "lg" ? "1.25rem" : "1rem" }}>ARC</span>
+              <span className="hidden sm:flex flex-col">
+                <span className={cn("font-bold tracking-tight text-foreground whitespace-nowrap", textSize)}>Alumni Relations Cell</span>
+                <span className="text-[9px] font-semibold tracking-widest text-muted-foreground/60 uppercase leading-none mt-0.5">MEC Thrikkakara</span>
+              </span>
             </>
           ) : (
-            "Alumni Relations Cell"
+            <span className="flex flex-col">
+              <span className={cn("font-bold tracking-tight text-foreground whitespace-nowrap", textSize)}>Alumni Relations Cell</span>
+              <span className="text-[9px] font-semibold tracking-widest text-muted-foreground/60 uppercase leading-none mt-0.5">MEC Thrikkakara</span>
+            </span>
           )}
         </span>
       )}

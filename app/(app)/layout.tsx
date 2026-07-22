@@ -7,7 +7,7 @@ import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import Navbar from "@/components/layout/Navbar";
 import ProfileCompletionBar from "@/components/onboarding/ProfileCompletionBar";
 import WelcomeModal from "@/components/onboarding/WelcomeModal";
-import { SidebarInset } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { getPrimaryRole, normalizeRoleForDisplay } from "@/lib/roleUtils";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -40,14 +40,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const normalizedRole = normalizeRoleForDisplay(userRole);
 
   return (
-    <div className="flex min-h-screen bg-background w-full">
-      <DashboardSidebar role={normalizedRole} rawRoles={user.roles} />
-      <SidebarInset>
-        <Navbar />
-        <ProfileCompletionBar />
-        <main className="flex-1 w-full">{children}</main>
-        <WelcomeModal />
-      </SidebarInset>
-    </div>
+    <SidebarProvider defaultOpen={false}>
+      <div className="flex min-h-screen bg-background w-full">
+        <DashboardSidebar role={normalizedRole} rawRoles={user.roles} />
+        <SidebarInset>
+          <Navbar />
+          <ProfileCompletionBar />
+          <main className="flex-1 w-full">{children}</main>
+          <WelcomeModal />
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 }

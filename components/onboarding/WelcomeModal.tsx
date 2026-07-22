@@ -90,17 +90,21 @@ export default function WelcomeModal() {
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="welcome-phone">Phone</Label>
-            <Input
-              id="welcome-phone"
-              type="tel"
-              placeholder="+91 98765 43210"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              disabled={isSaving}
-            />
-          </div>
+          {!profile?.phone && (
+            <div className="space-y-2">
+              <Label htmlFor="welcome-phone">
+                Phone <span className="text-muted-foreground/60">(optional)</span>
+              </Label>
+              <Input
+                id="welcome-phone"
+                type="tel"
+                placeholder="+91 98765 43210"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={isSaving}
+              />
+            </div>
+          )}
 
           {isStudentRole && (
             <>

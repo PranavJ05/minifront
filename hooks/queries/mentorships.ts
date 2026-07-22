@@ -1,7 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/fetcher";
 import { queryKeys } from "./keys";
-import type { Mentorship, MentorshipApplication, ApplicationStatusResponse, CanEditResponse } from "@/lib/types/mentorship";
+import type {
+  Mentorship,
+  MentorshipApplication,
+  ApplicationStatusResponse,
+  CanEditResponse,
+  MentorshipUpdate,
+  MyApplication,
+} from "@/lib/types/mentorship";
 
 export function useMentorshipsQuery() {
   return useQuery({
@@ -60,9 +67,9 @@ export function useDeleteMentorshipMutation() {
 export function useApplyMentorshipMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ mentorshipId, motivation, resume }: { mentorshipId: number; motivation: string; resume: File | null }) => {
+    mutationFn: ({ mentorshipId, motivation, cgpaAtApplication, resume }: { mentorshipId: number; motivation: string; cgpaAtApplication: number; resume: File | null }) => {
       const formData = new FormData();
-      formData.append("data", new Blob([JSON.stringify({ motivation })], { type: "application/json" }));
+      formData.append("data", new Blob([JSON.stringify({ motivation, cgpaAtApplication })], { type: "application/json" }));
       if (resume) formData.append("resume", resume);
       return api<{ success: boolean }>(`/api/mentorships/${mentorshipId}/apply`, {
         method: "POST",
@@ -144,19 +151,19 @@ export function useFinalSubmitMentorshipMutation() {
   });
 }
 
-export function useGetFinalMenteesQuery(mentorshipId: number) {
+export function useGetFinalMenteesQuery(mentorshipId: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.mentorships.finalMentees(mentorshipId),
     queryFn: () => api<MentorshipApplication[]>(`/api/mentorships/${mentorshipId}/final-mentees`),
-    enabled: !!mentorshipId,
+    enabled: !!mentorshipId && (options?.enabled ?? true),
   });
 }
 
-export function useGetApplicationStatusQuery(mentorshipId: number) {
+export function useGetApplicationStatusQuery(mentorshipId: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.mentorships.applicationStatus(mentorshipId),
     queryFn: () => api<ApplicationStatusResponse>(`/api/mentorships/${mentorshipId}/application-status`),
-    enabled: !!mentorshipId,
+    enabled: !!mentorshipId && (options?.enabled ?? true),
   });
 }
 
@@ -167,10 +174,117 @@ export function useMyMentorshipsQuery() {
   });
 }
 
+export function useMyApplicationsQuery(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: queryKeys.mentorships.myApplications(),
+    queryFn: () => api<MyApplication[]>("/api/mentorships/my-applications"),
+    enabled: options?.enabled ?? true,
+  });
+}
+
 export function useCanEditQuery(mentorshipId: number) {
   return useQuery({
     queryKey: [...queryKeys.mentorships.detail(mentorshipId), "can-edit"],
     queryFn: () => api<CanEditResponse>(`/api/mentorships/${mentorshipId}/can-edit`),
     enabled: !!mentorshipId,
+  });
+}
+
+export function useConfirmMatchMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (applicationId: number) =>
+      api<void>(`/api/mentorships/applications/${applicationId}/confirm`, {
+        method: "POST",
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.mentorships.all });
+    },
+  });
+}
+
+export function useDeclineMatchMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (applicationId: number) =>
+      api<void>(`/api/mentorships/applications/${applicationId}/decline`, {
+        method: "POST",
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.mentorships.all });
+    },
+  });
+}
+
+export function usePostUpdateMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      applicationId,
+      content,
+      isMilestone,
+    }: {
+      applicationId: number;
+      content: string;
+      isMilestone?: boolean;
+    }) =>
+      api<MentorshipUpdate>(`/api/mentorships/applications/${applicationId}/updates`, {
+        method: "POST",
+        body: { content, isMilestone },
+      }),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({
+        queryKey: queryKeys.mentorships.updates(variables.applicationId),
+      });
+    },
+  });
+}
+
+export function useGetUpdatesQuery(applicationId: number) {
+  return useQuery({
+    queryKey: queryKeys.mentorships.updates(applicationId),
+    queryFn: () =>
+      api<MentorshipUpdate[]>(
+        `/api/mentorships/applications/${applicationId}/updates`,
+      ),
+    enabled: !!applicationId,
+  });
+}
+
+export function useMarkCompleteMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (applicationId: number) =>
+      api<void>(`/api/mentorships/applications/${applicationId}/complete`, {
+        method: "POST",
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.mentorships.all });
+    },
+  });
+}
+
+export function useSubmitFeedbackMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      applicationId,
+      rating,
+      comment,
+    }: {
+      applicationId: number;
+      rating: number;
+      comment?: string;
+    }) =>
+      api<void>(`/api/mentorships/applications/${applicationId}/feedback`, {
+        method: "POST",
+        body: { rating, comment },
+      }),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({
+        queryKey: queryKeys.mentorships.feedbackExists(variables.applicationId),
+      });
+      qc.invalidateQueries({ queryKey: queryKeys.mentorships.all });
+    },
   });
 }

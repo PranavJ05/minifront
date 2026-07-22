@@ -229,12 +229,8 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-5 max-w-lg">
-          <Badge variant="secondary" className="text-sm px-3.5 py-1 font-medium w-fit">
-            <Sparkles className="h-4 w-4 mr-1.5" />
-            MEC Alumni Network
-          </Badge>
           <h1 className="text-3xl lg:text-4xl font-extrabold text-foreground leading-tight tracking-tight">
-            Welcome back to your alumni community
+            Welcome back to your MEC community
           </h1>
           <p className="text-sm lg:text-base text-muted-foreground leading-relaxed">
             Access placement opportunities, connect with fellow graduates, and engage with campus events.
@@ -262,12 +258,12 @@ export default function LoginPage() {
       </div>
 
       {/* Right Form Container */}
-      <div className="flex-1 flex flex-col justify-between px-4 py-8 min-h-screen">
+      <div className="flex-1 flex flex-col px-4 py-4 min-h-screen">
         <div className="flex items-center justify-end w-full max-w-md mx-auto">
           <ThemeToggle />
         </div>
 
-        <div className="w-full max-w-md space-y-6 mx-auto my-auto py-4">
+        <div className="w-full max-w-md space-y-6 mx-auto my-28 py-4">
           <div className="space-y-2">
             <div className="lg:hidden flex items-center justify-between gap-2 mb-4">
               <Logo size="sm" shortTextOnMobile />

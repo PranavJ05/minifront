@@ -575,6 +575,7 @@ export default function SignupPage() {
                   formData={{
                     fullName: formData.fullName,
                     rollNumber: formData.rollNumber,
+                    phone: formData.phone,
                     email: formData.email,
                     password: formData.password,
                     confirmPassword: formData.confirmPassword,

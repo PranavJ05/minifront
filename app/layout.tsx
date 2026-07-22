@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { QueryClientProvider } from "@/components/QueryClientProvider";
 import { AuthProvider } from "@/contexts/auth-context";
 
@@ -42,14 +41,12 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider>
-            <SidebarProvider defaultOpen={false}>
               <QueryClientProvider>
                 <AuthProvider>
                   {children}
                   <Toaster richColors position="bottom-right" />
                 </AuthProvider>
               </QueryClientProvider>
-            </SidebarProvider>
           </TooltipProvider>
         </ThemeProvider>
       </body>
