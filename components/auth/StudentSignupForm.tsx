@@ -107,7 +107,7 @@ export default function StudentSignupForm({
               id="email"
               type="email"
               className="pl-8"
-              placeholder="MDL26CS301@mec.ac.in"
+              placeholder="rollno.mec@gmail.com"
               value={formData.email}
               onChange={(e) => onChange("email", e.target.value)}
             />

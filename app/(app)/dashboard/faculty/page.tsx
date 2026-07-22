@@ -1,36 +1,27 @@
 "use client";
-// app/dashboard/faculty/page.tsx
+
 import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import {
-  Users,
   Calendar,
-  TrendingUp,
-  CheckCircle,
-  AlertCircle,
-  Eye,
-  UserPlus,
-  GraduationCap,
   Briefcase,
   Loader2,
   ArrowRight,
   MapPin,
-  Search,
+  GraduationCap,
+  Building2,
 } from "lucide-react";
-import DashboardSidebar from "@/components/layout/DashboardSidebar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import DirectorySnapshot from "@/components/dashboard/DirectorySnapshot";
 import { hasRole } from "@/lib/roleUtils";
 import { useAuth } from "@/contexts/auth-context";
 import { useEventsQuery } from "@/hooks/queries/events";
 import { useOpportunitiesQuery } from "@/hooks/queries/opportunities";
 import { useAlumniSearchQuery } from "@/hooks/queries/alumni";
-import { BACKEND_URL } from "@/lib/config";
-
-const resolveImageUrl = (value: string | null) => {
-  if (!value) return null;
-  return value.startsWith("http") ? value : `${BACKEND_URL}${value}`;
-};
 
 export default function FacultyDashboard() {
   const router = useRouter();
@@ -47,11 +38,8 @@ export default function FacultyDashboard() {
   } = useOpportunitiesQuery();
   const {
     data: directoryData,
-    isLoading: directoryLoading,
-    error: directoryError,
   } = useAlumniSearchQuery();
 
-  // Auth check
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated || !user) {
@@ -63,7 +51,6 @@ export default function FacultyDashboard() {
 
     if (!isAllowedRole) {
       router.replace("/auth/login");
-      return;
     }
   }, [authLoading, isAuthenticated, user, router]);
 
@@ -79,7 +66,6 @@ export default function FacultyDashboard() {
     }));
   }, [directoryData]);
 
-  // Format date helper
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-IN", {
       day: "numeric",
@@ -89,7 +75,7 @@ export default function FacultyDashboard() {
   };
 
   const upcomingEvents = useMemo(
-    () => events.filter((e) => new Date(e.eventDate) >= new Date()).slice(0, 5),
+    () => events.filter((e) => new Date(e.eventDate) >= new Date()).slice(0, 4),
     [events],
   );
 
@@ -98,278 +84,193 @@ export default function FacultyDashboard() {
     [opportunities],
   );
 
-  const directoryPreview = useMemo(() => directory.slice(0, 3), [directory]);
-
-  // Calculate stats from loaded data
   const statsData = useMemo(
     () => [
       {
         label: "Total Alumni",
         value: String(directory.length || 0),
         icon: GraduationCap,
-        color: "text-blue-600",
-        bg: "bg-blue-50",
       },
       {
         label: "Open Opportunities",
         value: String(opportunities.length || 0),
         icon: Briefcase,
-        color: "text-green-600",
-        bg: "bg-green-50",
       },
       {
         label: "Upcoming Events",
         value: String(upcomingEvents.length || 0),
         icon: Calendar,
-        color: "text-purple-600",
-        bg: "bg-purple-50",
       },
       {
         label: "Departments",
         value: String(
-          new Set(directory.map((item) => item.department).filter(Boolean))
-            .size,
+          new Set(directory.map((item) => item.department).filter(Boolean)).size,
         ),
-        icon: UserPlus,
-        color: "text-gold-600",
-        bg: "bg-gold-50",
+        icon: Building2,
       },
     ],
     [directory, opportunities, upcomingEvents],
   );
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-navy-800 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (!user) return null;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <DashboardSidebar role="faculty" />
-
-      <main className="flex-1 overflow-auto p-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="font-serif text-2xl font-bold text-navy-900">
+    <div className="w-full px-4 sm:px-6 pb-6 space-y-6">
+      {/* Sticky Header */}
+      <div className="sticky top-14 z-30 bg-background/95 backdrop-blur-md py-4 border-b border-border/40 -mx-4 sm:-mx-6 px-4 sm:px-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">
               Faculty Dashboard
             </h1>
-            <p className="text-gray-500">
-              Platform overview and community insights
+            <p className="text-xs text-muted-foreground">
+              Platform overview, events &amp; alumni community insights
             </p>
           </div>
+          <Button variant="outline" size="sm" asChild className="cursor-pointer">
+            <Link href="/alumni">View Directory</Link>
+          </Button>
+        </div>
+      </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {statsData.map(({ label, value, icon: Icon, color, bg }) => (
-              <div key={label} className="card p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div
-                    className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center`}
-                  >
-                    <Icon className={`h-5 w-5 ${color}`} />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-navy-900 font-serif">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {statsData.map(({ label, value, icon: Icon }) => (
+          <Card key={label} className="p-4">
+            <CardContent className="p-0 flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-muted text-foreground shrink-0">
+                <Icon className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-lg font-semibold tracking-tight text-foreground leading-none">
                   {value}
                 </div>
-                <div className="text-xs text-gray-500 mt-1">{label}</div>
+                <div className="text-xs text-muted-foreground mt-1 truncate">
+                  {label}
+                </div>
               </div>
-            ))}
-          </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-          {/* Search Alumni */}
-          <div className="card p-5 mb-6 bg-navy-950">
-            <h2 className="text-white font-bold mb-3">Find Alumni Fast</h2>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by name, company, or field..."
-                className="w-full pl-10 pr-4 py-3 bg-navy-800 border border-navy-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-gold-500"
-              />
-            </div>
-            <Link
-              href="/alumni"
-              className="inline-flex items-center gap-2 mt-3 text-gold-400 text-sm hover:text-gold-300"
-            >
-              Browse full directory <ArrowRight className="h-3.5 w-3.5" />
+      {/* Quick Directory Link */}
+      <Card className="p-4 bg-muted/30 border-border">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <h2 className="text-sm font-semibold text-foreground">Find Alumni Fast</h2>
+            <p className="text-xs text-muted-foreground">Search by name, department, or company</p>
+          </div>
+          <Button variant="outline" size="sm" asChild className="cursor-pointer">
+            <Link href="/alumni">
+              Browse Directory <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Link>
-          </div>
+          </Button>
+        </div>
+      </Card>
 
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Upcoming Events */}
-            <div className="card p-5">
-              <h2 className="font-bold text-navy-900 font-serif mb-5 flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-gold-500" />
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Upcoming Events */}
+        <Card className="p-4 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
                 Upcoming Events
               </h2>
-
-              {eventsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-                </div>
-              ) : eventsError ? (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
-                  {eventsError?.message}
-                </div>
-              ) : upcomingEvents.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No upcoming events</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {upcomingEvents.map((event) => (
-                    <div key={event.id} className="flex gap-3">
-                      <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 bg-gold-500" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-700">
-                          {event.title}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
-                          <Calendar className="h-3 w-3" />
-                          <span>{formatDate(event.eventDate)}</span>
-                        </div>
-                        {event.location && (
-                          <div className="flex items-center gap-1 mt-0.5 text-xs text-gray-500">
-                            <MapPin className="h-3 w-3" />
-                            <span>{event.location}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
-            {/* Opportunities */}
-            <div className="lg:col-span-2 card p-5">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="font-bold text-navy-900 font-serif flex items-center gap-2">
-                  <Briefcase className="h-5 w-5 text-gold-500" />
-                  Current Opportunities
-                </h2>
-                <Link
-                  href="/opportunities"
-                  className="text-xs text-gold-600 font-medium"
-                >
-                  View All
-                </Link>
+            {eventsLoading ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
               </div>
-
-              {opportunitiesLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-                </div>
-              ) : opportunitiesError ? (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
-                  {opportunitiesError?.message}
-                </div>
-              ) : opportunityPreview.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No opportunities available</p>
-                </div>
-              ) : (
-                <div className="grid md:grid-cols-3 gap-4">
-                  {opportunityPreview.map((opp) => (
-                    <div
-                      key={opp.id}
-                      className="border border-gray-200 rounded-xl p-4 hover:border-navy-300 hover:shadow-md transition-all"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="badge bg-navy-50 text-navy-700">
-                          {opp.type}
-                        </span>
-                      </div>
-                      <h4 className="font-semibold text-navy-900 mb-1 line-clamp-2">
-                        {opp.title}
-                      </h4>
-                      <p className="text-sm text-gray-600 mb-2">
-                        {opp.company}
-                      </p>
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <MapPin className="h-3 w-3" />
-                        <span>{opp.location}</span>
-                      </div>
+            ) : eventsError ? (
+              <Alert variant="destructive">
+                <AlertDescription className="text-xs">
+                  {eventsError?.message || "Could not load events"}
+                </AlertDescription>
+              </Alert>
+            ) : upcomingEvents.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-6 text-center">
+                No upcoming events scheduled
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {upcomingEvents.map((event) => (
+                  <div key={event.id} className="p-2.5 rounded-lg bg-muted/30 border border-border/60 space-y-1">
+                    <p className="text-xs font-medium text-foreground line-clamp-1">
+                      {event.title}
+                    </p>
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                      <span>{formatDate(event.eventDate)}</span>
+                      {event.location && (
+                        <>
+                          <span>&middot;</span>
+                          <span className="truncate">{event.location}</span>
+                        </>
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+        </Card>
 
-          {/* Alumni Directory Preview */}
-          <div className="card p-5 mt-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-bold text-navy-900 font-serif">
-                Alumni Directory Snapshot
+        {/* Opportunities */}
+        <Card className="lg:col-span-2 p-4 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-muted-foreground" />
+                Active Opportunities
               </h2>
-              <Link
-                href="/alumni"
-                className="text-xs text-gold-600 font-medium"
-              >
+              <Link href="/opportunities" className="text-xs text-muted-foreground hover:text-foreground font-medium">
                 View All
               </Link>
             </div>
 
-            {directoryLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+            {opportunitiesLoading ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
               </div>
-            ) : directoryError ? (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
-                {directoryError?.message}
-              </div>
-            ) : directoryPreview.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <p>No alumni found</p>
-              </div>
+            ) : opportunitiesError ? (
+              <Alert variant="destructive">
+                <AlertDescription className="text-xs">
+                  {opportunitiesError?.message || "Could not load opportunities"}
+                </AlertDescription>
+              </Alert>
+            ) : opportunityPreview.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-6 text-center">
+                No active opportunities
+              </p>
             ) : (
-              <div className="grid md:grid-cols-3 gap-4">
-                {directoryPreview.map((alumni) => {
-                  const avatar = resolveImageUrl(alumni.profileImageUrl);
-                  return (
-                    <div
-                      key={alumni.id}
-                      className="card p-5 flex items-start gap-3"
-                    >
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-navy-100 flex items-center justify-center flex-shrink-0">
-                        {avatar ? (
-                          <img
-                            src={avatar}
-                            alt={alumni.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Users className="h-5 w-5 text-navy-500" />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-navy-900 truncate">
-                          {alumni.name}
-                        </p>
-                        <p className="text-sm text-gray-600 truncate">
-                          {alumni.profession || "Professional"}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1 truncate">
-                          {alumni.department || "Department not added"}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1 truncate">
-                          {alumni.location || "Location not added"}
-                        </p>
-                      </div>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {opportunityPreview.map((opp) => (
+                  <div key={opp.id} className="p-3 rounded-lg border border-border bg-card space-y-1.5 flex flex-col justify-between">
+                    <div className="space-y-1">
+                      <Badge variant="secondary" className="text-[9px]">
+                        {opp.type}
+                      </Badge>
+                      <h4 className="font-semibold text-xs text-foreground line-clamp-1">
+                        {opp.title}
+                      </h4>
+                      <p className="text-[10px] text-muted-foreground line-clamp-1">
+                        {opp.company}
+                      </p>
                     </div>
-                  );
-                })}
+                    <p className="text-[10px] text-muted-foreground/60 flex items-center gap-1 pt-1">
+                      <MapPin className="h-2.5 w-2.5 shrink-0" /> {opp.location}
+                    </p>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        </div>
-      </main>
+        </Card>
+      </div>
+
+      <DirectorySnapshot title="Alumni Directory Snapshot" />
     </div>
   );
 }

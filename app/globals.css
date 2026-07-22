@@ -193,11 +193,12 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
-    @apply font-sans;
+    font-size: 112.5%;
+    @apply font-sans text-foreground bg-background antialiased;
+  }
+  body {
+    @apply bg-background text-foreground text-base leading-relaxed;
   }
 }
 

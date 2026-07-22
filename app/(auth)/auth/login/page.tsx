@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  GraduationCap,
   Mail,
   Lock,
   Eye,
@@ -13,11 +12,20 @@ import {
   Clock,
   CheckCircle2,
   ExternalLink,
+  ShieldCheck,
+  Briefcase,
+  Users,
+  Sparkles,
 } from "lucide-react";
 import AuthInput from "@/components/auth/AuthInput";
+import Logo from "@/components/layout/Logo";
+import ThemeToggle from "@/components/layout/ThemeToggle";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/auth-context";
 import { BACKEND_URL } from "@/lib/config";
-import { UserRole } from "@/types";
 import { getDashboardPathForRoles } from "@/lib/roleUtils";
 
 export default function LoginPage() {
@@ -27,8 +35,6 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    role: "alumni" as UserRole,
-    rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -59,7 +65,6 @@ export default function LoginPage() {
       const data = await login({
         email: formData.email.trim(),
         password: formData.password,
-        role: formData.role as "alumni" | "student" | "faculty",
       });
 
       if (data.emailVerificationRequired) {
@@ -98,8 +103,6 @@ export default function LoginPage() {
         else if (typeof data.role === "string") allRoles = [data.role];
       }
 
-      if (allRoles.length === 0) allRoles = [formData.role.toUpperCase()];
-
       try {
         const profileRes = await fetch(`${BACKEND_URL}/api/profile/me`, {
           headers: { Authorization: `Bearer ${data.token}` },
@@ -124,8 +127,8 @@ export default function LoginPage() {
             roles: allRoles,
           });
         }
-      } catch (profileErr: unknown) {
-        const _ignored = profileErr;
+      } catch {
+        // ignore profile error fallback
       }
 
       localStorage.removeItem("pendingUserData");
@@ -158,171 +161,167 @@ export default function LoginPage() {
     }
   };
 
-  const roles: { value: UserRole; label: string; desc: string }[] = [
-    { value: "alumni", label: "Alumni", desc: "Graduate member" },
-    { value: "student", label: "Student", desc: "Current student" },
-    { value: "faculty", label: "Faculty", desc: "College-issued access" },
-  ];
-
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <div className="hidden lg:flex lg:w-1/2 bg-navy-950 relative overflow-hidden flex-col justify-between p-12">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gold-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-navy-700/50 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-background flex w-full overflow-x-hidden">
+      {/* Left Banner - Desktop */}
+      <div className="hidden lg:flex lg:w-1/2 bg-card border-r border-border flex-col justify-between p-12 min-h-screen">
+        <Logo size="lg" />
 
-        <Link href="/" className="flex items-center gap-2.5 relative z-10">
-          <div className="bg-gold-500 p-1.5 rounded-lg">
-            <GraduationCap className="h-5 w-5 text-navy-950" />
-          </div>
-          <span className="font-serif font-bold text-white text-xl">
-            ALUMNI
-          </span>
-        </Link>
+        {/* Vector SVG Art */}
+        <div className="relative w-full max-w-md aspect-4/3 my-auto mx-auto flex items-center justify-center p-4">
+          <svg
+            viewBox="0 0 400 300"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-full h-full text-foreground/80"
+          >
+            <defs>
+              <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="currentColor" stopOpacity="0.08" />
+                <stop offset="100%" stopColor="currentColor" stopOpacity="0.01" />
+              </linearGradient>
+              <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="currentColor" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="currentColor" stopOpacity="0.1" />
+              </linearGradient>
+            </defs>
 
-        <div className="relative z-10">
-          <h1 className="font-serif text-4xl font-bold text-white leading-tight mb-6">
-            Welcome back to
-            <br />
-            your <span className="gradient-text">community</span>
+            {/* Network Circles */}
+            <circle cx="200" cy="150" r="110" fill="url(#bgGrad)" />
+            <circle cx="200" cy="150" r="75" stroke="url(#lineGrad)" strokeWidth="1" strokeDasharray="4 4" />
+            <circle cx="200" cy="150" r="45" stroke="url(#lineGrad)" strokeWidth="1" />
+
+            {/* Network Nodes & Paths */}
+            <path d="M100 150 L200 75 L300 150 L200 225 Z" stroke="url(#lineGrad)" strokeWidth="1.5" strokeLinejoin="round" />
+            <path d="M145 105 L255 195 M255 105 L145 195" stroke="url(#lineGrad)" strokeWidth="1" strokeDasharray="3 3" />
+
+            {/* Glowing Points */}
+            <circle cx="200" cy="75" r="7" fill="currentColor" fillOpacity="0.9" />
+            <circle cx="300" cy="150" r="6" fill="currentColor" fillOpacity="0.8" />
+            <circle cx="200" cy="225" r="7" fill="currentColor" fillOpacity="0.9" />
+            <circle cx="100" cy="150" r="6" fill="currentColor" fillOpacity="0.8" />
+            <circle cx="145" cy="105" r="5" fill="currentColor" fillOpacity="0.6" />
+            <circle cx="255" cy="105" r="5" fill="currentColor" fillOpacity="0.6" />
+            <circle cx="255" cy="195" r="5" fill="currentColor" fillOpacity="0.6" />
+            <circle cx="145" cy="195" r="5" fill="currentColor" fillOpacity="0.6" />
+
+            {/* Center Cap Illustration */}
+            <g transform="translate(176, 126)">
+              <path
+                d="M24 4L2 15L24 26L46 15L24 4Z"
+                fill="currentColor"
+                fillOpacity="0.2"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M9 18.5V30C9 30 15 35 24 35C33 35 39 30 39 30V18.5"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path d="M42 17.5V31.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <circle cx="42" cy="33.5" r="1.5" fill="currentColor" />
+            </g>
+          </svg>
+        </div>
+
+        <div className="space-y-5 max-w-lg">
+          <Badge variant="secondary" className="text-sm px-3.5 py-1 font-medium w-fit">
+            <Sparkles className="h-4 w-4 mr-1.5" />
+            MEC Alumni Network
+          </Badge>
+          <h1 className="text-3xl lg:text-4xl font-extrabold text-foreground leading-tight tracking-tight">
+            Welcome back to your alumni community
           </h1>
-          <p className="text-gray-300 text-lg leading-relaxed mb-10">
-            Sign in to access your network, career opportunities, and stay
-            connected with your university family.
+          <p className="text-sm lg:text-base text-muted-foreground leading-relaxed">
+            Access placement opportunities, connect with fellow graduates, and engage with campus events.
           </p>
-          <div className="space-y-4">
+
+          <div className="space-y-3 pt-2">
             {[
-              "35,000+ alumni connections worldwide",
-              "Exclusive job board and opportunities",
-              "Mentorship and career guidance",
-              "Campus news and announcements",
-            ].map((f) => (
-              <div key={f} className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-gold-500 rounded-full flex-shrink-0" />
-                <span className="text-gray-300 text-sm">{f}</span>
+              { icon: Users, text: "Verified MEC alumni & student directory" },
+              { icon: Briefcase, text: "Placement & referral opportunities" },
+              { icon: ShieldCheck, text: "Official institution portal" },
+            ].map(({ icon: Icon, text }) => (
+              <div key={text} className="flex items-center gap-3 text-sm font-medium text-foreground/90">
+                <div className="p-2 rounded-lg bg-muted text-foreground shrink-0 border border-border/40">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <span>{text}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="text-gray-500 text-xs relative z-10">
-          © 2024 Alumni Network. Verified University Platform.
+        <p className="text-sm text-muted-foreground pt-6">
+          © {new Date().getFullYear()} Alumni Network. All rights reserved.
         </p>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="bg-navy-800 p-1.5 rounded-lg">
-              <GraduationCap className="h-5 w-5 text-gold-500" />
-            </div>
-            <span className="font-serif font-bold text-navy-900 text-xl">
-              ALUMNI
-            </span>
-          </div>
+      {/* Right Form Container */}
+      <div className="flex-1 flex flex-col justify-between px-4 py-8 min-h-screen">
+        <div className="flex items-center justify-end w-full max-w-md mx-auto">
+          <ThemeToggle />
+        </div>
 
-          <div className="mb-8">
-            <h2 className="font-serif text-3xl font-bold text-navy-900 mb-2">
+        <div className="w-full max-w-md space-y-6 mx-auto my-auto py-4">
+          <div className="space-y-2">
+            <div className="lg:hidden flex items-center justify-between gap-2 mb-4">
+              <Logo size="sm" shortTextOnMobile />
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">
               Sign In
             </h2>
-            <p className="text-gray-500">Access your alumni account</p>
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-navy-800 mb-2 font-sans">
-              Sign in as
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {roles.map((role) => (
-                <button
-                  key={role.value}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, role: role.value })}
-                  className={`p-3 rounded-lg border-2 text-center transition-all ${
-                    formData.role === role.value
-                      ? "border-navy-800 bg-navy-50 text-navy-900"
-                      : "border-gray-200 text-gray-500 hover:border-gray-300"
-                  }`}
-                >
-                  <div className="font-semibold text-sm">{role.label}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">
-                    {role.desc}
-                  </div>
-                </button>
-              ))}
-            </div>
-            <p className="mt-3 text-xs text-gray-500 font-sans">
-              {formData.role === "faculty"
-                ? "Faculty login uses college-issued credentials."
-                : formData.role === "student"
-                  ? "Sign in with your approved student account."
-                  : "Sign in with your approved alumni account."}
+            <p className="text-xs text-muted-foreground">
+              Enter your email and password to continue.
             </p>
           </div>
 
           {resetSuccess && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3 text-green-700">
-              <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-sm">
-                  Password reset successful
-                </p>
-                <p className="text-sm mt-0.5">
-                  Sign in with your new password.
-                </p>
-              </div>
-            </div>
+            <Alert className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600">
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Password reset successful. You can now sign in with your new password.
+              </AlertDescription>
+            </Alert>
           )}
 
           {approvedSuccess && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3 text-green-700">
-              <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-sm">
-                  Account approved!
-                </p>
-                <p className="text-sm mt-0.5">
-                  Your account has been approved. Sign in with your credentials.
-                </p>
-              </div>
-            </div>
+            <Alert className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600">
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Your account is approved! Please sign in below.
+              </AlertDescription>
+            </Alert>
           )}
 
           {error === "pending" && (
-            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-              <Clock className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-amber-800 text-sm">
-                  Account Pending Approval
-                </p>
-                <p className="text-amber-700 text-sm mt-0.5">
-                  Your account is awaiting admin approval.
-                </p>
-                <Link
-                  href="/auth/pending"
-                  className="inline-flex items-center gap-1 text-amber-700 underline text-sm mt-1 hover:no-underline"
-                >
-                  Check approval status <ExternalLink className="h-3 w-3" />
+            <Alert className="border-amber-500/30 bg-amber-500/10 text-amber-700">
+              <Clock className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Your account is awaiting admin approval.{" "}
+                <Link href="/auth/pending" className="underline font-medium inline-flex items-center gap-1">
+                  Check status <ExternalLink className="h-3 w-3" />
                 </Link>
-              </div>
-            </div>
+              </AlertDescription>
+            </Alert>
           )}
 
           {error && error !== "pending" && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-sm">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              {error}
-            </div>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">{error}</AlertDescription>
+            </Alert>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <AuthInput
               label="Email Address"
               type="email"
-              placeholder={
-                formData.role === "faculty"
-                  ? "faculty@mec.ac.in"
-                  : "your@email.edu"
-              }
+              placeholder="your.email@example.com"
               icon={Mail}
               value={formData.email}
               onChange={(e) =>
@@ -344,7 +343,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-muted-foreground/60 hover:text-foreground cursor-pointer"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -356,50 +355,37 @@ export default function LoginPage() {
               required
             />
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.rememberMe}
-                  onChange={(e) =>
-                    setFormData({ ...formData, rememberMe: e.target.checked })
-                  }
-                  className="w-4 h-4 rounded border-gray-300 accent-navy-800"
-                />
-                <span className="text-sm text-gray-600 font-sans">
-                  Remember me
-                </span>
-              </label>
+            <div className="flex items-center justify-end text-xs">
               <Link
                 href="/forgot-password"
-                className="text-sm text-gold-600 hover:text-gold-700 font-medium font-sans"
+                className="text-primary hover:underline font-medium"
               >
                 Forgot password?
               </Link>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full btn-primary flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                "Sign In"
-              )}
-            </button>
+            <Button type="submit" disabled={loading} className="w-full cursor-pointer">
+              {loading ? "Signing in..." : "Sign In"}
+            </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-500 font-sans">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/auth/signup"
-              className="text-gold-600 hover:text-gold-700 font-semibold"
-            >
-              Join the Network
-            </Link>
-          </p>
+          <Card className="p-4 bg-muted/20 text-center text-xs">
+            <CardContent className="p-0">
+              <p className="text-muted-foreground">
+                Don&apos;t have an account yet?{" "}
+                <Link
+                  href="/auth/signup"
+                  className="text-foreground font-semibold hover:underline"
+                >
+                  Join the Network
+                </Link>
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="w-full max-w-md mx-auto text-center text-xs text-muted-foreground py-2">
+          © {new Date().getFullYear()} Alumni Network
         </div>
       </div>
     </div>

@@ -128,16 +128,20 @@ export function normalizeRoleForDisplay(
   const normalized = normalizeRoleToken(role);
   if (normalized === "faculty") return "faculty";
   if (normalized === "student") return "student";
-  if (normalized === "admin" || normalized === "batch_admin") return "admin";
+  if (normalized === "admin") return "admin";
+  if (normalized === "batch_admin") return "alumni";
   return "alumni";
 }
 
 export function getDashboardPathForRoles(
   userRoles: string | string[] | null | undefined,
 ): string {
-  console.log("getDashboardPathForRoles", userRoles);
-  if (isAnyAdmin(userRoles)) {
+  if (isMainAdmin(userRoles)) {
     return "/dashboard/mainadmin";
+  }
+
+  if (isBatchAdmin(userRoles)) {
+    return "/dashboard/alumni";
   }
 
   if (isFaculty(userRoles)) {
@@ -147,6 +151,5 @@ export function getDashboardPathForRoles(
   if (isStudent(userRoles)) {
     return "/dashboard/student";
   }
-  console.log("hieq3awefadfa");
   return "/dashboard/alumni";
 }

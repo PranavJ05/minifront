@@ -3,10 +3,14 @@ import { api } from "@/lib/fetcher";
 import { queryKeys } from "./keys";
 import type { Event, EventActionResponse, CreateEventPayload } from "@/lib/types/events";
 
-export function useEventsQuery() {
+export function useEventsQuery(params?: { category?: string }) {
+  const searchParams = new URLSearchParams();
+  if (params?.category) searchParams.set("category", params.category);
+  const queryStr = searchParams.toString();
+
   return useQuery({
-    queryKey: queryKeys.events.all,
-    queryFn: () => api<Event[]>("/api/events/all"),
+    queryKey: [...queryKeys.events.all, params],
+    queryFn: () => api<Event[]>(`/api/events/all${queryStr ? `?${queryStr}` : ""}`),
   });
 }
 

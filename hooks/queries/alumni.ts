@@ -5,10 +5,15 @@ import { queryKeys } from "./keys";
 export interface AlumniProfile {
   id: number;
   name: string;
-  profession?: string;
-  department?: string;
-  location?: string;
-  profileImageUrl?: string;
+  email?: string | null;
+  profileImageUrl?: string | null;
+  batchYear?: number | null;
+  department?: string | null;
+  courseCode?: string | null;
+  courseName?: string | null;
+  location?: string | null;
+  profession?: string | null;
+  linkedinUrl?: string | null;
 }
 
 export function useAlumniSearchQuery(params?: Record<string, string>) {
@@ -19,6 +24,8 @@ export function useAlumniSearchQuery(params?: Record<string, string>) {
       api<AlumniProfile[]>(`/api/alumni/search${searchParams ? `?${searchParams}` : ""}`),
   });
 }
+
+export const useAlumniQuery = useAlumniSearchQuery;
 
 export function useAlumniProfileQuery(id: number) {
   return useQuery({

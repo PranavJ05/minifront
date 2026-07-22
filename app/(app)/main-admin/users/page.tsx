@@ -3,13 +3,41 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
-import ManageClubsModal from "@/components/main-admin/ManageClubsModal";
 import { getUsers } from "@/lib/api/mainAdmin";
-import { UserSummary } from "@/lib/types/mainAdmin";
+import type { UserSummary } from "@/lib/types/mainAdmin";
 import { useAuth } from "@/contexts/auth-context";
 import { isMainAdmin } from "@/lib/roleUtils";
-import { Loader2 } from "lucide-react";
-import { getErrorMessage } from "@/lib/get-error-message";
+import { Loader2, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+
+const roleColorMap: Record<string, string> = {
+  ADMIN: "bg-red-500/10 text-red-600",
+  ALUMNI: "bg-blue-500/10 text-blue-600",
+  STUDENT: "bg-emerald-500/10 text-emerald-600",
+  FACULTY: "bg-purple-500/10 text-purple-600",
+};
+
+const statusColorMap: Record<string, string> = {
+  APPROVED: "bg-emerald-500/10 text-emerald-600",
+  PENDING: "bg-amber-500/10 text-amber-600",
+  REJECTED: "bg-red-500/10 text-red-600",
+};
 
 export default function MainAdminUsersPage() {
   const router = useRouter();
@@ -19,14 +47,12 @@ export default function MainAdminUsersPage() {
   const [authorized, setAuthorized] = useState(false);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
-  const [selectedUser, setSelectedUser] = useState<UserSummary | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
 
   const filteredUsers = useMemo(() => {
     return users.filter(
-      (user) =>
-        user.name.toLowerCase().includes(search.toLowerCase()) ||
-        user.email.toLowerCase().includes(search.toLowerCase()),
+      (u) =>
+        u.name.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase()),
     );
   }, [users, search]);
 
@@ -35,8 +61,7 @@ export default function MainAdminUsersPage() {
       setLoading(true);
       const data = await getUsers(roleFilter || undefined);
       setUsers(data);
-    } catch (err) {
-      console.error(err);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -63,92 +88,105 @@ export default function MainAdminUsersPage() {
 
   if (authLoading || !authorized) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-navy-800" />
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center gap-2 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <span className="text-sm">Loading users...</span>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
-      <h1 className="text-3xl font-bold mb-6">User Management</h1>
-
-      <div className="flex gap-4 mb-6">
-        <input
-          type="text"
-          placeholder="Search user..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border rounded px-3 py-2 flex-1"
-        />
-
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          className="border rounded px-3 py-2"
-        >
-          <option value="">All Roles</option>
-          <option value="STUDENT">Student</option>
-          <option value="ALUMNI">Alumni</option>
-          <option value="FACULTY">Faculty</option>
-          <option value="ADMIN">Admin</option>
-        </select>
+    <div className="w-full px-4 sm:px-6 py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          User Management
+        </h1>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full border">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-3 text-left">Name</th>
-              <th className="p-3 text-left">Email</th>
-              <th className="p-3 text-left">Role</th>
-              <th className="p-3 text-left">Status</th>
-              <th className="p-3 text-left">Club Manager</th>
-              <th className="p-3 text-left">Action</th>
-            </tr>
-          </thead>
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+          <Input
+            placeholder="Search by name or email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-9 text-xs"
+          />
+        </div>
 
-          <tbody>
-            {filteredUsers.map((user) => (
-              <tr key={user.id} className="border-t">
-                <td className="p-3">{user.name}</td>
-                <td className="p-3">{user.email}</td>
-                <td className="p-3">{user.role}</td>
-                <td className="p-3">{user.accountStatus}</td>
-                <td className="p-3">{user.clubManager ? "🟢 Yes" : "—"}</td>
-                <td className="p-3">
-                  <button
-                    onClick={() => {
-                      setSelectedUser(user);
-                      setModalOpen(true);
-                    }}
-                    className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                  >
-                    Manage Clubs
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="w-full sm:w-44">
+          <Select
+            value={roleFilter}
+            onValueChange={(v) => setRoleFilter(v ?? "")}
+          >
+            <SelectTrigger className="h-9 text-xs">
+              <SelectValue placeholder="All Roles" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Roles</SelectItem>
+              <SelectItem value="STUDENT">Student</SelectItem>
+              <SelectItem value="ALUMNI">Alumni</SelectItem>
+              <SelectItem value="FACULTY">Faculty</SelectItem>
+              <SelectItem value="ADMIN">Admin</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {selectedUser && (
-        <ManageClubsModal
-          open={modalOpen}
-          onClose={() => {
-            setModalOpen(false);
-            setSelectedUser(null);
-            loadUsers();
-          }}
-          userId={selectedUser.id}
-          userName={selectedUser.name}
-        />
-      )}
+      {/* Users Table */}
+      <div className="border border-border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredUsers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-10">
+                  No users found
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredUsers.map((u) => (
+                <TableRow key={u.id}>
+                  <TableCell className="font-medium">{u.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{u.email}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="secondary"
+                      className={`text-[10px] font-medium ${roleColorMap[u.role] || ""}`}
+                    >
+                      {u.role}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] font-medium ${statusColorMap[u.accountStatus] || ""}`}
+                    >
+                      {u.accountStatus}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

@@ -1,12 +1,6 @@
 "use client";
 
-/**
- * AlumniDirectoryMap.tsx
- *
- * Alumni directory map view using React Leaflet + Leaflet.markercluster.
- */
-
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ExternalLink,
@@ -20,14 +14,16 @@ import {
   Users,
   ChevronRight,
 } from "lucide-react";
-import type * as L from "leaflet";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { api } from "@/lib/fetcher";
 
 interface AlumniMapPin {
   alumniId: number;
   name: string;
   profileImageUrl: string | null;
+  email?: string | null;
   batchYear: number | null;
   department: string | null;
   courseName: string | null;
@@ -40,70 +36,77 @@ interface AlumniMapPin {
   country: string | null;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const API_BASE = "http://localhost:8080";
-const MAP_CENTER: [number, number] = [20.5937, 78.9629]; // India centre
+const MAP_CENTER: [number, number] = [20.5937, 78.9629];
 const MAP_ZOOM = 5;
-const LOG = (...a: unknown[]) => console.log("[AlumniDirectoryMap]", ...a);
-const ERR = (...a: unknown[]) => console.error("[AlumniDirectoryMap]", ...a);
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AlumniDirectoryMap() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
-  const clusterGroup = useRef<L.MarkerClusterGroup | null>(null);
+  const clusterGroup = useRef<any>(null);
 
   const [pins, setPins] = useState<AlumniMapPin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<AlumniMapPin | null>(null);
-  const [clusterList, setClusterList] = useState<AlumniMapPin[] | null>(null); // NEW: State for cluster hover panel
+  const [clusterList, setClusterList] = useState<AlumniMapPin[] | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
-  // ── Fetch pins from backend ─────────────────────────────────────────────
-
-  async function fetchPins() {
-    LOG("fetchPins() called");
+  const fetchPins = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Public endpoint — no auth header needed
-      const res = await fetch(`${API_BASE}/api/alumni/map`);
-      LOG("Response status:", res.status);
+      const rawData: Record<string, unknown>[] = await api("/api/alumni/search", {
+        method: "GET",
+      });
 
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      const mappedPins: AlumniMapPin[] = (rawData || [])
+        .map((item) => ({
+          alumniId: (item.id || item.alumniId) as number,
+          name: (item.name as string) || "Unknown",
+          profileImageUrl: (item.profileImageUrl as string) || null,
+          email: (item.email as string) || null,
+          batchYear: (item.batchYear as number) || null,
+          department: (item.department as string) || null,
+          courseName: (item.courseName as string) || null,
+          profession: (item.profession as string) || null,
+          linkedinUrl: (item.linkedinUrl as string) || null,
+          latitude: item.latitude as number,
+          longitude: item.longitude as number,
+          displayLocation: ((item.location || item.placeOfResidence) as string) || "Location unavailable",
+          city: (item.city as string) || null,
+          country: (item.country as string) || null,
+        }))
+        .filter(
+          (pin) =>
+            typeof pin.latitude === "number" &&
+            typeof pin.longitude === "number" &&
+            !isNaN(pin.latitude) &&
+            !isNaN(pin.longitude),
+        );
 
-      const data: AlumniMapPin[] = await res.json();
-      LOG(`Loaded ${data.length} pins`);
-      setPins(data);
+      setPins(mappedPins);
     } catch (err: unknown) {
-      ERR("fetchPins error:", err);
-      setError(err instanceof Error ? err.message : "Failed to load alumni locations");
+      const message = err instanceof Error ? err.message : "Failed to load alumni locations";
+      setError(message);
     } finally {
       setLoading(false);
     }
-  }
-
-  // ── Init Leaflet (client-only) ──────────────────────────────────────────
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined" || !mapContainer.current) return;
-    if (mapInstance.current) return; // Already initialised
+    if (mapInstance.current) return;
 
     let cancelled = false;
 
-    // Dynamic import keeps Leaflet out of the SSR bundle
-    import("leaflet")
-      .then((leaflet) => {
-        if (cancelled) return;
+    (async () => {
+      try {
+        const leafletModule = await import("leaflet");
+        const L = leafletModule.default || leafletModule;
 
-        (window as unknown as { leaflet?: typeof leaflet }).leaflet = leaflet;
-
-        delete (leaflet.Icon.Default.prototype as unknown as { _getIconUrl?: string })._getIconUrl;
-        leaflet.Icon.Default.mergeOptions({
+        delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
+        L.Icon.Default.mergeOptions({
           iconRetinaUrl:
             "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
           iconUrl:
@@ -112,67 +115,53 @@ export default function AlumniDirectoryMap() {
             "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
         });
 
-        return import("leaflet.markercluster");
-      })
-      .then(() => {
+        const extensibleL = Object.create(L);
+        (window as any).L = extensibleL;
+
+        await import("leaflet.markercluster");
+
         if (cancelled) return;
 
-        LOG("Leaflet loaded, initialising map");
-
-        const leaflet = (window as unknown as { leaflet?: typeof import("leaflet") }).leaflet!;
-
-        const map = leaflet.map(mapContainer.current!, {
+        const map = L.map(mapContainer.current!, {
           center: MAP_CENTER,
           zoom: MAP_ZOOM,
           zoomControl: true,
         });
 
-        leaflet.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution:
             '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
           maxZoom: 18,
         }).addTo(map);
 
-        const cluster = leaflet.markerClusterGroup({
-          chunkedLoading: true,
-          maxClusterRadius: 60,
-          spiderfyOnMaxZoom: true,
-          showCoverageOnHover: false,
-        });
+        const markerClusterGroup = (extensibleL as any).markerClusterGroup;
+        if (typeof markerClusterGroup === "function") {
+          const cluster = markerClusterGroup({
+            chunkedLoading: true,
+            maxClusterRadius: 60,
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false,
+          });
+          map.addLayer(cluster);
+          clusterGroup.current = cluster;
 
-        // NEW: Listen for hover events on the clusters!
-        cluster.on("clustermouseover", (a: any) => {
-          // Extract all child markers inside this specific cluster
-          const markers = a.layer.getAllChildMarkers();
-
-          // Map them back to the original AlumniMapPin data we attached earlier
-          const alumniInCluster = markers.map((m: any) => m.alumniData);
-
-          // Show the side panel, and hide the single-pin panel if it's open
-          setClusterList(alumniInCluster);
-          setSelected(null);
-        });
-
-        // Click anywhere on the map background to clear panels
-        map.on("click", () => {
-          setSelected(null);
-          setClusterList(null);
-        });
-
-        map.addLayer(cluster);
+          cluster.on("clusterclick", (a: any) => {
+            const markers = a.layer.getAllChildMarkers();
+            const pinList: AlumniMapPin[] = markers
+              .map((m: any) => m.options.alumniPin)
+              .filter(Boolean);
+            setClusterList(pinList);
+            setSelected(null);
+          });
+        }
 
         mapInstance.current = map;
-        clusterGroup.current = cluster;
-
         setMapReady(true);
-        LOG("Map initialised");
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          ERR("Failed to load Leaflet:", err);
-          setError("Failed to load map");
-        }
-      });
+      } catch (err: unknown) {
+        console.error("Failed to load Leaflet:", err);
+        setError("Failed to initialize map library.");
+      }
+    })();
 
     return () => {
       cancelled = true;
@@ -184,277 +173,172 @@ export default function AlumniDirectoryMap() {
     };
   }, []);
 
-  // ── Load pins from API ──────────────────────────────────────────────────
-
   useEffect(() => {
+    if (!mapReady || !mapInstance.current) return;
     fetchPins();
-  }, []);
-
-  // ── Add markers whenever pins or map change ─────────────────────────────
+  }, [mapReady]);
 
   useEffect(() => {
-    if (!mapReady || !clusterGroup.current || pins.length === 0) return;
+    if (!mapReady || !mapInstance.current || !pins.length) return;
 
-    const leaflet = (window as unknown as { leaflet?: typeof import("leaflet") }).leaflet!;
-    const cluster = clusterGroup.current;
-    cluster.clearLayers();
+    const leaflet = (window as any).L;
+    if (!leaflet) return;
 
-    LOG(`Adding ${pins.length} markers to cluster`);
+    if (clusterGroup.current) {
+      clusterGroup.current.clearLayers();
+    }
 
     pins.forEach((pin) => {
-      const marker = leaflet.marker([pin.latitude, pin.longitude]);
-
-      (marker as unknown as { alumniData: AlumniMapPin }).alumniData = pin;
-
-      marker.bindTooltip(
-        `<strong>${pin.name}</strong><br>${pin.displayLocation ?? ""}`,
-        { direction: "top", offset: [0, -10] },
-      );
-
-      marker.on("click", () => {
-        LOG("Marker clicked:", pin.alumniId, pin.name);
-        setSelected(pin);
-        setClusterList(null); // Hide cluster panel if open
+      const marker = leaflet.marker([pin.latitude, pin.longitude], {
+        title: pin.name,
+        alumniPin: pin,
       });
 
-      cluster.addLayer(marker);
+      marker.on("click", () => {
+        setSelected(pin);
+        setClusterList(null);
+      });
+
+      if (clusterGroup.current) {
+        clusterGroup.current.addLayer(marker);
+      } else if (mapInstance.current) {
+        marker.addTo(mapInstance.current);
+      }
     });
   }, [mapReady, pins]);
 
-  // ── Render ─────────────────────────────────────────────────────────────
-
   return (
-    <div className="relative w-full h-full min-h-[600px] rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100">
-      {/* Map canvas */}
-      <div
-        ref={mapContainer}
-        className="w-full h-full"
-        style={{ minHeight: 600 }}
-      />
+    <div className="relative w-full h-[650px] rounded-xl overflow-hidden border border-border shadow-sm bg-card">
+      <div ref={mapContainer} className="w-full h-full z-0" />
 
-      {/* ── Loading & Error overlays (unchanged) ── */}
-      {loading && (
-        <div className="absolute inset-0 z-[500] flex items-center justify-center bg-white/70 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-7 w-7 animate-spin text-[#1a2744]" />
-            <p className="text-sm font-medium text-[#1a2744]">
-              Loading alumni locations…
-            </p>
-          </div>
-        </div>
-      )}
-
-      {error && !loading && (
-        <div className="absolute inset-0 z-[500] flex items-center justify-center bg-white/80 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl border border-red-200 p-6 max-w-sm w-full shadow-lg mx-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-[#1a2744]">Could not load map</p>
-                <p className="text-sm text-gray-500 mt-1">{error}</p>
-                <button
-                  onClick={fetchPins}
-                  className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1a2744] text-white text-sm font-medium hover:bg-[#243460] transition-colors"
-                >
-                  <RefreshCw className="h-4 w-4" /> Retry
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Stats badge (top-left) ── */}
-      {!loading && pins.length > 0 && (
-        <div className="absolute top-4 left-4 z-[400] flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2 border border-gray-200 shadow-sm">
-          <Users className="h-4 w-4 text-[#1a2744]" />
-          <span className="text-sm font-semibold text-[#1a2744]">
-            {pins.length} alumni on map
-          </span>
-        </div>
-      )}
-
-      {/* ── Refresh button (top-right) ── */}
-      <button
-        onClick={fetchPins}
-        disabled={loading}
-        className="
-          absolute top-4 right-4 z-[400]
-          w-9 h-9 flex items-center justify-center
-          bg-white/90 backdrop-blur-sm rounded-xl
-          border border-gray-200 shadow-sm
-          text-[#1a2744] hover:bg-white
-          disabled:opacity-40 transition-all
-        "
-        title="Refresh"
-      >
-        <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-      </button>
-
-      {/* ── NEW: Cluster Hover Panel (Right Side Slide-out) ── */}
-      <div
-        className={`
-          absolute top-0 right-0 bottom-0 z-[450] w-80 bg-white shadow-[-4px_0_25px_rgba(0,0,0,0.1)]
-          transition-transform duration-300 ease-in-out flex flex-col border-l border-gray-200
-          ${clusterList && clusterList.length > 0 ? "translate-x-0" : "translate-x-full"}
-        `}
-      >
-        {/* Header */}
-        <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-navy-50">
-          <div>
-            <h3 className="font-bold text-navy-900 text-lg">
-              {clusterList?.length} Alumni
-            </h3>
-            <p className="text-xs text-navy-600 mt-0.5">In this area</p>
-          </div>
-          <button
-            onClick={() => setClusterList(null)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-navy-900 hover:bg-white transition-colors shadow-sm border border-transparent hover:border-gray-200"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Scrollable List */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50/50">
-          {clusterList?.map((alumni, index) => (
-            <div
-              key={`${alumni.alumniId}-${index}`}
-              className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow group"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-[#f0f4ff] border border-[#1a2744]/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {alumni.profileImageUrl ? (
-                    <img
-                      src={alumni.profileImageUrl}
-                      alt={alumni.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-[#1a2744] font-bold text-sm">
-                      {alumni.name.charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-bold text-[#1a2744] text-sm truncate">
-                    {alumni.name}
-                  </p>
-                  {alumni.profession && (
-                    <p className="text-xs text-gray-500 truncate">
-                      {alumni.profession}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between border-t border-gray-50 pt-3 mt-1">
-                <span className="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-md truncate max-w-[130px]">
-                  {alumni.department || "Alumni"}
-                </span>
-
-                <Link
-                  href={`/alumni/${alumni.alumniId}`}
-                  className="inline-flex items-center text-xs font-semibold text-gold-600 hover:text-gold-700 group-hover:underline"
-                >
-                  View Profile <ChevronRight className="h-3 w-3 ml-0.5" />
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Top Bar Controls */}
+      <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
+        <Badge variant="secondary" className="shadow-md bg-background/90 backdrop-blur-md text-xs py-1 px-3">
+          <MapPin className="h-3.5 w-3.5 mr-1.5 text-primary" />
+          {loading ? "Loading..." : `${pins.length} Alumni Mapped`}
+        </Badge>
+        <Button
+          variant="outline"
+          size="xs"
+          onClick={fetchPins}
+          disabled={loading}
+          className="shadow-md bg-background/90 backdrop-blur-md cursor-pointer"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
       </div>
 
-      {/* ── Selected Single Alumni card (bottom panel) ── */}
-      {selected && (
-        <div
-          className="
-            absolute bottom-4 left-4 right-4 z-[400]
-            bg-white rounded-2xl shadow-xl border border-gray-200
-            p-4 flex items-start gap-4
-            sm:left-auto sm:right-4 sm:w-80
-          "
-          style={{ animation: "slideUp 0.2s ease-out" }}
-        >
-          {/* Avatar */}
-          <div className="w-12 h-12 rounded-xl bg-[#f0f4ff] border border-[#1a2744]/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-            {selected.profileImageUrl ? (
-              <img
-                src={selected.profileImageUrl}
-                alt={selected.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-[#1a2744] font-bold text-lg">
-                {selected.name.charAt(0).toUpperCase()}
-              </span>
-            )}
-          </div>
-
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-[#1a2744] truncate">{selected.name}</p>
-
-            {selected.profession && (
-              <p className="text-xs text-[#c8a84b] font-medium mt-0.5 flex items-center gap-1 truncate">
-                <Briefcase className="h-3 w-3 flex-shrink-0" />
-                {selected.profession}
-              </p>
-            )}
-
-            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 mb-3">
-              {selected.department && (
-                <span className="text-xs text-gray-500 flex items-center gap-1">
-                  <GraduationCap className="h-3 w-3" />
-                  {selected.department}
-                  {selected.batchYear && ` · ${selected.batchYear}`}
-                </span>
-              )}
-              {(selected.displayLocation || selected.city) && (
-                <span className="text-xs text-gray-500 flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  {selected.city ?? selected.displayLocation}
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Link
-                href={`/alumni/${selected.alumniId}`}
-                className="inline-flex items-center gap-1 text-xs text-white bg-[#1a2744] px-3 py-1.5 rounded-lg font-semibold hover:bg-[#243460] transition-colors"
-              >
-                View Profile <ChevronRight className="h-3 w-3" />
-              </Link>
-
-              {selected.linkedinUrl && (
-                <a
-                  href={selected.linkedinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-gray-500 font-semibold hover:text-[#0077b5] transition-colors"
-                >
-                  <ExternalLink className="h-3 w-3" /> LinkedIn
-                </a>
-              )}
-            </div>
-          </div>
-
-          {/* Close */}
-          <button
-            onClick={() => setSelected(null)}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-[#1a2744] hover:bg-gray-100 flex-shrink-0 transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
+      {loading && (
+        <div className="absolute inset-0 bg-background/60 backdrop-blur-xs z-20 flex flex-col items-center justify-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <p className="text-xs text-muted-foreground">Loading alumni map...</p>
         </div>
       )}
 
-      <style>{`
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0);    }
-        }
-      `}</style>
+      {error && (
+        <div className="absolute top-3 right-3 z-20 max-w-sm">
+          <Card className="border-destructive bg-destructive/10 text-destructive p-3">
+            <CardContent className="p-0 flex items-center gap-2 text-xs">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Selected Alumni Pin Drawer */}
+      {selected && (
+        <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 z-20 sm:w-80">
+          <Card className="shadow-xl border-border bg-card/95 backdrop-blur-md p-4 space-y-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0 border border-primary/20">
+                  {selected.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-foreground">{selected.name}</h4>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3 w-3" /> {selected.displayLocation}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSelected(null)}
+                className="h-6 w-6 cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap gap-1.5 text-xs">
+              {selected.batchYear && (
+                <Badge variant="outline" className="font-normal text-xs">
+                  <GraduationCap className="h-3 w-3 mr-1" />
+                  Class of {selected.batchYear}
+                </Badge>
+              )}
+              {selected.department && (
+                <Badge variant="secondary" className="font-normal text-xs">
+                  {selected.department}
+                </Badge>
+              )}
+              {selected.profession && (
+                <Badge variant="outline" className="font-normal text-xs">
+                  <Briefcase className="h-3 w-3 mr-1" />
+                  {selected.profession}
+                </Badge>
+              )}
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              {selected.linkedinUrl && (
+                <Button size="xs" variant="outline" asChild className="flex-1 cursor-pointer">
+                  <a href={selected.linkedinUrl} target="_blank" rel="noreferrer">
+                    LinkedIn <ExternalLink className="h-3 w-3 ml-1" />
+                  </a>
+                </Button>
+              )}
+              <Button size="xs" asChild className="flex-1 cursor-pointer">
+                <Link href={`/alumni/${selected.alumniId}`}>
+                  View Profile <ChevronRight className="h-3 w-3 ml-1" />
+                </Link>
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Cluster Alumni List Drawer */}
+      {clusterList && !selected && (
+        <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 z-20 sm:w-80 max-h-72 flex flex-col">
+          <Card className="shadow-xl border-border bg-card/95 backdrop-blur-md p-4 space-y-3 overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                <Users className="h-4 w-4 text-primary" /> {clusterList.length} Alumni in this area
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setClusterList(null)} className="h-6 w-6 cursor-pointer">
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <div className="overflow-y-auto space-y-2 pr-1 max-h-48 divide-y divide-border/40">
+              {clusterList.map((pin) => (
+                <div key={pin.alumniId} className="pt-2 first:pt-0 flex items-center justify-between gap-2 text-xs">
+                  <div>
+                    <p className="font-semibold text-foreground">{pin.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{pin.profession || pin.department || "Alumni"}</p>
+                  </div>
+                  <Button size="xs" variant="ghost" onClick={() => setSelected(pin)} className="cursor-pointer text-primary">
+                    View
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

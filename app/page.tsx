@@ -185,7 +185,7 @@ export default function LandingPage() {
               {
                 icon: Users,
                 title: "Global Alumni Directory",
-                desc: "Search and connect with 35,000+ verified graduates across every industry, country, and graduating class.",
+                desc: "Search and connect with verified graduates across every industry, country, and graduating class.",
                 color: "bg-blue-50 text-blue-600",
                 cta: "Browse Profiles",
               },
@@ -330,7 +330,7 @@ export default function LandingPage() {
               <Shield className="h-4 w-4 text-gold-500" /> Verified members only
             </span>
             <span className="flex items-center gap-1.5">
-              <Users className="h-4 w-4 text-gold-500" /> 35,000+ active alumni
+              <Users className="h-4 w-4 text-gold-500" /> Active alumni network
             </span>
             <span className="flex items-center gap-1.5">
               <Star className="h-4 w-4 text-gold-500" /> Free to join

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/fetcher";
 import { queryKeys } from "./keys";
+import { isCurrentMainAdmin, hasAuthToken } from "@/lib/auth";
 
 export function useCoursesQuery() {
   return useQuery({
@@ -38,7 +39,7 @@ export function useAlumniSkillsQuery(alumniId: number) {
   return useQuery({
     queryKey: queryKeys.skills.alumni(alumniId),
     queryFn: () => api<{ id: number; name: string }[]>(`/alumni/${alumniId}/skills`),
-    enabled: !!alumniId,
+    enabled: !!alumniId && hasAuthToken(),
   });
 }
 
@@ -49,7 +50,7 @@ export function useAlumniSkillsSummaryQuery(alumniId: number) {
       api<{ category: string; skills: { id: number; name: string }[] }[]>(
         `/alumni/${alumniId}/skills/summary`,
       ),
-    enabled: !!alumniId,
+    enabled: !!alumniId && hasAuthToken(),
   });
 }
 
@@ -80,10 +81,12 @@ export function useRemoveSkillFromAlumniMutation() {
   });
 }
 
-export function usePendingSkillsQuery() {
+export function usePendingSkillsQuery(options?: { enabled?: boolean }) {
+  const isAuthorized = isCurrentMainAdmin();
   return useQuery({
     queryKey: queryKeys.skills.pending(),
     queryFn: () => api<{ id: number; name: string }[]>("/skills/pending"),
+    enabled: (options?.enabled ?? true) && isAuthorized,
   });
 }
 

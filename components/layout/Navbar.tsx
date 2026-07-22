@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { GraduationCap, Bell, LogOut, Sun, Moon, User } from "lucide-react";
+import { GraduationCap, Bell, LogOut, Sun, Moon, User, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
@@ -20,8 +20,8 @@ import {
 import { useTheme } from "next-themes";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
-import PendingModal from "@/components/main-admin/PendingModal";
-import { isAnyAdmin } from "@/lib/roleUtils";
+import Logo from "@/components/layout/Logo";
+import { isAlumni } from "@/lib/roleUtils";
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -191,14 +191,7 @@ export default function Navbar({
                 </div>
               </>
             ) : (
-              <Link href="/" className="flex items-center gap-2 group">
-                <div className="bg-primary/10 p-1 rounded-md text-primary group-hover:bg-primary/20 transition-colors">
-                  <GraduationCap className="h-4 w-4" />
-                </div>
-                <span className="font-sans font-semibold text-sm tracking-wider uppercase text-foreground">
-                  ALUMNI
-                </span>
-              </Link>
+              <Logo href="/" size="sm" shortTextOnMobile />
             )}
           </div>
 
@@ -228,8 +221,6 @@ export default function Navbar({
                 >
                   <Bell className="h-4 w-4" />
                 </Button>
-
-                {isAnyAdmin(storedUser?.roles) && <PendingModal />}
 
                 {/* Account dropdown - hover open */}
                 <div

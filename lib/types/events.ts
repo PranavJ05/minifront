@@ -17,9 +17,17 @@ export interface Event {
   id: number;
   title: string;
   description?: string;
+  category?: string;
+  mode?: string;
+  topicDomain?: string;
+  speakerName?: string;
+  speakerDetails?: string;
   eventDate: string;
+  endTime?: string;
   location: string;
   batchYear?: number;
+  maxParticipants?: number;
+  registrationCount?: number;
   createdBy?: number;
   createdByName?: string;
   createdAt?: string;
@@ -34,10 +42,17 @@ export interface Event {
 export interface CreateEventPayload {
   title: string;
   description: string;
+  category?: string;
+  mode?: string;
+  topicDomain?: string;
+  speakerName?: string;
+  speakerDetails?: string;
   eventDate: string;
+  endTime?: string;
   location: string;
-  batchYear: number;
-  registrationRequired: boolean;
+  batchYear?: number;
+  maxParticipants?: number;
+  registrationRequired?: boolean;
   registrationLink?: string;
 }
 

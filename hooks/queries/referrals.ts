@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/fetcher";
 import { queryKeys } from "./keys";
+import { hasAuthToken, isCurrentAlumni } from "@/lib/auth";
 
 export interface ReferralRequest {
   id: number;
@@ -15,17 +16,20 @@ export interface ReferralRequest {
   reviewedAt: string | null;
 }
 
-export function useMyReferralsQuery() {
+export function useMyReferralsQuery(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.referrals.mine(),
     queryFn: () => api<ReferralRequest[]>("/api/referrals/mine"),
+    enabled: (options?.enabled ?? true) && hasAuthToken(),
   });
 }
 
-export function useReceivedReferralsQuery() {
+export function useReceivedReferralsQuery(options?: { enabled?: boolean }) {
+  const isAuthorized = isCurrentAlumni();
   return useQuery({
     queryKey: queryKeys.referrals.received(),
     queryFn: () => api<ReferralRequest[]>("/api/referrals/received"),
+    enabled: (options?.enabled ?? true) && isAuthorized,
   });
 }
 
