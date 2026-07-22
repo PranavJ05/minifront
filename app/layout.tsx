@@ -41,12 +41,12 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider>
-              <QueryClientProvider>
-                <AuthProvider>
-                  {children}
-                  <Toaster richColors position="bottom-right" />
-                </AuthProvider>
-              </QueryClientProvider>
+            <QueryClientProvider>
+              <AuthProvider>
+                {children}
+                <Toaster richColors position="bottom-right" />
+              </AuthProvider>
+            </QueryClientProvider>
           </TooltipProvider>
         </ThemeProvider>
       </body>

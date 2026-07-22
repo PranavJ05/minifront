@@ -164,7 +164,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex w-full overflow-x-hidden">
       {/* Left Banner - Desktop */}
-      <div className="hidden lg:flex lg:w-1/2 bg-card border-r border-border flex-col justify-between p-12 min-h-screen">
+      <div className="hidden lg:flex lg:w-1/2 bg-card border-r border-border flex-col justify-between p-12 pb-6 min-h-screen">
         <Logo size="lg" />
 
         {/* Vector SVG Art */}
@@ -235,24 +235,9 @@ export default function LoginPage() {
           <p className="text-sm lg:text-base text-muted-foreground leading-relaxed">
             Access placement opportunities, connect with fellow graduates, and engage with campus events.
           </p>
-
-          <div className="space-y-3 pt-2">
-            {[
-              { icon: Users, text: "Verified MEC alumni & student directory" },
-              { icon: Briefcase, text: "Placement & referral opportunities" },
-              { icon: ShieldCheck, text: "Official institution portal" },
-            ].map(({ icon: Icon, text }) => (
-              <div key={text} className="flex items-center gap-3 text-sm font-medium text-foreground/90">
-                <div className="p-2 rounded-lg bg-muted text-foreground shrink-0 border border-border/40">
-                  <Icon className="h-4 w-4" />
-                </div>
-                <span>{text}</span>
-              </div>
-            ))}
-          </div>
         </div>
 
-        <p className="text-sm text-muted-foreground pt-6">
+        <p className="text-sm text-muted-foreground text-center pt-6 pb-0 mb-0">
           © {new Date().getFullYear()} Alumni Network. All rights reserved.
         </p>
       </div>
@@ -378,10 +363,6 @@ export default function LoginPage() {
               </p>
             </CardContent>
           </Card>
-        </div>
-
-        <div className="w-full max-w-md mx-auto text-center text-xs text-muted-foreground py-2">
-          © {new Date().getFullYear()} Alumni Network
         </div>
       </div>
     </div>
