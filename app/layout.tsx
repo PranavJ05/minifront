@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Figtree } from "next/font/google";
+import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -8,12 +8,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@/components/QueryClientProvider";
 import { AuthProvider } from "@/contexts/auth-context";
 
-const figtreeHeading = Figtree({
+const fontSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+const fontHeading = Outfit({
   subsets: ["latin"],
   variable: "--font-heading",
 });
-
-const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Alumni Network | University Alumni Relations",
@@ -30,7 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("font-sans", figtree.variable, figtreeHeading.variable)}
+      className={cn("font-sans", fontSans.variable, fontHeading.variable)}
       suppressHydrationWarning
     >
       <body suppressHydrationWarning>

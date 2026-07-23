@@ -3,6 +3,19 @@ import { BACKEND_URL } from "./config";
 import { ApiError } from "./api-error";
 import { getToken } from "./auth";
 
+function handleAutoLogout() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("token");
+  localStorage.removeItem("alumni_user");
+  window.dispatchEvent(new Event("storage"));
+
+  const pathname = window.location.pathname;
+  if (!pathname.startsWith("/auth/")) {
+    const next = encodeURIComponent(pathname + window.location.search);
+    window.location.href = `/auth/login?next=${next}`;
+  }
+}
+
 export const api = ofetch.create({
   baseURL: BACKEND_URL,
   headers: { "Content-Type": "application/json" },
@@ -20,6 +33,18 @@ export const api = ofetch.create({
     }
   },
   onResponseError({ response }) {
+    if (response.status === 401) {
+      const url = response.url || "";
+      const isAuthEndpoint =
+        url.includes("/api/auth/login") ||
+        url.includes("/api/auth/faculty/login") ||
+        url.includes("/api/auth/register");
+
+      if (!isAuthEndpoint) {
+        handleAutoLogout();
+      }
+    }
+
     const data = response._data as
       | { message?: string; error?: string; errors?: Record<string, string> }
       | string

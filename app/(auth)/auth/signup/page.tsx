@@ -174,7 +174,9 @@ export default function SignupPage() {
       ...prev,
       role: newRole,
       country: newRole === "student" ? "India" : prev.country,
+      countryCode: newRole === "student" ? "IN" : prev.countryCode,
       state: newRole === "student" ? "Kerala" : prev.state,
+      stateCode: newRole === "student" ? "KL" : prev.stateCode,
     }));
   };
 
@@ -214,8 +216,8 @@ export default function SignupPage() {
       state: "",
       stateCode: "",
       city: "",
-      latitude: countryObj?.latitude || prev.latitude,
-      longitude: countryObj?.longitude || prev.longitude,
+      latitude: countryObj?.latitude ? Number(countryObj.latitude) : prev.latitude,
+      longitude: countryObj?.longitude ? Number(countryObj.longitude) : prev.longitude,
     }));
     setErrors((prev) => ({
       ...prev,
@@ -230,10 +232,10 @@ export default function SignupPage() {
     setFormData((prev) => ({
       ...prev,
       state: stateName,
-      stateCode: stateObj?.iso2 || prev.stateCode,
+      stateCode: stateObj?.iso2 || stateObj?.state_code || prev.stateCode,
       city: "",
-      latitude: stateObj?.latitude || prev.latitude,
-      longitude: stateObj?.longitude || prev.longitude,
+      latitude: stateObj?.latitude ? Number(stateObj.latitude) : prev.latitude,
+      longitude: stateObj?.longitude ? Number(stateObj.longitude) : prev.longitude,
     }));
     setErrors((prev) => ({
       ...prev,
@@ -246,8 +248,8 @@ export default function SignupPage() {
     setFormData((prev) => ({
       ...prev,
       city: cityName,
-      latitude: cityObj?.latitude || prev.latitude,
-      longitude: cityObj?.longitude || prev.longitude,
+      latitude: cityObj?.latitude ? Number(cityObj.latitude) : prev.latitude,
+      longitude: cityObj?.longitude ? Number(cityObj.longitude) : prev.longitude,
     }));
     if (errors.city) {
       setErrors((prev) => ({ ...prev, city: "" }));
@@ -389,14 +391,16 @@ export default function SignupPage() {
         countryCode: formData.countryCode,
         stateCode: formData.stateCode,
         latitude:
-          selectedCity?.latitude ||
-          selectedState?.latitude ||
-          selectedCountry?.latitude ||
+          selectedCity?.latitude ? String(selectedCity.latitude) :
+          selectedState?.latitude ? String(selectedState.latitude) :
+          selectedCountry?.latitude ? String(selectedCountry.latitude) :
+          formData.latitude != null ? String(formData.latitude) :
           undefined,
         longitude:
-          selectedCity?.longitude ||
-          selectedState?.longitude ||
-          selectedCountry?.longitude ||
+          selectedCity?.longitude ? String(selectedCity.longitude) :
+          selectedState?.longitude ? String(selectedState.longitude) :
+          selectedCountry?.longitude ? String(selectedCountry.longitude) :
+          formData.longitude != null ? String(formData.longitude) :
           undefined,
       };
 

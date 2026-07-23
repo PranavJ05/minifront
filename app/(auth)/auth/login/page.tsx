@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -28,7 +28,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { BACKEND_URL } from "@/lib/config";
 import { getDashboardPathForRoles } from "@/lib/roleUtils";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, updateUser } = useAuth();
@@ -366,5 +366,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-sm text-muted-foreground">Loading...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
