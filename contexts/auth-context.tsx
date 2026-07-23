@@ -106,15 +106,11 @@ function extractRoles(data: LoginResponse, fallbackRole = "ALUMNI"): string[] {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<StoredUser | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<StoredUser | null>(() => getStoredUser());
+  const [token, setToken] = useState<string | null>(() => getStoredToken());
+  const [isLoading] = useState(false);
 
   useEffect(() => {
-    setUser(getStoredUser());
-    setToken(getStoredToken());
-    setIsLoading(false);
-
     const handleStorage = () => {
       setUser(getStoredUser());
       setToken(getStoredToken());

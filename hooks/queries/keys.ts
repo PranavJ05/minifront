@@ -59,13 +59,6 @@ export const queryKeys = {
     users: (params?: Record<string, string>) =>
       ["admin", "users", params] as const,
   },
-  location: {
-    countries: ["location", "countries"] as const,
-    states: (countryCode: string) =>
-      ["location", "states", countryCode] as const,
-    cities: (countryCode: string, stateCode: string) =>
-      ["location", "cities", countryCode, stateCode] as const,
-  },
   referrals: {
     mine: () => ["referrals", "mine"] as const,
     received: () => ["referrals", "received"] as const,

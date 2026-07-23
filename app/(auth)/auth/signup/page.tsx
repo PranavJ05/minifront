@@ -28,8 +28,6 @@ import Logo from "@/components/layout/Logo";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import AcademicDetails from "@/components/auth/AcademicDetails";
 import LocationSelector from "@/components/auth/LocationSelector";
-import { useCountriesQuery, useStatesQuery, useCitiesQuery } from "@/hooks/queries/location";
-import type { LocationCountry, LocationState, LocationCity } from "@/hooks/queries/location";
 import { BACKEND_URL } from "@/lib/config";
 import { departments } from "@/lib/mockData";
 import { UserRole } from "@/types";
@@ -150,24 +148,6 @@ export default function SignupPage() {
     designation: "",
     officeLocation: "",
   });
-
-  const { data: countries, isLoading: countriesLoading } = useCountriesQuery();
-  const { data: states, isLoading: statesLoading } = useStatesQuery(
-    formData.countryCode,
-  );
-  const { data: cities, isLoading: citiesLoading } = useCitiesQuery(
-    formData.countryCode,
-    formData.stateCode,
-  );
-  const locationLoading = {
-    countries: countriesLoading,
-    states: statesLoading,
-    cities: citiesLoading,
-  };
-
-  const safeCountries = countries ?? [];
-  const safeStates = states ?? [];
-  const safeCities = cities ?? [];
 
   const updateRole = (newRole: UserRole) => {
     setFormData((prev) => ({
@@ -339,13 +319,6 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const selectedCountry = safeCountries.find(
-        (country) => country.iso2 === formData.countryCode,
-      );
-      const selectedState = safeStates.find(
-        (state) => state.iso2 === formData.stateCode,
-      );
-      const selectedCity = safeCities.find((city) => city.name === formData.city);
       const location = [formData.city, formData.state, formData.country]
         .filter(Boolean)
         .join(", ");
@@ -391,15 +364,9 @@ export default function SignupPage() {
         countryCode: formData.countryCode,
         stateCode: formData.stateCode,
         latitude:
-          selectedCity?.latitude ? String(selectedCity.latitude) :
-          selectedState?.latitude ? String(selectedState.latitude) :
-          selectedCountry?.latitude ? String(selectedCountry.latitude) :
           formData.latitude != null ? String(formData.latitude) :
           undefined,
         longitude:
-          selectedCity?.longitude ? String(selectedCity.longitude) :
-          selectedState?.longitude ? String(selectedState.longitude) :
-          selectedCountry?.longitude ? String(selectedCountry.longitude) :
           formData.longitude != null ? String(formData.longitude) :
           undefined,
       };
@@ -461,14 +428,6 @@ export default function SignupPage() {
       setLoading(false);
     }
   };
-
-  const selectedCountry = safeCountries.find(
-    (country) => country.iso2 === formData.countryCode,
-  );
-  const selectedState = safeStates.find(
-    (state) => state.iso2 === formData.stateCode,
-  );
-  const selectedCity = safeCities.find((city) => city.name === formData.city);
 
   return (
     <div className="min-h-screen bg-background flex w-full overflow-x-hidden">
