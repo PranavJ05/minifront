@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
-import { GetCountries, GetState, GetCity } from "react-country-state-city";
+import { GetState, GetCity } from "react-country-state-city";
 import {
   Select,
   SelectContent,
@@ -25,6 +25,7 @@ export interface LocationState {
   id: number;
   name: string;
   iso2?: string;
+  state_code?: string;
   latitude?: string;
   longitude?: string;
 }
@@ -64,7 +65,11 @@ export default function LocationSelector({
 
   useEffect(() => {
     let mounted = true;
-    GetCountries()
+    fetch("/data/countriesminified.json")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load local countries");
+        return res.json();
+      })
       .then((res: any[]) => {
         if (!mounted) return;
         const list: LocationCountry[] = (res || []).map((c: any) => ({
@@ -100,13 +105,14 @@ export default function LocationSelector({
     if (!foundCountry) return;
 
     setLoadingStates(true);
-    GetState(foundCountry.id)
+    GetState(foundCountry.id, "/data")
       .then((res: any[]) => {
         if (!mounted) return;
         const list: LocationState[] = (res || []).map((s: any) => ({
           id: s.id,
           name: s.name,
-          iso2: s.iso2,
+          iso2: s.iso2 || s.state_code,
+          state_code: s.state_code || s.iso2,
           latitude: s.latitude,
           longitude: s.longitude,
         }));
@@ -139,7 +145,7 @@ export default function LocationSelector({
     if (!foundCountry || !foundState) return;
 
     setLoadingCities(true);
-    GetCity(foundCountry.id, foundState.id)
+    GetCity(foundCountry.id, foundState.id, "/data")
       .then((res: any[]) => {
         if (!mounted) return;
         const list: LocationCity[] = (res || []).map((ct: any) => ({

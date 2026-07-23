@@ -124,8 +124,7 @@ export default function LandingPage() {
               <Link href="/auth/login">
                 <Button
                   size="lg"
-                  variant="outline"
-                  className="cursor-pointer border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 gap-2"
+                  className="cursor-pointer bg-transparent border border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 gap-2 shadow-none"
                 >
                   <Lock className="h-4 w-4" />
                   Member Login
@@ -157,7 +156,7 @@ export default function LandingPage() {
             {mockAlumni.slice(0, 4).map((alumni, i) => (
               <div
                 key={alumni.id}
-                className={`bg-card/10 backdrop-blur rounded-xl p-4 border border-border/20 ${i % 2 === 1 ? "translate-y-5" : ""}`}
+                className={`bg-primary-foreground/10 backdrop-blur rounded-xl p-4 border border-primary-foreground/20 text-primary-foreground ${i % 2 === 1 ? "translate-y-5" : ""}`}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <Image
@@ -342,8 +341,7 @@ export default function LandingPage() {
             <Link href="/auth/login">
               <Button
                 size="lg"
-                variant="outline"
-                className="cursor-pointer border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 gap-2"
+                className="cursor-pointer bg-transparent border border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 gap-2 shadow-none"
               >
                 Already a Member? Sign In
               </Button>
