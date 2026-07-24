@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { FaLinkedin } from "react-icons/fa";
 import {
   GraduationCap,
   MapPin,
@@ -186,7 +187,7 @@ export default function AlumniProfilePage() {
             {alumni.linkedinUrl && (
               <Button size="xs" asChild className="flex-1 sm:flex-none cursor-pointer">
                 <a href={alumni.linkedinUrl} target="_blank" rel="noreferrer">
-                  LinkedIn <ExternalLink className="h-3.5 w-3.5 ml-1.5" />
+                  LinkedIn <FaLinkedin className="h-3.5 w-3.5 ml-1.5 text-[#0A66C2]" />
                 </a>
               </Button>
             )}

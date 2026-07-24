@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { FaLinkedin } from "react-icons/fa";
 import {
   ExternalLink,
   GraduationCap,
@@ -537,12 +538,12 @@ export default function AlumniDirectoryMap() {
               {selected.linkedinUrl && (
                 <Button size="sm" variant="outline" asChild className="flex-1 cursor-pointer rounded-xl h-9 text-xs font-semibold">
                   <a href={selected.linkedinUrl} target="_blank" rel="noreferrer">
-                    LinkedIn <ExternalLink className="h-3.5 w-3.5 ml-1" />
+                    LinkedIn <FaLinkedin className="h-3.5 w-3.5 ml-1 text-[#0A66C2]" />
                   </a>
                 </Button>
               )}
               <Button size="sm" asChild className="flex-1 cursor-pointer rounded-xl h-9 text-xs font-semibold">
-                <Link href={`/alumni/${selected.alumniId}`}>
+                <Link href={`/network/alumni/${selected.alumniId}`}>
                   View Profile <ChevronRight className="h-3.5 w-3.5 ml-1" />
                 </Link>
               </Button>

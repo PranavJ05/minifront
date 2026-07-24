@@ -83,7 +83,7 @@ export default function StudentDashboard() {
             </p>
           </div>
           <Button variant="outline" size="sm" asChild className="cursor-pointer">
-            <Link href="/alumni">
+            <Link href="/network/alumni">
               Directory Snapshot <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Link>
           </Button>
@@ -98,7 +98,7 @@ export default function StudentDashboard() {
             <p className="text-xs text-muted-foreground">Search by name, company, or domain</p>
           </div>
           <Button variant="outline" size="sm" asChild className="cursor-pointer">
-            <Link href="/alumni">
+            <Link href="/network/alumni">
               Browse Directory <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Link>
           </Button>

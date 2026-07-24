@@ -29,7 +29,7 @@ export default function Footer() {
   ];
 
   const quickLinks = [
-    { label: "Alumni Directory", path: "/alumni" },
+    { label: "Alumni Directory", path: "/network/alumni" },
     { label: "Events & News", path: "/events" },
     { label: "Opportunities", path: "/opportunities" },
   ];

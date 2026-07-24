@@ -12,6 +12,7 @@ import {
   Building2,
   Globe,
   MapPin,
+  Clock,
 } from "lucide-react";
 import { FaLinkedin } from "react-icons/fa";
 
@@ -106,6 +107,8 @@ interface FacultyFields {
   designation: string;
   officeLocation: string;
   phone: string;
+  linkedinUrl: string;
+  totalExperienceYears: string;
 }
 
 type FormData = BaseFormData & StudentFields & AlumniFields & FacultyFields;
@@ -147,6 +150,7 @@ export default function SignupPage() {
     phone: "",
     designation: "",
     officeLocation: "",
+    totalExperienceYears: "",
   });
 
   const updateRole = (newRole: UserRole) => {
@@ -354,8 +358,14 @@ export default function SignupPage() {
         officeLocation:
           formData.role === "faculty" ? formData.officeLocation : undefined,
         linkedinUrl:
-          formData.role === "student"
+          formData.role === "student" || formData.role === "faculty"
             ? formData.linkedinUrl.trim() || undefined
+            : undefined,
+        totalExperienceYears:
+          formData.role === "faculty"
+            ? formData.totalExperienceYears
+              ? Number(formData.totalExperienceYears)
+              : undefined
             : undefined,
         location,
         country: formData.country,
@@ -384,7 +394,7 @@ export default function SignupPage() {
         throw new Error(data.message || "Registration failed");
       }
 
-      if (formData.role !== "student" && typeof window !== "undefined") {
+      if (formData.role === "alumni" && typeof window !== "undefined") {
         localStorage.setItem(
           "pendingUserData",
           JSON.stringify({
@@ -414,6 +424,8 @@ export default function SignupPage() {
         router.push(
           `/auth/verify-otp?email=${encodeURIComponent(formData.email)}`,
         );
+      } else if (formData.role === "faculty") {
+        router.push("/auth/login");
       } else {
         router.push("/auth/pending");
       }
@@ -735,6 +747,48 @@ export default function SignupPage() {
                     {errors.officeLocation && (
                       <p className="text-xs text-destructive">
                         {errors.officeLocation}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="faculty-linkedin">LinkedIn URL</Label>
+                    <div className="relative">
+                      <Globe className={inputIconClass} />
+                      <Input
+                        id="faculty-linkedin"
+                        className="pl-8 h-9 text-xs"
+                        placeholder="https://linkedin.com/in/..."
+                        value={formData.linkedinUrl}
+                        onChange={(e) => update("linkedinUrl", e.target.value)}
+                      />
+                    </div>
+                    {errors.linkedinUrl && (
+                      <p className="text-xs text-destructive">
+                        {errors.linkedinUrl}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="experience">Years of Experience</Label>
+                    <div className="relative">
+                      <Clock className={inputIconClass} />
+                      <Input
+                        id="experience"
+                        className="pl-8 h-9 text-xs"
+                        placeholder="Total years in academia/industry"
+                        type="number"
+                        min={0}
+                        value={formData.totalExperienceYears}
+                        onChange={(e) =>
+                          update("totalExperienceYears", e.target.value)
+                        }
+                      />
+                    </div>
+                    {errors.totalExperienceYears && (
+                      <p className="text-xs text-destructive">
+                        {errors.totalExperienceYears}
                       </p>
                     )}
                   </div>
