@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { GraduationCap, Bell, LogOut, Sun, Moon, User, Shield } from "lucide-react";
+import { LogOut, Sun, Moon, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
@@ -18,10 +18,8 @@ import {
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "next-themes";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import Logo from "@/components/layout/Logo";
-import { isAlumni } from "@/lib/roleUtils";
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -170,8 +168,6 @@ export default function Navbar({
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-2 min-w-0">
             {isAuthenticated ? (
-              <>
-                <SidebarTrigger className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0 cursor-pointer mr-1" />
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium truncate">
                   {breadcrumbs.map((crumb, idx) => (
                     <div key={crumb.href} className="flex items-center gap-1.5">
@@ -189,7 +185,6 @@ export default function Navbar({
                     </div>
                   ))}
                 </div>
-              </>
             ) : (
               <Logo href="/" size="sm" shortTextOnMobile />
             )}
@@ -214,14 +209,6 @@ export default function Navbar({
 
             {isAuthenticated ? (
               <>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="text-muted-foreground hover:text-foreground h-8 w-8 cursor-pointer"
-                >
-                  <Bell className="h-4 w-4" />
-                </Button>
-
                 {/* Account dropdown - hover open */}
                 <div
                   onMouseEnter={() => {

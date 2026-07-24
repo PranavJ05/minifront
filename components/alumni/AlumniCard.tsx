@@ -31,7 +31,7 @@ export default function AlumniCard({ alumni, variant = "grid" }: any) {
             {alumni.company || "Not specified"}
           </p>
         </div>
-        <Link href={`/alumni/${alumni.id}`}>
+        <Link href={`/network/alumni/${alumni.id}`}>
           <Button variant="outline" size="sm">View Profile</Button>
         </Link>
       </Card>
@@ -80,7 +80,7 @@ export default function AlumniCard({ alumni, variant = "grid" }: any) {
         )}
       </CardContent>
       <CardFooter>
-        <Link href={`/alumni/${alumni.id}`} className="w-full">
+        <Link href={`/network/alumni/${alumni.id}`} className="w-full">
           <Button variant="outline" size="sm" className="w-full">View Profile</Button>
         </Link>
       </CardFooter>

@@ -128,7 +128,7 @@ export default function FacultyDashboard() {
             </p>
           </div>
           <Button variant="outline" size="sm" asChild className="cursor-pointer">
-            <Link href="/alumni">View Directory</Link>
+            <Link href="/network/alumni">View Directory</Link>
           </Button>
         </div>
       </div>
@@ -162,7 +162,7 @@ export default function FacultyDashboard() {
             <p className="text-xs text-muted-foreground">Search by name, department, or company</p>
           </div>
           <Button variant="outline" size="sm" asChild className="cursor-pointer">
-            <Link href="/alumni">
+            <Link href="/network/alumni">
               Browse Directory <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Link>
           </Button>

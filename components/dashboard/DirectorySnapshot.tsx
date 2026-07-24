@@ -21,7 +21,7 @@ const resolveImageUrl = (value: string | null) => {
 
 export default function DirectorySnapshot({
   title = "Directory Snapshot",
-  linkHref = "/alumni",
+  linkHref = "/network/alumni",
   linkLabel = "View All",
 }: DirectorySnapshotProps) {
   const {
