@@ -311,7 +311,7 @@ export default function LandingPage() {
                             &ldquo;Helping electrical and electronics students with embedded hardware, PCB design, and career paths.&rdquo;
                           </p>
                           <div className="flex items-center justify-between pt-2 border-t border-border/40 text-[11px]">
-                            <span className="text-xs text-muted-foreground font-medium">ECE Batch 2017</span>
+                            <span className="text-xs text-muted-foreground font-medium">EEE Batch 2017</span>
                             <Button size="sm" variant="outline" className="h-7 text-[11px] cursor-pointer">
                               Book Guidance
                             </Button>
